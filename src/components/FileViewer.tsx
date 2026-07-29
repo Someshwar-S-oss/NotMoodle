@@ -34,7 +34,10 @@ export function FileViewer({ mod, token }: { mod: any, token: string }) {
 
       const supabase = createClient()
       const bucket = 'course_files'
-      const filePath = `mod_${mod.id}_${filename}`
+      
+      // Sanitize filename to avoid Supabase upload/URL encoding issues with spaces or special chars
+      const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+      const filePath = `mod_${mod.id}_${safeFilename}`
 
       // 1. Check if we already have this file in Supabase
       const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath)
