@@ -114,7 +114,9 @@ async def supabase_webhook(request: Request, background_tasks: BackgroundTasks):
     """
     try:
         payload = await request.json()
-    except:
+        print(f"Received webhook payload: {payload}", flush=True)
+    except Exception as e:
+        print(f"Webhook error: {e}", flush=True)
         return {"status": "error", "message": "Invalid JSON"}
     
     # Check if this is an INSERT into the storage.objects table
@@ -123,7 +125,10 @@ async def supabase_webhook(request: Request, background_tasks: BackgroundTasks):
         bucket_id = record.get("bucket_id")
         file_path = record.get("name")
         
+        print(f"Checking record... Bucket: {bucket_id}, File: {file_path}", flush=True)
+        
         if bucket_id == "course_files" and file_path:
+            print(f"Triggering background task for {file_path}", flush=True)
             # Run the heavy processing in the background so the webhook responds quickly to Supabase
             background_tasks.add_task(process_file_background, file_path)
             return {"status": "processing_started", "file": file_path}
