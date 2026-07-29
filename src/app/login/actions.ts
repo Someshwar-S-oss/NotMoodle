@@ -27,5 +27,5 @@ export async function signup(formData: FormData) {
   const { error } = await supabase.auth.signUp(data)
   if (error) { redirect('/login?error=Could not authenticate user') }
   revalidatePath('/', 'layout')
-  redirect('/')
+  redirect('/login?message=Check your email to confirm your account before logging in.')
 }

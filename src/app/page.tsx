@@ -38,10 +38,18 @@ export default function Home() {
 
   const fetchAssignments = async () => {
     setLoading(true)
-    const res = await fetch('/api/moodle/assignments')
-    if (res.ok) {
-      const data = await res.json()
-      setAssignments(data.assignments || [])
+    try {
+      const res = await fetch('/api/moodle/assignments')
+      const contentType = res.headers.get('content-type') || ''
+      if (res.ok && contentType.includes('application/json')) {
+        const data = await res.json()
+        setAssignments(data.assignments || [])
+      } else if (res.status === 401) {
+        // Session expired — middleware will handle redirect on next navigation
+        window.location.href = '/login'
+      }
+    } catch (err) {
+      console.error('Failed to fetch assignments:', err)
     }
     setLoading(false)
   }
