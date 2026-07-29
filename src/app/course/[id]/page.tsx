@@ -4,6 +4,8 @@ import { useEffect, useState, use } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2 } from 'lucide-react'
 import { getSiteInfo, getCourseContents, type MoodleCourse } from '@/lib/moodle-client'
+import { Drawer } from '@/components/Drawer'
+import { FileViewer } from '@/components/FileViewer'
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
@@ -13,6 +15,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [loading, setLoading] = useState(true)
   const [sections, setSections] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [selectedMod, setSelectedMod] = useState<any>(null)
+  const [token, setToken] = useState<string>('')
 
   useEffect(() => {
     loadCourseData()
@@ -28,6 +32,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       if (tokenRes.status === 401) { window.location.href = '/login'; return }
       if (!tokenRes.ok) throw new Error('Not connected to Moodle')
       const { token } = await tokenRes.json()
+      setToken(token)
 
       // Fetch course contents directly from browser to Moodle
       const contents = await getCourseContents(token, courseId)
@@ -98,25 +103,49 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 </div>
                 
                 <div className="divide-y divide-gray-700/50">
-                  {section.modules?.map((mod: any) => (
-                    <a
-                      key={mod.id}
-                      href={mod.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 px-5 py-4 hover:bg-gray-750 transition-colors group"
-                    >
-                      {getModuleIcon(mod.modname)}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-medium group-hover:text-indigo-300 transition-colors truncate">
-                          {mod.name}
-                        </h3>
-                        <p className="text-xs text-gray-500 uppercase tracking-wider mt-0.5">
-                          {mod.modname}
-                        </p>
-                      </div>
-                    </a>
-                  ))}
+                  {section.modules?.map((mod: any) => {
+                    const isFile = mod.modname === 'resource' && mod.contents?.[0]?.fileurl;
+                    
+                    if (isFile) {
+                      return (
+                        <button
+                          key={mod.id}
+                          onClick={() => setSelectedMod(mod)}
+                          className="w-full text-left flex items-center gap-4 px-5 py-4 hover:bg-gray-750 transition-colors group"
+                        >
+                          {getModuleIcon(mod.modname)}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-medium group-hover:text-indigo-300 transition-colors truncate">
+                              {mod.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 uppercase tracking-wider mt-0.5">
+                              {mod.modname}
+                            </p>
+                          </div>
+                        </button>
+                      )
+                    }
+
+                    return (
+                      <a
+                        key={mod.id}
+                        href={mod.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 px-5 py-4 hover:bg-gray-750 transition-colors group"
+                      >
+                        {getModuleIcon(mod.modname)}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-medium group-hover:text-indigo-300 transition-colors truncate">
+                            {mod.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mt-0.5">
+                            {mod.modname}
+                          </p>
+                        </div>
+                      </a>
+                    )
+                  })}
                   {(!section.modules || section.modules.length === 0) && (
                     <div className="px-5 py-4 text-sm text-gray-500">No content in this section.</div>
                   )}
@@ -133,6 +162,14 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           </div>
         )}
       </div>
+
+      <Drawer
+        isOpen={!!selectedMod}
+        onClose={() => setSelectedMod(null)}
+        title={selectedMod?.name || 'File Preview'}
+      >
+        {selectedMod && <FileViewer mod={selectedMod} token={token} />}
+      </Drawer>
     </main>
   )
 }
