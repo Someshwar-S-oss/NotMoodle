@@ -247,7 +247,7 @@ export async function buildSearchIndex(token: string, courses: MoodleCourse[]): 
               type: mod.modname,
               title: mod.name,
               course: course.fullname,
-              url: mod.url || `${MOODLE_BASE}/mod/${mod.modname}/view.php?id=${mod.id}`,
+              url: `/course/${course.id}?mod=${mod.id}`,
             })
           }
         }

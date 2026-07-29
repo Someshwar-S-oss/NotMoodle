@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2 } from 'lucide-react'
 import { getSiteInfo, getCourseContents, type MoodleCourse } from '@/lib/moodle-client'
 import { Drawer } from '@/components/Drawer'
@@ -11,6 +11,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const unwrappedParams = use(params)
   const courseId = parseInt(unwrappedParams.id, 10)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const modParam = searchParams.get('mod')
   
   const [loading, setLoading] = useState(true)
   const [sections, setSections] = useState<any[]>([])
@@ -21,6 +23,19 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   useEffect(() => {
     loadCourseData()
   }, [courseId])
+
+  useEffect(() => {
+    // Auto-open file drawer if ?mod= parameter exists in URL (e.g. from Cmd+K search)
+    if (modParam && sections.length > 0) {
+      for (const section of sections) {
+        const found = section.modules?.find((m: any) => m.id.toString() === modParam)
+        if (found && found.modname === 'resource' && found.contents?.[0]?.fileurl) {
+          setSelectedMod(found)
+          break
+        }
+      }
+    }
+  }, [modParam, sections])
 
   const loadCourseData = async () => {
     setLoading(true)
