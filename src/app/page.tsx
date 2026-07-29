@@ -124,7 +124,7 @@ export default function Home() {
             {moodleError && (
               <div className="flex items-center justify-between p-4 bg-red-900/30 border border-red-700 rounded-xl text-sm">
                 <span className="text-red-300">{moodleError}</span>
-                <button onClick={loadMoodleData} className="ml-4 px-3 py-1 text-xs bg-red-700 hover:bg-red-600 rounded-lg">
+                <button onClick={() => loadMoodleData(true)} className="ml-4 px-3 py-1 text-xs bg-red-700 hover:bg-red-600 rounded-lg">
                   Retry
                 </button>
               </div>
