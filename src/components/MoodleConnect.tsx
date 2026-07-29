@@ -13,18 +13,23 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/moodle/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    })
+    try {
+      const res = await fetch('/api/moodle/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      })
 
-    const data = await res.json()
+      const contentType = res.headers.get('content-type') || ''
+      const data = contentType.includes('application/json') ? await res.json() : {}
 
-    if (res.ok) {
-      onConnected()
-    } else {
-      setError(data.error || 'Connection failed')
+      if (res.ok) {
+        onConnected()
+      } else {
+        setError(data.error || 'Connection failed. Please check your credentials.')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
     }
     setLoading(false)
   }
