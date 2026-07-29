@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationBell } from "@/components/NotificationBell";
+import { CommandMenu } from "@/components/CommandMenu";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,12 +34,16 @@ export default function RootLayout({
         <div className="min-h-screen bg-gray-900 flex flex-col">
           <header className="bg-gray-800 border-b border-gray-700 py-4 px-6 flex justify-between items-center">
             <h1 className="text-white font-bold text-xl">NotMoodle</h1>
-            <NotificationBell />
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-400 hidden sm:inline-block border border-gray-700 rounded px-2 py-1">Cmd+K</span>
+              <NotificationBell />
+            </div>
           </header>
           <div className="flex-1">
             {children}
           </div>
         </div>
+        <CommandMenu />
       </body>
     </html>
   );
