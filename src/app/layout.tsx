@@ -4,10 +4,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandMenu } from "@/components/CommandMenu";
-import { ApiKeySettings } from "@/components/ApiKeySettings";
 import { createClient } from '@/utils/supabase/server';
 import { logout } from '@/app/login/actions';
 import Link from 'next/link';
+import { Settings } from 'lucide-react';
+import { NavigationDock } from '@/components/NavigationDock';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,29 +43,22 @@ export default async function RootLayout({
           <header className="sticky top-0 h-[80px] bg-background/90 backdrop-blur-[12px] border-b border-border/10 px-8 flex justify-between items-center relative z-50">
             <Link href={user ? "/dashboard" : "/"} className="clash-title text-3xl uppercase hover:opacity-80 transition-opacity">The NotMoodle</Link>
             <div className="flex items-center gap-8">
-              <nav className="hidden md:flex items-center gap-6 text-[14px] uppercase tracking-wide font-medium">
-                {user ? (
-                  <Link href="/dashboard" className="transition-colors duration-120 hover:text-[#b6b5b5]">Dashboard</Link>
-                ) : (
-                  <>
-                    <Link href="/" className="transition-colors duration-120 hover:text-[#b6b5b5]">Platform</Link>
-                    <Link href="/" className="transition-colors duration-120 hover:text-[#b6b5b5]">Philosophy</Link>
-                  </>
-                )}
-              </nav>
+              {!user && (
+                <nav className="hidden md:flex items-center gap-6 text-[14px] uppercase tracking-wide font-medium">
+                  <Link href="/" className="transition-colors duration-120 hover:text-[#b6b5b5]">Platform</Link>
+                  <Link href="/" className="transition-colors duration-120 hover:text-[#b6b5b5]">Philosophy</Link>
+                </nav>
+              )}
               <div className="flex items-center gap-4">
-                {user && (
-                  <>
-                    <ApiKeySettings />
-                    <NotificationBell />
-                  </>
-                )}
                 {user ? (
-                  <form action={logout}>
-                    <button type="submit" className="px-5 py-2 text-[14px] uppercase tracking-wide font-medium rounded-full border border-[#1e1e1e] transition-colors duration-300 hover:bg-[#111111] hover:text-[#f2f2f2] cursor-pointer">
-                      Log Out
-                    </button>
-                  </form>
+                  <>
+                    <NotificationBell />
+                    <form action={logout}>
+                      <button type="submit" className="px-5 py-2 text-[14px] uppercase tracking-wide font-medium rounded-full border border-[#1e1e1e] transition-colors duration-300 hover:bg-[#111111] hover:text-[#f2f2f2] cursor-pointer">
+                        Log Out
+                      </button>
+                    </form>
+                  </>
                 ) : (
                   <Link href="/login" className="px-5 py-2 text-[14px] uppercase tracking-wide font-medium rounded-full border border-[#1e1e1e] transition-colors duration-300 hover:bg-[#111111] hover:text-[#f2f2f2]">
                     Log In
@@ -76,6 +70,7 @@ export default async function RootLayout({
           <div className="flex-1">
             {children}
           </div>
+          {user && <NavigationDock />}
         </div>
         <CommandMenu />
       </body>

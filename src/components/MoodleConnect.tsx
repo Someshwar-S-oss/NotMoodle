@@ -16,7 +16,6 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
     setError('')
 
     try {
-      // Step 1: Fetch token directly from Moodle (browser → Moodle, uses user's IP)
       const formData = new URLSearchParams()
       formData.append('username', username)
       formData.append('password', password)
@@ -49,7 +48,6 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
         return
       }
 
-      // Step 2: Send only the token to our API to store (never send password to our server)
       const res = await fetch('/api/moodle/connect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,29 +64,25 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
         setError(data.error || 'Failed to save connection. Please try again.')
       }
     } catch (err) {
-      // CORS or network error from Moodle fetch
       setError('Could not reach Moodle. If you are off-campus, try connecting to the university VPN or network.')
     }
     setLoading(false)
   }
 
   return (
-    <div className="p-6 border border-gray-700 rounded-lg bg-gray-800 shadow">
-      <h2 className="text-xl font-bold mb-4">Connect Moodle</h2>
-      <p className="text-sm text-gray-400 mb-6">Enter your university Moodle credentials to sync your courses. Your password is never sent to our servers.</p>
+    <div className="p-8 border border-border/20 bg-white flex flex-col gap-6 w-full">
+      {error && <p className="text-[#CC0000] bg-[#CC0000]/10 p-3 text-sm font-medium border border-[#CC0000]/20">{error}</p>}
       
-      {error && <p className="mb-4 text-red-500 bg-red-900/50 p-3 rounded text-sm">{error}</p>}
-      
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="moodle-username">Moodle Username</label>
-          <input id="moodle-username" className="w-full rounded-md border border-gray-600 bg-gray-700 px-4 py-2" value={username} onChange={e => setUsername(e.target.value)} required />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label className="text-xs uppercase tracking-widest font-bold" htmlFor="moodle-username">Moodle Username</label>
+          <input id="moodle-username" className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" value={username} onChange={e => setUsername(e.target.value)} required />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1" htmlFor="moodle-password">Moodle Password</label>
-          <input id="moodle-password" type="password" className="w-full rounded-md border border-gray-600 bg-gray-700 px-4 py-2" value={password} onChange={e => setPassword(e.target.value)} required />
+        <div className="flex flex-col gap-2">
+          <label className="text-xs uppercase tracking-widest font-bold" htmlFor="moodle-password">Moodle Password</label>
+          <input id="moodle-password" type="password" className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" value={password} onChange={e => setPassword(e.target.value)} required />
         </div>
-        <button disabled={loading} className="mt-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-md px-4 py-2 font-medium">
+        <button disabled={loading} className="bg-[#111111] text-[#f2f2f2] disabled:opacity-50 hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 font-medium uppercase tracking-widest text-sm mt-2">
           {loading ? 'Connecting...' : 'Connect Account'}
         </button>
       </form>

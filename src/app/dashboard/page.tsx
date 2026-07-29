@@ -117,8 +117,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
       {!isConnected && !loading ? (
-        <div className="w-full h-[70vh] flex flex-col items-center justify-center">
-          <MoodleConnect onConnected={checkConnection} />
+        <div className="w-full h-[70vh] flex flex-col items-center justify-center px-6">
+          <div className="flex flex-col items-center justify-center p-12 border border-border/20 bg-white max-w-lg mx-auto w-full">
+            <h2 className="clash-title text-3xl uppercase mb-4 text-center">Not Connected</h2>
+            <p className="text-foreground/70 mb-8 text-center font-medium">You need to link your Moodle account to access the workspace.</p>
+            <Link href="/settings" className="bg-[#111111] text-[#f2f2f2] hover:scale-105 transition-transform duration-300 rounded-full px-8 py-3 font-medium uppercase tracking-widest text-sm text-center">Go to Settings</Link>
+          </div>
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
