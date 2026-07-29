@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
-import { google } from '@ai-sdk/google'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { streamText, embed } from 'ai'
 import { NextResponse } from 'next/server'
 
@@ -22,9 +22,14 @@ export async function POST(req: Request) {
       content: lastMessage.content
     })
 
+    const userApiKey = req.headers.get('x-gemini-api-key') || process.env.GEMINI_API_KEY || ''
+    const customGoogle = createGoogleGenerativeAI({
+      apiKey: userApiKey,
+    })
+
     // 2. Generate embedding for the user's question
     const { embedding } = await embed({
-      model: google.textEmbeddingModel('gemini-embedding-2'),
+      model: customGoogle.textEmbeddingModel('gemini-embedding-2'),
       value: lastMessage.content,
     })
 
@@ -36,7 +41,7 @@ export async function POST(req: Request) {
       filter_course_id: courseId.toString()
     })
 
-    const contextText = documents?.map((doc: any) => `[Source: ${doc.file_path}]\n${doc.chunk_text}`).join('\n\n---\n\n') || 'No direct course materials found.'
+    const contextText = documents?.map((doc: any) => `[Source: ${doc.file_path}]\n${Buffer.from(doc.chunk_text, 'base64').toString('utf8')}`).join('\n\n---\n\n') || 'No direct course materials found.'
     
     const systemPrompt = `You are a helpful AI teaching assistant for a university course.
 Use the following context extracted from the course documents to answer the student's question.
@@ -49,7 +54,7 @@ ${contextText}
 
     // 4. Generate AI response stream
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: customGoogle('gemini-1.5-flash'),
       system: systemPrompt,
       messages,
       async onFinish({ text }) {

@@ -9,7 +9,10 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
   const [loadingHistory, setLoadingHistory] = useState(true)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  const [apiKey, setApiKey] = useState('')
+
   useEffect(() => {
+    setApiKey(localStorage.getItem('notmoodle_gemini_key') || '')
     // Fetch chat history for this course
     fetch(`/api/chat/history?courseId=${courseId}`)
       .then(res => res.json())
@@ -22,6 +25,7 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
     body: { courseId },
+    headers: { 'x-gemini-api-key': apiKey },
     initialMessages,
   })
 

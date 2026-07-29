@@ -35,6 +35,33 @@ def extract_text_from_pptx(filepath):
                 text += shape.text + "\n"
     return text
 
+def extract_text_from_docx(filepath):
+    import docx
+    doc = docx.Document(filepath)
+    return "\n".join([para.text for para in doc.paragraphs])
+
+def extract_text_from_csv(filepath):
+    import csv
+    text = ""
+    with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+        reader = csv.reader(f)
+        for row in reader:
+            text += " ".join(row) + "\n"
+    return text
+
+def extract_text_from_ppt_raw(filepath):
+    import string
+    with open(filepath, 'rb') as f:
+        b = f.read()
+    valid_chars = bytes(string.printable, 'ascii')
+    text = ""
+    for char in b:
+        if char in valid_chars:
+            text += chr(char)
+        else:
+            text += " "
+    return " ".join(text.split())
+
 def chunk_text(text, chunk_size=800, overlap=150):
     words = text.split()
     chunks = []
@@ -65,6 +92,12 @@ def process_file_background(file_path: str):
             text = extract_text_from_pdf(temp_file_path)
         elif ext == ".pptx":
             text = extract_text_from_pptx(temp_file_path)
+        elif ext == ".docx":
+            text = extract_text_from_docx(temp_file_path)
+        elif ext == ".csv":
+            text = extract_text_from_csv(temp_file_path)
+        elif ext == ".ppt":
+            text = extract_text_from_ppt_raw(temp_file_path)
         else:
             print(f"Unsupported file type: {ext}")
             return
@@ -94,7 +127,7 @@ def process_file_background(file_path: str):
                     "course_id": course_id,
                     "file_path": file_path,
                     "chunk_index": i,
-                    "chunk_text": chunk,
+                    "chunk_text": __import__('base64').b64encode(chunk.encode('utf-8')).decode('utf-8'),
                     "embedding": embedding
                 }).execute()
             except Exception as e:

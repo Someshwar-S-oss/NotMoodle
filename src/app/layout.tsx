@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { NotificationBell } from "@/components/NotificationBell";
 import { CommandMenu } from "@/components/CommandMenu";
+import { ApiKeySettings } from "@/components/ApiKeySettings";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({
             <h1 className="text-white font-bold text-xl">NotMoodle</h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-400 hidden sm:inline-block border border-gray-700 rounded px-2 py-1">Cmd+K</span>
+              <ApiKeySettings />
               <NotificationBell />
             </div>
           </header>

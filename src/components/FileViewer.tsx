@@ -23,8 +23,9 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
       if (!fileContent?.fileurl) throw new Error("No file URL found in module")
 
       const filename = fileContent.filename || 'document.pdf'
-      const isPdfFile = filename.toLowerCase().endsWith('.pdf')
-      setIsPdf(isPdfFile)
+      const ext = filename.toLowerCase().split('.').pop() || ''
+      const isNativeFile = ['pdf', 'csv', 'txt', 'png', 'jpg', 'jpeg'].includes(ext)
+      setIsPdf(isNativeFile)
 
       const moodleUrl = fileContent.fileurl.includes('?') 
         ? `${fileContent.fileurl}&token=${token}` 
@@ -61,7 +62,7 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
         if (uploadError && uploadError.message !== 'The resource already exists') {
            console.error("Supabase upload error:", uploadError)
            // If Supabase upload fails (e.g. bucket doesn't exist yet), fallback to local preview for PDFs
-           if (isPdfFile) {
+           if (isNativeFile) {
              // For PDFs we can just use the blob URL directly in the browser!
              setPreviewUrl(URL.createObjectURL(blob))
              setLoading(false)
@@ -73,10 +74,10 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
       }
 
       // 4. Generate the preview URL
-      if (isPdfFile) {
+      if (isNativeFile) {
         setPreviewUrl(finalPublicUrl)
       } else {
-        // Use Microsoft Office Online Viewer for PPTX, DOCX, XLSX
+        // Use Microsoft Office Online Viewer for PPTX, DOCX, XLSX, PPT, DOC, XLS
         // Note: Office Viewer requires the URL to be fully public
         setPreviewUrl(`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(finalPublicUrl)}`)
       }
@@ -118,7 +119,7 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
     <div className="space-y-4">
       <div className="flex justify-between items-center text-xs">
         <span className="text-gray-400">
-          {isPdf ? 'PDF Preview' : 'Office Document Preview'}
+          {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
         </span>
         <a 
           href={fallbackUrl || previewUrl!} 

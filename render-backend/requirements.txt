@@ -4,4 +4,5 @@ supabase
 google-genai
 PyMuPDF
 python-pptx
+python-docx
 pydantic
