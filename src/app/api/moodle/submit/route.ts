@@ -6,40 +6,55 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { assignmentId, supabaseFilePath, filename } = await request.json()
-  if (!assignmentId || !supabaseFilePath || !filename) {
-    return NextResponse.json({ error: 'Missing parameters' }, { status: 400 })
-  }
-
-  // 1. Get Moodle Token
   const { data: conn } = await supabase.from('moodle_connections').select('encrypted_token').eq('user_id', user.id).single()
   if (!conn) return NextResponse.json({ error: 'Not connected' }, { status: 404 })
 
+  const contentType = request.headers.get('content-type') || ''
+  
+  let fileData: Blob | null = null
+  let filename = ''
+  let assignmentId = ''
+  let supabaseFilePath = ''
   let success = false
   let errorMessage = ''
 
   try {
-    // 2. Download from Supabase Storage
-    const { data: fileData, error: downloadError } = await supabase.storage.from('submissions').download(supabaseFilePath)
-    if (downloadError || !fileData) throw new Error('Failed to retrieve file from staging')
+    // Determine if hybrid direct upload (FormData) or Supabase Staging (JSON)
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData()
+      const file = formData.get('file') as Blob
+      assignmentId = formData.get('assignmentId') as string
+      if (!file || !assignmentId) throw new Error('Missing file or assignmentId')
+      fileData = file
+      filename = (file as File).name || 'submission.file'
+    } else {
+      const body = await request.json()
+      assignmentId = body.assignmentId
+      supabaseFilePath = body.supabaseFilePath
+      filename = body.filename
+      if (!assignmentId || !supabaseFilePath || !filename) throw new Error('Missing parameters')
+      
+      const { data: downloaded, error: downloadError } = await supabase.storage.from('submissions').download(supabaseFilePath)
+      if (downloadError || !downloaded) throw new Error('Failed to retrieve file from staging')
+      fileData = downloaded
+    }
 
-    // 3. Upload to Moodle upload.php
-    const formData = new FormData()
-    formData.append('file', fileData as Blob, filename)
+    // Upload to Moodle upload.php
+    const moodleFormData = new FormData()
+    moodleFormData.append('file', fileData, filename)
 
     const uploadRes = await fetch(`https://hselearning.sriher.com/webservice/upload.php?token=${conn.encrypted_token}`, {
       method: 'POST',
-      body: formData
+      body: moodleFormData
     })
     
-    // Moodle upload.php returns an array of file records
     const uploadJson = await uploadRes.json()
     if (uploadJson.error) throw new Error(uploadJson.error)
-    if (!Array.isArray(uploadJson) || !uploadJson[0]?.itemid) throw new Error('Upload to Moodle failed - no itemid returned')
+    if (!Array.isArray(uploadJson) || !uploadJson[0]?.itemid) throw new Error('Upload to Moodle failed')
     
     const itemid = uploadJson[0].itemid
 
-    // 4. Save Submission
+    // Save Submission
     const submitForm = new URLSearchParams()
     submitForm.append('assignmentid', assignmentId.toString())
     submitForm.append('plugindata[files_filemanager]', itemid.toString())
@@ -57,8 +72,10 @@ export async function POST(request: Request) {
   } catch (error: any) {
     errorMessage = error.message || 'An unknown error occurred'
   } finally {
-    // 5. AGGRESSIVE CLEANUP: Always delete from Supabase staging
-    await supabase.storage.from('submissions').remove([supabaseFilePath])
+    // AGGRESSIVE CLEANUP: If we staged in Supabase, always delete it now
+    if (supabaseFilePath) {
+      await supabase.storage.from('submissions').remove([supabaseFilePath])
+    }
   }
 
   if (success) {

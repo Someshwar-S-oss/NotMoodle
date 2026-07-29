@@ -16,39 +16,55 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
     setError('')
     setSuccess(false)
 
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-      setError('Not authenticated')
-      setUploading(false)
-      return
-    }
+    // Using 4MB threshold to safely stay under Vercel's 4.5MB limit
+    const isSmallFile = file.size <= 4 * 1024 * 1024
 
-    const ext = file.name.split('.').pop()
-    const filePath = `${user.id}/${assignment.id}-${Date.now()}.${ext}`
+    let res;
 
-    // 1. Stage in Supabase
-    const { error: uploadError } = await supabase.storage
-      .from('submissions')
-      .upload(filePath, file)
-
-    if (uploadError) {
-      setError('Failed to stage file: ' + uploadError.message)
-      setUploading(false)
-      return
-    }
-
-    // 2. Trigger Backend Transfer
-    const res = await fetch('/api/moodle/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        assignmentId: assignment.id, 
-        supabaseFilePath: filePath,
-        filename: file.name
+    if (isSmallFile) {
+      // Hybrid Optimization: Vercel Direct Proxy (No Supabase egress used)
+      const formData = new FormData()
+      formData.append('assignmentId', assignment.id.toString())
+      formData.append('file', file)
+      
+      res = await fetch('/api/moodle/submit', {
+        method: 'POST',
+        body: formData
       })
-    })
+    } else {
+      // Fallback: Supabase Storage Staging for large files
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      
+      if (!user) {
+        setError('Not authenticated')
+        setUploading(false)
+        return
+      }
+
+      const ext = file.name.split('.').pop()
+      const filePath = `${user.id}/${assignment.id}-${Date.now()}.${ext}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('submissions')
+        .upload(filePath, file)
+
+      if (uploadError) {
+        setError('Failed to stage large file: ' + uploadError.message)
+        setUploading(false)
+        return
+      }
+
+      res = await fetch('/api/moodle/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          assignmentId: assignment.id, 
+          supabaseFilePath: filePath,
+          filename: file.name
+        })
+      })
+    }
 
     const data = await res.json()
     if (res.ok) {
@@ -96,6 +112,9 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
             >
               {uploading ? 'Submitting...' : <><UploadCloud className="mr-2 h-5 w-5" /> Submit File</>}
             </button>
+            {file && file.size > 4 * 1024 * 1024 && (
+              <p className="text-xs text-gray-500 text-center">Large file detected. This will use our optimized staging server.</p>
+            )}
           </div>
         )}
       </div>
