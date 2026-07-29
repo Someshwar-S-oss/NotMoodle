@@ -85,7 +85,7 @@ def process_file_background(file_path: str):
         for i, chunk in enumerate(chunks):
             try:
                 embedding_res = gemini_client.models.embed_content(
-                    model="text-embedding-004",
+                    model="embedding-001",
                     contents=chunk
                 )
                 embedding = embedding_res.embeddings[0].values
