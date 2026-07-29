@@ -16,7 +16,7 @@ export async function GET(request: Request) {
 
   let notificationsGenerated = 0
 
-  for (const conn of connections) {
+  await Promise.all(connections.map(async (conn) => {
     try {
       const msgRes = await fetch(`https://hselearning.sriher.com/webservice/rest/server.php?wstoken=${conn.encrypted_token}&wsfunction=core_message_get_messages&moodlewsrestformat=json&type=conversations&read=0`)
       const msgData = await msgRes.json()
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
     } catch (e) {
       console.error(`Failed to sync for user ${conn.user_id}`, e)
     }
-  }
+  }))
 
   return NextResponse.json({ success: true, notificationsGenerated })
 }
