@@ -64,7 +64,7 @@ export function FileViewer({ mod, token }: { mod: any, token: string }) {
              setLoading(false)
              return
            } else {
-             throw new Error("Missing Supabase bucket 'course_files'. Please create it in your Supabase dashboard to enable Office previews.")
+             throw new Error(`Upload failed: ${uploadError.message}`)
            }
         }
       }
