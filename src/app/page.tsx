@@ -6,7 +6,7 @@ import { MoodleConnect } from '@/components/MoodleConnect'
 import { Drawer } from '@/components/Drawer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { createClient } from '@/utils/supabase/client'
-import { Calendar, BookOpen, Clock, Book, Sparkles, HelpCircle, FileText, AlertTriangle } from 'lucide-react'
+import { Calendar, BookOpen, Clock, Book, Sparkles, HelpCircle, FileText, AlertTriangle, ClipboardList } from 'lucide-react'
 import { getSiteInfo, getCurrentCourses, getTimelineEvents, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
 
 export default function Home() {
