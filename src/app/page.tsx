@@ -7,7 +7,7 @@ import { Drawer } from '@/components/Drawer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { createClient } from '@/utils/supabase/client'
 import { Calendar, BookOpen, Clock, Book, Sparkles, HelpCircle, FileText, AlertTriangle, ClipboardList } from 'lucide-react'
-import { getSiteInfo, getCurrentCourses, getTimelineEvents, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
+import { getSiteInfo, getCurrentCourses, getTimelineEvents, getAssignments, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
 
 export default function Home() {
   const [loading, setLoading] = useState(true)
@@ -64,19 +64,35 @@ export default function Home() {
       const currentCourses = await getCurrentCourses(token, info.userid)
       const upcomingEvents = await getTimelineEvents(token)
       
+      const assignments = await getAssignments(token, currentCourses.map(c => c.id))
+      const existingAssignInstances = new Set(upcomingEvents.filter(e => e.eventtype === 'assign').map(e => e.instance))
+      const newAssignmentEvents = assignments
+        .filter(a => !existingAssignInstances.has(a.id))
+        .map(a => ({
+          id: -a.id, // Negative to avoid collision with calendar events
+          name: a.name,
+          description: a.intro,
+          eventtype: 'assign',
+          course: { id: a.course, fullname: a.coursename, shortname: '' },
+          timestart: a.duedate,
+          timeduration: 0,
+          instance: a.id,
+          url: ''
+        }))
+
+      const allEvents = [...upcomingEvents, ...newAssignmentEvents].sort((a, b) => a.timestart - b.timestart)
+      
       setCourses(currentCourses)
-      setEvents(upcomingEvents)
+      setEvents(allEvents)
 
       localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
         courses: currentCourses,
-        events: upcomingEvents,
+        events: allEvents,
         timestamp: Date.now()
       }))
     } catch (err: any) {
       console.error('Moodle load failed:', err)
-      if (courses.length === 0) {
-        setMoodleError(err.message || 'Failed to load Moodle data.')
-      }
+      setMoodleError(err.message || 'Failed to load Moodle data.')
     }
     setLoading(false)
   }
