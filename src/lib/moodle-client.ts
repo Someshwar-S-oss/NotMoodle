@@ -41,6 +41,7 @@ export interface MoodleCourse {
   id: number
   fullname: string
   shortname: string
+  displayname?: string
   progress: number | null
   lastaccess: number | null
   startdate: number
@@ -96,6 +97,7 @@ export interface MoodleSearchItem {
   course: string
   url: string
 }
+
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 

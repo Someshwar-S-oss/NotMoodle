@@ -72,7 +72,7 @@ export default function GlobalChatPage() {
                       : 'bg-background text-foreground hover:bg-muted'
                   }`}
                 >
-                  {c.shortname}
+                  {c.fullname}
                 </button>
               ))}
             </div>

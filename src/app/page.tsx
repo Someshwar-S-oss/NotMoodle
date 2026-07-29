@@ -134,7 +134,7 @@ export default function Home() {
                   <div className="space-y-1">
                     {courses.map(course => (
                       <Link key={course.id} href={`/course/${course.id}`} className="block px-3 py-2 hover:bg-muted border border-transparent hover:border-border transition-colors">
-                        <p className="font-serif font-bold text-sm truncate" title={course.fullname}>{course.shortname || course.fullname}</p>
+                        <p className="font-serif font-bold text-sm truncate" title={course.fullname}>{course.fullname}</p>
                       </Link>
                     ))}
                   </div>
@@ -202,12 +202,12 @@ export default function Home() {
                             if (event.eventtype === 'assign') {
                               setSelectedAssignment({
                                 id: event.instance,
-                                course: event.course.id,
+                                course: event.course?.id || 0,
                                 name: event.name,
                                 intro: event.description || '',
                                 duedate: event.timestart,
                                 cutoffdate: 0,
-                                coursename: event.course.fullname,
+                                coursename: event.course?.fullname || '',
                                 cmid: 0,
                                 allowsubmissionsfromdate: 0,
                                 grade: 100
@@ -216,14 +216,14 @@ export default function Home() {
                               window.open(event.url, '_blank')
                             }
                           }}
-                          className={`p-6 border-b-4 border-l-4 border-r-4 border-border bg-background text-left transition-colors group flex flex-col md:flex-row justify-between md:items-center gap-6 ${isOverdue ? 'hover:bg-muted' : (isToday ? 'hover:bg-muted' : 'hover:bg-muted')}`}
+                          className={`w-full p-6 border-b-4 border-l-4 border-r-4 border-border bg-background text-left transition-colors group flex flex-col md:flex-row justify-between md:items-center gap-6 ${isOverdue ? 'hover:bg-muted' : (isToday ? 'hover:bg-muted' : 'hover:bg-muted')}`}
                         >
                           <div className="flex items-start gap-4">
                             <div className={`p-3 border-2 border-border ${isOverdue ? 'bg-foreground text-background' : (isToday ? 'bg-accent text-background' : 'bg-background group-hover:bg-foreground group-hover:text-background')} transition-colors`}>
                               {event.eventtype === 'quiz' ? <HelpCircle className="h-6 w-6 stroke-1" /> : <ClipboardList className="h-6 w-6 stroke-1" />}
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 mb-1 border-b border-border pb-1 inline-block">{event.course.fullname}</p>
+                              <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 mb-1 border-b border-border pb-1 inline-block">{event.course?.fullname || 'Global Event'}</p>
                               <h4 className="font-serif font-bold text-xl md:text-2xl mt-1 truncate group-hover:underline decoration-2">
                                 {event.name}
                               </h4>
