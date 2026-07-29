@@ -26,7 +26,7 @@ export default function Home() {
       .from('moodle_connections')
       .select('created_at')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
     if (data) {
       setIsConnected(true)

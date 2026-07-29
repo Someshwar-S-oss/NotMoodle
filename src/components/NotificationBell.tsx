@@ -14,10 +14,15 @@ export function NotificationBell() {
   }, [])
 
   const fetchNotifications = async () => {
-    const res = await fetch('/api/notifications')
-    if (res.ok) {
-      const data = await res.json()
-      setNotifications(data.notifications || [])
+    try {
+      const res = await fetch('/api/notifications')
+      if (res.ok) {
+        const data = await res.json()
+        setNotifications(data.notifications || [])
+      }
+      // Silently ignore errors (401, 500) — bell shows empty state
+    } catch {
+      // Network error, ignore
     }
   }
 
