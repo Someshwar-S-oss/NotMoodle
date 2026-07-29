@@ -54,7 +54,7 @@ ${contextText}
 
     // 4. Generate AI response stream
     const result = await streamText({
-      model: customGoogle('gemini-1.5-flash'),
+      model: customGoogle('gemini-3.6-flash'),
       system: systemPrompt,
       messages,
       async onFinish({ text }) {
