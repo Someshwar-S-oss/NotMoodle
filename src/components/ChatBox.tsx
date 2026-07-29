@@ -36,50 +36,50 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
 
   if (loadingHistory) {
     return (
-      <div className="flex items-center justify-center h-full w-full min-h-[400px] text-gray-500">
-        <Loader2 className="h-6 w-6 animate-spin mr-2 text-indigo-500" />
+      <div className="flex items-center justify-center h-full w-full min-h-[400px] text-neutral-500 font-mono text-sm uppercase tracking-widest">
+        <Loader2 className="h-6 w-6 animate-spin mr-3 stroke-1 text-foreground" />
         Loading chat history...
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl relative">
+    <div className="flex flex-col h-full w-full bg-background relative">
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-5 py-4 bg-gray-950 border-b border-gray-800 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg">
-            <Sparkles className="h-5 w-5" />
+      <div className="flex items-center justify-between px-6 py-4 bg-background border-b-4 border-border shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="p-3 border border-border text-foreground">
+            <Sparkles className="h-6 w-6 stroke-1" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-100 leading-tight">Course AI Assistant</h3>
-            {courseName && <p className="text-xs text-gray-500">{courseName}</p>}
+            <h3 className="font-serif font-bold text-2xl uppercase tracking-tight">Course AI Assistant</h3>
+            {courseName && <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 mt-1">{courseName}</p>}
           </div>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 bg-muted">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-3 opacity-60">
-            <Bot className="h-12 w-12 text-indigo-400" />
-            <p className="text-sm text-gray-400 max-w-xs">
-              Hi! I'm your AI assistant for this course. Ask me any questions about the course materials, syllabus, or topics!
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
+            <Bot className="h-16 w-16 stroke-1 text-foreground" />
+            <p className="font-serif text-xl max-w-sm text-foreground">
+              "All the news that's fit to print." Ask me any questions about the course materials, syllabus, or topics.
             </p>
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={m.id} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-                  <Bot className="h-4 w-4 text-indigo-400" />
+                <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
+                  <Bot className="h-6 w-6 stroke-1" />
                 </div>
               )}
               
-              <div className={`px-4 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed ${
+              <div className={`px-6 py-4 max-w-[85%] text-base font-body leading-relaxed border border-border ${
                 m.role === 'user' 
-                  ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                  : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
+                  ? 'bg-foreground text-background' 
+                  : 'bg-background text-foreground'
               }`}>
                 {/* Minimal markdown rendering just for bold and breaks */}
                 {m.content.split('\n').map((line, i) => (
@@ -91,8 +91,8 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
               </div>
 
               {m.role === 'user' && (
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center shrink-0">
-                  <User className="h-4 w-4 text-gray-300" />
+                <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
+                  <User className="h-6 w-6 stroke-1" />
                 </div>
               )}
             </div>
@@ -100,14 +100,14 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
         )}
         
         {isLoading && (
-          <div className="flex gap-3 justify-start">
-             <div className="w-8 h-8 rounded-full bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center shrink-0">
-              <Bot className="h-4 w-4 text-indigo-400 animate-pulse" />
+          <div className="flex gap-4 justify-start">
+             <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
+              <Bot className="h-6 w-6 stroke-1 animate-pulse" />
             </div>
-            <div className="px-4 py-3 rounded-2xl bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm flex items-center gap-1">
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce"></span>
+            <div className="px-6 py-4 bg-background text-foreground border border-border flex items-center gap-2">
+              <span className="w-2 h-2 bg-foreground animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-2 h-2 bg-foreground animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-2 h-2 bg-foreground animate-bounce"></span>
             </div>
           </div>
         )}
@@ -115,25 +115,25 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
       </div>
 
       {/* Chat Input */}
-      <div className="p-3 bg-gray-900 border-t border-gray-800 shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-2 relative">
+      <div className="p-6 bg-background border-t-4 border-border shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-4 relative">
           <input
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask a question about this course..."
-            className="flex-1 bg-gray-950 border border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+            placeholder="TYPE YOUR INQUIRY..."
+            className="flex-1 bg-background border border-border px-6 py-4 text-base font-mono uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none focus:bg-muted transition-all"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-lg transition-colors"
+            className="px-6 py-4 bg-foreground border border-transparent hover:border-border hover:bg-background hover:text-foreground text-background transition-all duration-200 disabled:bg-muted disabled:border-border disabled:text-neutral-500"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-6 w-6 stroke-1" />
           </button>
         </form>
-        <div className="text-center mt-2 text-[10px] text-gray-600 font-medium tracking-wide">
-          AI CAN MAKE MISTAKES. VERIFY IMPORTANT INFO.
+        <div className="text-center mt-4 text-xs font-mono uppercase tracking-widest text-neutral-500">
+          AI MAY PRODUCE INACCURACIES. VERIFY ALL INFORMATION.
         </div>
       </div>
     </div>

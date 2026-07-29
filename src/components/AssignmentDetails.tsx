@@ -70,21 +70,21 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-8 text-foreground font-body">
       {/* Header */}
       <div>
-        <h3 className="text-xl font-bold">{assignment.name}</h3>
-        <p className="text-gray-400 text-sm mt-1">{assignment.coursename}</p>
-        <div className="flex flex-wrap gap-3 mt-3 text-xs">
+        <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 mb-2">{assignment.coursename}</p>
+        <h3 className="text-3xl md:text-4xl font-serif font-black">{assignment.name}</h3>
+        <div className="flex flex-wrap gap-4 mt-6">
           {assignment.duedate > 0 && (
-            <span className="flex items-center gap-1 bg-gray-800 px-2.5 py-1 rounded-full border border-gray-700">
-              <Clock className="h-3 w-3 text-orange-400" />
+            <span className="flex items-center gap-2 bg-muted px-4 py-2 border border-border text-xs font-mono uppercase tracking-widest">
+              <Clock className="h-4 w-4 stroke-1" />
               Due: {formatDate(assignment.duedate)}
             </span>
           )}
           {assignment.grade > 0 && (
-            <span className="flex items-center gap-1 bg-gray-800 px-2.5 py-1 rounded-full border border-gray-700">
-              <Star className="h-3 w-3 text-yellow-400" />
+            <span className="flex items-center gap-2 bg-muted px-4 py-2 border border-border text-xs font-mono uppercase tracking-widest">
+              <Star className="h-4 w-4 stroke-1" />
               Max grade: {assignment.grade}
             </span>
           )}
@@ -93,50 +93,50 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
 
       {/* Instructions */}
       {assignment.intro && (
-        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
-          <h4 className="font-semibold mb-2 text-sm text-gray-300 uppercase tracking-wider">Instructions</h4>
+        <div className="bg-background p-6 border border-border">
+          <h4 className="font-mono font-bold mb-4 pb-2 border-b border-border text-xs uppercase tracking-widest">Instructions</h4>
           <div
-            className="text-sm prose prose-invert prose-sm max-w-none"
+            className="text-base prose prose-neutral max-w-none font-body leading-relaxed"
             dangerouslySetInnerHTML={{ __html: assignment.intro }}
           />
         </div>
       )}
 
       {/* Submission status */}
-      <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
-        <h4 className="font-semibold mb-3 text-sm text-gray-300 uppercase tracking-wider">Current Submission</h4>
+      <div className="bg-background p-6 border border-border">
+        <h4 className="font-mono font-bold mb-4 pb-2 border-b border-border text-xs uppercase tracking-widest">Current Submission</h4>
         {statusLoading ? (
-          <div className="flex items-center gap-2 text-gray-500 text-sm">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading...
+          <div className="flex items-center gap-2 text-neutral-500 font-mono text-sm uppercase tracking-widest">
+            <Loader2 className="h-4 w-4 animate-spin stroke-1" /> Loading...
           </div>
         ) : !status || status.status === 'new' ? (
-          <p className="text-gray-500 text-sm">No submission yet.</p>
+          <p className="text-neutral-500 font-mono text-sm uppercase tracking-widest">No submission yet.</p>
         ) : (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <span className={`text-xs font-mono uppercase tracking-widest px-4 py-1.5 border border-border ${
                 status.submitted
-                  ? 'bg-green-900/40 text-green-400 border border-green-700'
-                  : 'bg-yellow-900/40 text-yellow-400 border border-yellow-700'
+                  ? 'bg-background text-foreground border-l-4 border-l-accent'
+                  : 'bg-muted text-foreground'
               }`}>
                 {status.submitted ? 'Submitted' : 'Draft'}
               </span>
               {status.graded && (
-                <span className="text-xs px-2.5 py-1 rounded-full bg-blue-900/40 text-blue-400 border border-blue-700">
+                <span className="text-xs font-mono uppercase tracking-widest px-4 py-1.5 bg-background text-foreground border border-border border-l-4 border-l-black">
                   Graded
                 </span>
               )}
             </div>
             {status.timemodified && (
-              <p className="text-xs text-gray-500">Last modified: {formatDate(status.timemodified)}</p>
+              <p className="text-xs font-mono uppercase tracking-widest text-neutral-500">Last modified: {formatDate(status.timemodified)}</p>
             )}
             {status.files.length > 0 && (
-              <div className="mt-2 space-y-1">
+              <div className="mt-4 space-y-2 border-t border-border pt-4">
                 {status.files.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs text-gray-400 bg-gray-700/50 px-3 py-2 rounded-lg">
-                    <FileText className="h-3 w-3 shrink-0" />
+                  <div key={i} className="flex items-center gap-3 text-sm font-mono bg-muted border border-border px-4 py-3">
+                    <FileText className="h-4 w-4 shrink-0 stroke-1" />
                     <span className="truncate">{f.filename}</span>
-                    <span className="ml-auto shrink-0 text-gray-500">{formatSize(f.filesize)}</span>
+                    <span className="ml-auto shrink-0 text-neutral-500">{formatSize(f.filesize)}</span>
                   </div>
                 ))}
               </div>
@@ -146,38 +146,39 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       </div>
 
       {/* Submit new file */}
-      <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
-        <h4 className="font-semibold mb-4 text-sm text-gray-300 uppercase tracking-wider">
+      <div className="bg-background p-6 border border-border">
+        <h4 className="font-mono font-bold mb-6 pb-2 border-b border-border text-xs uppercase tracking-widest">
           {status?.submitted ? 'Resubmit' : 'Submit Assignment'}
         </h4>
 
         {success ? (
-          <div className="flex items-center gap-2 text-green-400 bg-green-900/30 border border-green-700 p-3 rounded-lg">
-            <CheckCircle className="h-5 w-5 shrink-0" />
-            <span>Submission recorded in Moodle!</span>
+          <div className="flex items-center gap-3 text-foreground bg-muted border border-border border-l-4 border-l-foreground p-4">
+            <CheckCircle className="h-5 w-5 shrink-0 stroke-1" />
+            <span className="font-mono uppercase tracking-widest text-sm">Submission recorded in Moodle!</span>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             <input
               type="file"
               onChange={e => setFile(e.target.files?.[0] || null)}
-              className="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-600 file:text-white hover:file:bg-indigo-700 cursor-pointer"
+              className="block w-full text-sm font-mono text-neutral-600 file:mr-4 file:py-3 file:px-6 file:border file:border-border file:text-xs file:uppercase file:tracking-widest file:font-mono file:bg-muted file:text-foreground hover:file:bg-foreground hover:file:text-background cursor-pointer transition-colors"
             />
             {file && (
-              <p className="text-xs text-gray-500">{file.name} ({formatSize(file.size)})</p>
+              <p className="text-xs font-mono uppercase tracking-widest text-neutral-500">{file.name} ({formatSize(file.size)})</p>
             )}
-            {error && <p className="text-red-400 text-sm bg-red-900/20 p-2 rounded">{error}</p>}
+            {error && <p className="text-background text-xs font-mono uppercase tracking-widest bg-accent p-3 border border-border">{error}</p>}
             <button
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="flex w-full justify-center items-center gap-2 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 rounded-lg font-medium transition-colors text-sm"
+              className="flex w-full justify-center items-center gap-3 py-4 px-6 bg-foreground hover:bg-background hover:text-foreground border border-transparent hover:border-border disabled:bg-muted disabled:border-border disabled:text-neutral-500 disabled:cursor-not-allowed text-background font-mono uppercase tracking-widest text-sm transition-all duration-200 mt-6"
             >
               {uploading
-                ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting...</>
-                : <><UploadCloud className="h-4 w-4" /> Submit File</>}
+                ? <><Loader2 className="h-5 w-5 animate-spin stroke-1" /> Submitting...</>
+                : <><UploadCloud className="h-5 w-5 stroke-1" /> Submit File</>}
             </button>
-            <p className="text-xs text-gray-600 text-center">
-              File uploads go directly to Moodle — nothing is stored on our servers.
+            <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 text-center mt-4 pt-4 border-t border-border border-dashed">
+              Files uploaded directly to Moodle server.
+
             </p>
           </div>
         )}

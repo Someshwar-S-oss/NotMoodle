@@ -34,42 +34,42 @@ export default function GlobalChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 text-white p-6 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-4xl flex items-center gap-4 mb-8">
-        <button 
-          onClick={() => router.push('/')}
-          className="p-2 bg-gray-800 hover:bg-gray-700 rounded-full transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-indigo-400" />
+    <main className="min-h-screen bg-background text-foreground p-4 md:p-8 flex flex-col items-center newsprint-texture">
+      <div className="w-full max-w-screen-xl flex flex-col md:flex-row md:items-baseline justify-between gap-6 mb-8 border-b-4 border-border pb-6 relative z-10">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => router.push('/')}
+            className="p-3 border border-border bg-background hover:bg-muted text-foreground transition-all duration-200"
+          >
+            <ArrowLeft className="h-5 w-5 stroke-1" />
+          </button>
+          <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter flex items-center gap-4">
+            <Sparkles className="h-8 w-8 stroke-1" />
             Global Study Chat
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Select a course to ask questions based on its materials.</p>
         </div>
+        <p className="text-xs font-mono uppercase tracking-widest text-neutral-500">Select a course to ask questions based on its materials.</p>
       </div>
 
-      <div className="w-full max-w-4xl flex-1 flex flex-col bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden shadow-2xl relative">
+      <div className="w-full max-w-screen-xl flex-1 flex flex-col bg-background border-4 border-border relative z-10 hard-shadow-hover">
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-gray-500">
-            <Loader2 className="h-8 w-8 animate-spin mb-4 text-indigo-500" />
-            <p>Loading your courses...</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 bg-muted">
+            <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-1 text-foreground" />
+            <p className="font-mono text-sm uppercase tracking-widest">Loading your courses...</p>
           </div>
         ) : (
           <div className="flex flex-col h-full w-full">
             {/* Course Selector Header */}
-            <div className="p-4 bg-gray-950 border-b border-gray-800 flex items-center gap-4 shrink-0 overflow-x-auto custom-scrollbar">
-              <Book className="h-5 w-5 text-gray-500 shrink-0" />
+            <div className="p-6 bg-background border-b-4 border-border flex items-center gap-4 shrink-0 overflow-x-auto custom-scrollbar">
+              <Book className="h-6 w-6 stroke-1 shrink-0" />
               {courses.map(c => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCourse(c.id.toString())}
-                  className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-colors shrink-0 ${
+                  className={`px-6 py-3 border border-border text-xs font-mono uppercase tracking-widest whitespace-nowrap transition-colors shrink-0 ${
                     selectedCourse === c.id.toString() 
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
-                      : 'bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-gray-200'
+                      ? 'bg-foreground text-background' 
+                      : 'bg-background text-foreground hover:bg-muted'
                   }`}
                 >
                   {c.shortname}
@@ -78,14 +78,14 @@ export default function GlobalChatPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 relative min-h-[500px]">
+            <div className="flex-1 relative min-h-[500px] bg-muted">
               {selectedCourse ? (
                 // We use key={selectedCourse} to force unmount/remount when course changes, ensuring it re-fetches history
                 <ChatBox key={selectedCourse} courseId={selectedCourse} />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 bg-gray-900/50">
-                  <Sparkles className="h-12 w-12 mb-4 text-gray-700" />
-                  <p className="text-lg font-medium">Select a course above to start studying!</p>
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
+                  <Sparkles className="h-12 w-12 mb-6 stroke-1 text-foreground" />
+                  <p className="font-serif font-bold text-3xl text-foreground">Select a course above to start studying!</p>
                 </div>
               )}
             </div>

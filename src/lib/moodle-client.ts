@@ -62,6 +62,24 @@ export interface MoodleAssignment {
   configs?: any[]
 }
 
+export interface MoodleTimelineEvent {
+  id: number
+  name: string
+  description: string
+  eventtype: string // "assign", "quiz", etc.
+  course: { id: number, fullname: string, shortname: string }
+  timestart: number
+  timeduration: number
+  instance: number // ID of the assign or quiz module instance
+  url: string
+  action?: {
+    name: string
+    url: string
+    itemcount: number
+    actionable: boolean
+  }
+}
+
 export interface MoodleSubmissionStatus {
   submitted: boolean
   status: 'submitted' | 'draft' | 'new'
@@ -115,7 +133,25 @@ export async function getCourseContents(token: string, courseid: number) {
   return moodleGet(token, 'core_course_get_contents', { courseid })
 }
 
-// ─── Assignments ─────────────────────────────────────────────────────────────
+// ─── Assignments & Timeline ──────────────────────────────────────────────────
+
+/** Unified timeline of upcoming deadlines (assignments, quizzes, etc.) across all courses */
+export async function getTimelineEvents(token: string): Promise<MoodleTimelineEvent[]> {
+  const qs = new URLSearchParams({
+    wstoken: token,
+    wsfunction: 'core_calendar_get_action_events_by_timesort',
+    moodlewsrestformat: 'json',
+    timesortfrom: String(Math.floor(Date.now() / 1000) - 86400), // From 1 day ago
+    limitnum: '20'
+  })
+  
+  const res = await fetch(`${REST}?${qs}`)
+  if (!res.ok) throw new Error(`Moodle returned HTTP ${res.status}`)
+  const data = await res.json()
+  if (data?.exception) throw new Error(data.message || 'Moodle exception: core_calendar_get_action_events_by_timesort')
+  
+  return data.events || []
+}
 
 /** Assignments across given course IDs, sorted by due date, excluding past cutoff */
 export async function getAssignments(token: string, courseIds: number[]): Promise<MoodleAssignment[]> {

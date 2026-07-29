@@ -91,23 +91,23 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-gray-400">
-        <Loader2 className="h-10 w-10 animate-spin mb-6 text-indigo-500" />
-        <p className="font-medium text-white">Syncing file securely...</p>
-        <p className="text-xs mt-2 text-gray-500">Checking local cache and Moodle.</p>
+      <div className="flex flex-col items-center justify-center py-32 text-neutral-500 border border-border bg-background">
+        <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-1 text-foreground" />
+        <p className="font-mono font-bold text-foreground uppercase tracking-widest text-sm">Syncing file securely...</p>
+        <p className="text-xs mt-2 font-mono uppercase tracking-widest">Checking local cache and Moodle.</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-red-400">
-        <AlertCircle className="h-10 w-10 mb-4" />
-        <p className="font-semibold">{error}</p>
-        <p className="text-xs text-gray-500 mt-2 mb-6">Could not load preview.</p>
+      <div className="flex flex-col items-center justify-center py-20 text-background bg-foreground border border-border p-6">
+        <AlertCircle className="h-12 w-12 mb-6 stroke-1" />
+        <p className="font-serif font-bold text-2xl">{error}</p>
+        <p className="text-xs font-mono uppercase tracking-widest mt-2 mb-8 text-neutral-400">Could not load preview.</p>
         {fallbackUrl && (
-          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors">
-            <ExternalLink className="h-4 w-4" />
+          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 bg-background text-foreground hover:bg-muted transition-colors font-mono text-sm uppercase tracking-widest">
+            <ExternalLink className="h-4 w-4 stroke-1" />
             Download Original File
           </a>
         )}
@@ -116,25 +116,27 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center text-xs">
-        <span className="text-gray-400">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center text-xs font-mono uppercase tracking-widest border-b border-border pb-2">
+        <span className="text-neutral-500">
           {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
         </span>
         <a 
           href={fallbackUrl || previewUrl!} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300"
+          className="flex items-center gap-1 text-foreground hover:text-accent transition-colors"
         >
-          <ExternalLink className="h-3 w-3" />
+          <ExternalLink className="h-4 w-4 stroke-1" />
           Download Direct
         </a>
       </div>
-      <div className="w-full h-[70vh] bg-gray-950 rounded-xl overflow-hidden border border-gray-800 shadow-inner">
+      <div className="w-full h-[70vh] bg-muted border-4 border-border relative overflow-hidden">
+        {/* Subtle texture behind the iframe just in case it loads slowly */}
+        <div className="absolute inset-0 newsprint-texture pointer-events-none opacity-20" />
         <iframe 
           src={previewUrl!} 
-          className="w-full h-full border-0 bg-white" // bg-white necessary for some transparent PDFs/docs
+          className="w-full h-full border-0 bg-white relative z-10" // bg-white necessary for some transparent PDFs/docs
           title={mod.name}
         />
       </div>

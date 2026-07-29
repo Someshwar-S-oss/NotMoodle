@@ -29,14 +29,14 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
-      <body className="min-h-full flex flex-col">
-        <div className="min-h-screen bg-gray-900 flex flex-col">
-          <header className="bg-gray-800 border-b border-gray-700 py-4 px-6 flex justify-between items-center">
-            <h1 className="text-white font-bold text-xl">NotMoodle</h1>
+      <body className="min-h-full flex flex-col font-body bg-background text-foreground">
+        <div className="min-h-screen flex flex-col newsprint-texture">
+          <header className="bg-background border-b border-border py-6 px-6 flex justify-between items-center relative z-40">
+            <h1 className="text-foreground font-serif font-black text-4xl tracking-tighter uppercase">The NotMoodle</h1>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-400 hidden sm:inline-block border border-gray-700 rounded px-2 py-1">Cmd+K</span>
+              <span className="text-xs text-foreground font-mono uppercase tracking-widest hidden sm:inline-block border border-border px-3 py-1 bg-muted">Edition: Vol 1.0</span>
               <ApiKeySettings />
               <NotificationBell />
             </div>
