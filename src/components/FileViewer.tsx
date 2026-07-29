@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { Loader2, AlertCircle, ExternalLink } from 'lucide-react'
 
-export function FileViewer({ mod, token }: { mod: any, token: string }) {
+export function FileViewer({ mod, courseId, token }: { mod: any, courseId: number, token: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -37,7 +37,7 @@ export function FileViewer({ mod, token }: { mod: any, token: string }) {
       
       // Sanitize filename to avoid Supabase upload/URL encoding issues with spaces or special chars
       const safeFilename = filename.replace(/[^a-zA-Z0-9.-]/g, '_')
-      const filePath = `mod_${mod.id}_${safeFilename}`
+      const filePath = `course_${courseId}_mod_${mod.id}_${safeFilename}`
 
       // 1. Check if we already have this file in Supabase
       const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(filePath)

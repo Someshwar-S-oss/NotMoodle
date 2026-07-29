@@ -2,10 +2,11 @@
 
 import { useEffect, useState, use } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2 } from 'lucide-react'
+import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2, Sparkles, MessageSquare } from 'lucide-react'
 import { getSiteInfo, getCourseContents, type MoodleCourse } from '@/lib/moodle-client'
 import { Drawer } from '@/components/Drawer'
 import { FileViewer } from '@/components/FileViewer'
+import { ChatBox } from '@/components/ChatBox'
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
@@ -19,6 +20,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [error, setError] = useState<string | null>(null)
   const [selectedMod, setSelectedMod] = useState<any>(null)
   const [token, setToken] = useState<string>('')
+  const [chatOpen, setChatOpen] = useState(false)
 
   useEffect(() => {
     loadCourseData()
@@ -178,12 +180,35 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         )}
       </div>
 
+      {/* Floating AI Chat Button */}
+      {!loading && !error && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-2xl hover:bg-indigo-500 hover:shadow-indigo-500/25 transition-all z-40 group flex items-center gap-2"
+        >
+          <Sparkles className="h-5 w-5 group-hover:scale-110 transition-transform" />
+          <span className="font-semibold text-sm hidden md:block">Ask AI</span>
+        </button>
+      )}
+
+      {/* File Viewer Drawer */}
       <Drawer
         isOpen={!!selectedMod}
         onClose={() => setSelectedMod(null)}
         title={selectedMod?.name || 'File Preview'}
       >
-        {selectedMod && <FileViewer mod={selectedMod} token={token} />}
+        {selectedMod && <FileViewer mod={selectedMod} courseId={courseId} token={token} />}
+      </Drawer>
+
+      {/* AI Chat Drawer */}
+      <Drawer
+        isOpen={chatOpen}
+        onClose={() => setChatOpen(false)}
+        title="Course AI Assistant"
+      >
+        <div className="h-[75vh]">
+          {chatOpen && <ChatBox courseId={courseId.toString()} />}
+        </div>
       </Drawer>
     </main>
   )

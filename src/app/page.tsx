@@ -6,7 +6,7 @@ import { MoodleConnect } from '@/components/MoodleConnect'
 import { Drawer } from '@/components/Drawer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { createClient } from '@/utils/supabase/client'
-import { Calendar, BookOpen, Clock } from 'lucide-react'
+import { Calendar, BookOpen, Clock, Book, Sparkles } from 'lucide-react'
 import { getSiteInfo, getCurrentCourses, getAssignments, type MoodleCourse, type MoodleAssignment } from '@/lib/moodle-client'
 
 export default function Home() {
@@ -132,15 +132,24 @@ export default function Home() {
 
             {/* ── Current Courses ── */}
             <section>
-              <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-                <BookOpen className="h-5 w-5 text-indigo-400" />
-                Current Courses
-                {courses.length > 0 && (
-                  <span className="ml-1 text-xs font-normal text-gray-500 bg-gray-800 px-2 py-0.5 rounded-full">
-                    {courses.length}
-                  </span>
-                )}
+              <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Book className="h-5 w-5 text-indigo-400" />
+                Your Courses
               </h2>
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/chat"
+                  className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition-colors shadow-lg shadow-indigo-500/20"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Global AI Chat
+                </Link>
+                <div className="text-sm font-medium bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700 text-indigo-300">
+                  {courses.length} Active
+                </div>
+              </div>
+            </div>
 
               {courses.length === 0 ? (
                 <p className="text-gray-500 text-sm">No active courses found.</p>
