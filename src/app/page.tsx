@@ -1,29 +1,21 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { MoodleConnect } from '@/components/MoodleConnect'
 import { Drawer } from '@/components/Drawer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { createClient } from '@/utils/supabase/client'
 import { Calendar, BookOpen, Clock } from 'lucide-react'
-
-interface Course {
-  id: number
-  fullname: string
-  shortname: string
-  progress: number | null
-  lastaccess: number | null
-  startdate: number
-  enddate: number
-  courseimage: string | null
-}
+import { getSiteInfo, getCurrentCourses, getAssignments, type MoodleCourse, type MoodleAssignment } from '@/lib/moodle-client'
 
 export default function Home() {
   const [loading, setLoading] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
-  const [assignments, setAssignments] = useState<any[]>([])
-  const [courses, setCourses] = useState<Course[]>([])
-  const [selectedAssignment, setSelectedAssignment] = useState<any>(null)
+  const [assignments, setAssignments] = useState<MoodleAssignment[]>([])
+  const [courses, setCourses] = useState<MoodleCourse[]>([])
+  const [moodleError, setMoodleError] = useState<string | null>(null)
+  const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
 
   useEffect(() => {
     checkConnection()
@@ -42,37 +34,56 @@ export default function Home() {
 
     if (data) {
       setIsConnected(true)
-      await Promise.all([fetchCourses(), fetchAssignments()])
+      
+      // 1. Instant load from local cache
+      const cached = localStorage.getItem('moodle_dashboard_cache')
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          setCourses(parsed.courses || [])
+          setAssignments(parsed.assignments || [])
+          setLoading(false) // Stop loading immediately
+        } catch (e) {}
+      }
+
+      // 2. Fetch fresh data in the background
+      await loadMoodleData(!cached)
     } else {
       setLoading(false)
     }
   }
 
-  const fetchCourses = async () => {
+  const loadMoodleData = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) setLoading(true)
+    setMoodleError(null)
     try {
-      const res = await fetch('/api/moodle/courses')
-      if (res.ok) {
-        const data = await res.json()
-        setCourses(data.courses || [])
-      }
-    } catch (err) {
-      console.error('Failed to fetch courses:', err)
-    }
-  }
+      // Get the token from our server (authenticated)
+      const tokenRes = await fetch('/api/moodle/token')
+      if (tokenRes.status === 401) { window.location.href = '/login'; return }
+      if (!tokenRes.ok) { setMoodleError('Not connected to Moodle.'); setLoading(false); return }
+      const { token } = await tokenRes.json()
 
-  const fetchAssignments = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/moodle/assignments')
-      const contentType = res.headers.get('content-type') || ''
-      if (res.ok && contentType.includes('application/json')) {
-        const data = await res.json()
-        setAssignments(data.assignments || [])
-      } else if (res.status === 401) {
-        window.location.href = '/login'
+      // All Moodle calls go browser → hselearning.sriher.com (user's IP, not blocked)
+      const info = await getSiteInfo(token)
+      const currentCourses = await getCurrentCourses(token, info.userid)
+      const courseIds = currentCourses.map(c => c.id)
+      const upcomingAssignments = await getAssignments(token, courseIds)
+      
+      setCourses(currentCourses)
+      setAssignments(upcomingAssignments)
+
+      // Update local cache
+      localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
+        courses: currentCourses,
+        assignments: upcomingAssignments,
+        timestamp: Date.now()
+      }))
+    } catch (err: any) {
+      console.error('Moodle load failed:', err)
+      // Only show error banner if we don't already have cached data to show
+      if (courses.length === 0) {
+        setMoodleError(err.message || 'Failed to load Moodle data.')
       }
-    } catch (err) {
-      console.error('Failed to fetch assignments:', err)
     }
     setLoading(false)
   }
@@ -110,6 +121,15 @@ export default function Home() {
         ) : (
           <div className="space-y-10">
 
+            {moodleError && (
+              <div className="flex items-center justify-between p-4 bg-red-900/30 border border-red-700 rounded-xl text-sm">
+                <span className="text-red-300">{moodleError}</span>
+                <button onClick={loadMoodleData} className="ml-4 px-3 py-1 text-xs bg-red-700 hover:bg-red-600 rounded-lg">
+                  Retry
+                </button>
+              </div>
+            )}
+
             {/* ── Current Courses ── */}
             <section>
               <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
@@ -127,12 +147,13 @@ export default function Home() {
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {courses.map(course => (
-                    <div
+                    <Link
+                      href={`/course/${course.id}`}
                       key={course.id}
-                      className="p-4 bg-gray-800 border border-gray-700 rounded-xl hover:border-indigo-500/50 transition-colors"
+                      className="block p-4 bg-gray-800 border border-gray-700 rounded-xl hover:bg-gray-750 hover:border-indigo-500/50 transition-colors group"
                     >
                       <p className="text-xs font-mono text-indigo-400 mb-1 truncate">{course.shortname}</p>
-                      <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-3">{course.fullname}</h3>
+                      <h3 className="font-semibold text-sm leading-snug line-clamp-2 mb-3 group-hover:text-indigo-100 transition-colors">{course.fullname}</h3>
 
                       {course.progress !== null && (
                         <div className="mb-3">
@@ -153,7 +174,7 @@ export default function Home() {
                         <Clock className="h-3 w-3" />
                         <span>Ends {formatDate(course.enddate)}</span>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
