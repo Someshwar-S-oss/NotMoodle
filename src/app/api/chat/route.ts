@@ -24,7 +24,7 @@ export async function POST(req: Request) {
 
     // 2. Generate embedding for the user's question
     const { embedding } = await embed({
-      model: google.textEmbeddingModel('embedding-001'),
+      model: google.textEmbeddingModel('gemini-embedding-2'),
       value: lastMessage.content,
     })
 
