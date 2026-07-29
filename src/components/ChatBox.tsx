@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useChat, Message } from 'ai/react'
+import { useChat, type Message } from 'ai/react'
 import { Send, Bot, User, Loader2, Sparkles, History } from 'lucide-react'
 
 export function ChatBox({ courseId, courseName }: { courseId: string; courseName?: string }) {

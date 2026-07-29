@@ -11,12 +11,12 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.27",
+    "@ai-sdk/google": "^0.0.55",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@google/generative-ai": "^0.24.1",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.111.0",
-    "ai": "^7.0.41",
+    "ai": "^3.4.33",
     "cmdk": "^1.1.1",
     "fuse.js": "^7.5.0",
     "lucide-react": "^1.27.0",
