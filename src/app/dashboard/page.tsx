@@ -1,0 +1,293 @@
+'use client'
+
+import Link from 'next/link'
+import { useEffect, useState, useMemo } from 'react'
+import { MoodleConnect } from '@/components/MoodleConnect'
+import { Drawer } from '@/components/Drawer'
+import { AssignmentDetails } from '@/components/AssignmentDetails'
+import { createClient } from '@/utils/supabase/client'
+import { ArrowRight, Hexagon, Circle, Square, Triangle } from 'lucide-react'
+import { getSiteInfo, getCurrentCourses, getTimelineEvents, getAssignments, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
+
+export default function Home() {
+  const [loading, setLoading] = useState(true)
+  const [isConnected, setIsConnected] = useState(false)
+  const [events, setEvents] = useState<MoodleTimelineEvent[]>([])
+  const [courses, setCourses] = useState<MoodleCourse[]>([])
+  const [moodleError, setMoodleError] = useState<string | null>(null)
+  const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
+
+  useEffect(() => {
+    checkConnection()
+  }, [])
+
+  const checkConnection = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const { data } = await supabase
+      .from('moodle_connections')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (data) {
+      setIsConnected(true)
+      
+      const cached = localStorage.getItem('moodle_dashboard_cache')
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached)
+          setCourses(parsed.courses || [])
+          setEvents(parsed.events || [])
+          setLoading(false)
+        } catch (e) {}
+      }
+
+      await loadMoodleData(!cached)
+    } else {
+      setLoading(false)
+    }
+  }
+
+  const loadMoodleData = async (showLoadingSpinner = true) => {
+    if (showLoadingSpinner) setLoading(true)
+    setMoodleError(null)
+    try {
+      const tokenRes = await fetch('/api/moodle/token')
+      if (tokenRes.status === 401) { window.location.href = '/login'; return }
+      if (!tokenRes.ok) { setMoodleError('Not connected to Moodle.'); setLoading(false); return }
+      const { token } = await tokenRes.json()
+
+      const info = await getSiteInfo(token)
+      const currentCourses = await getCurrentCourses(token, info.userid)
+      const upcomingEvents = await getTimelineEvents(token)
+      
+      const assignments = await getAssignments(token, currentCourses.map(c => c.id))
+      const existingAssignInstances = new Set(upcomingEvents.filter(e => e.eventtype === 'assign').map(e => e.instance))
+      const newAssignmentEvents = assignments
+        .filter(a => !existingAssignInstances.has(a.id))
+        .map(a => ({
+          id: -a.id, // Negative to avoid collision with calendar events
+          name: a.name,
+          description: a.intro,
+          eventtype: 'assign',
+          course: { id: a.course, fullname: a.coursename, shortname: '' },
+          timestart: a.duedate,
+          timeduration: 0,
+          instance: a.id,
+          url: ''
+        }))
+
+      const allEvents = [...upcomingEvents, ...newAssignmentEvents].sort((a, b) => a.timestart - b.timestart)
+      
+      setCourses(currentCourses)
+      setEvents(allEvents)
+
+      localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
+        courses: currentCourses,
+        events: allEvents,
+        timestamp: Date.now()
+      }))
+    } catch (err: any) {
+      console.error('Moodle load failed:', err)
+      setMoodleError(err.message || 'Failed to load Moodle data.')
+    }
+    setLoading(false)
+  }
+
+  const formatDate = (ts: number) =>
+    ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
+
+  const { overdue, today, upcoming } = useMemo(() => {
+    const now = Date.now()
+    const buckets = { overdue: [] as any[], today: [] as any[], upcoming: [] as any[] }
+    
+    events.forEach(e => {
+      const diff = Math.ceil((e.timestart * 1000 - now) / (1000 * 60 * 60 * 24))
+      if (diff < 0) buckets.overdue.push(e)
+      else if (diff === 0) buckets.today.push(e)
+      else buckets.upcoming.push(e)
+    })
+    
+    return buckets
+  }, [events])
+
+  return (
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
+      {!isConnected && !loading ? (
+        <div className="w-full h-[70vh] flex flex-col items-center justify-center">
+          <MoodleConnect onConnected={checkConnection} />
+        </div>
+      ) : (
+        <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
+          
+          {/* Hero Section */}
+          <section className="h-[70vh] md:h-[90vh] w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
+            <h1 className="clash-title uppercase text-[11vw] leading-[0.8] text-center" style={{ fontSize: 'clamp(80px, 11vw, 180px)' }}>
+              <span className="echo-stack" data-text="WORKSPACE">
+                WORKSPACE
+              </span>
+            </h1>
+          </section>
+
+          {/* Philosophy / Narrative Section */}
+          <section className="flex flex-col items-center mb-32 relative">
+            <div className="hairline-divider h-24 mb-12"></div>
+            <h2 className="clash-title text-4xl md:text-6xl text-center max-w-4xl mb-24">
+              Your academic life, <span className="font-serif italic font-normal">synthesized.</span>
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
+                <h3 className="clash-title text-2xl uppercase">Overdue</h3>
+                <p className="text-foreground/70 font-medium">
+                  {overdue.length} critical items require immediate attention. Focus here to eliminate backlog.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
+                <h3 className="clash-title text-2xl uppercase">Due Today</h3>
+                <p className="text-foreground/70 font-medium">
+                  {today.length} tasks scheduled for completion today. Prioritize these executions.
+                </p>
+              </div>
+              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
+                <h3 className="clash-title text-2xl uppercase">Upcoming</h3>
+                <p className="text-foreground/70 font-medium">
+                  {upcoming.length} planned assignments on the horizon. Preparation is key to systemic success.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Asymmetrical Showcase Grid */}
+          <section className="mb-32">
+            <div className="flex items-center gap-6 mb-12">
+              <h2 className="clash-title text-3xl uppercase">Timeline</h2>
+              <div className="flex-1 hairline-divider h-px w-full"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
+              {/* 1. Large 8-column rectangular card */}
+              <div className="md:col-span-8 rounded-sm overflow-hidden relative group reveal-transition bg-[#e5e5e5]">
+                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
+                <div className="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
+                  <h3 className="clash-title text-3xl mb-2 z-10 text-white mix-blend-difference">{events[0]?.name || 'Priority Task'}</h3>
+                  <p className="font-medium text-white/80 z-10 mix-blend-difference">{events[0]?.course?.fullname || 'System Default'}</p>
+                </div>
+              </div>
+
+              {/* 2. Vertical 4-column pill-shaped card */}
+              <div className="md:col-span-4 md:row-span-2 rounded-[9999px] overflow-hidden relative group reveal-transition bg-[#d1d1d1]">
+                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
+                <div className="absolute inset-0 bg-background/40 group-hover:bg-transparent transition-colors duration-500 z-0"></div>
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
+                  <div className="w-32 h-32 rounded-full border border-background/20 backdrop-blur-md flex flex-col items-center justify-center text-center p-4">
+                    <span className="text-xs uppercase tracking-widest font-bold text-white">Inspect</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Circular 5-column aspect-square */}
+              <div className="md:col-span-5 rounded-full overflow-hidden relative group reveal-transition bg-[#c9c9c9] aspect-square md:aspect-auto">
+                <img src="https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=1974&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
+                <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center bg-background/20 pointer-events-none">
+                  <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">{events[1]?.name || 'Secondary Task'}</h3>
+                </div>
+              </div>
+
+              {/* 4. Wide 7-column rectangle */}
+              <div className="md:col-span-7 rounded-sm overflow-hidden relative group reveal-transition bg-[#bfbfbf]">
+                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
+                <div className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
+                  <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">{events[2]?.name || 'Tertiary Task'}</h3>
+                </div>
+              </div>
+            </div>
+            
+            {/* The rest of the events can be listed minimally */}
+            {events.length > 3 && (
+              <div className="mt-8 flex flex-col gap-4">
+                {events.slice(3, 7).map((event: any) => (
+                  <button key={event.id} onClick={() => {}} className="text-left py-4 border-b border-border/10 flex justify-between items-center group hover:bg-white transition-colors px-4">
+                    <span className="clash-title text-xl group-hover:translate-x-2 transition-transform duration-300">{event.name}</span>
+                    <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Bespoke Service Cards */}
+          <section className="mb-16">
+            <div className="flex items-center gap-6 mb-12">
+              <h2 className="clash-title text-3xl uppercase">Enrolled Modules</h2>
+              <div className="flex-1 hairline-divider h-px w-full"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {courses.map((course, i) => {
+                const Icon = i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
+                return (
+                  <Link href={`/course/${course.id}`} key={course.id} className="group p-8 border border-[#1e1e1e]/10 bg-transparent hover:bg-[#ffffff] transition-colors duration-500 flex flex-col justify-between min-h-[320px]">
+                    <div className="w-16 h-16 border border-[#1e1e1e]/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-[#f2f2f2]">
+                      <Icon className="w-6 h-6 text-[#111111]" strokeWidth={1} />
+                    </div>
+                    <div>
+                      <h3 className="clash-title text-2xl mb-4 line-clamp-2">{course.fullname}</h3>
+                      <div className="flex items-center gap-2 uppercase tracking-widest font-bold text-xs">
+                        Enter Module <ArrowRight className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
+              {courses.length === 0 && loading && [1, 2, 3].map(i => (
+                <div key={i} className="p-8 border border-border/10 animate-pulse bg-white/50 min-h-[320px]"></div>
+              ))}
+            </div>
+          </section>
+
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-6 md:px-12 border-t border-white/5">
+        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+          <div>
+            <h2 className="clash-title text-2xl text-white mb-6 uppercase">The NotMoodle</h2>
+            <p className="text-sm font-medium leading-relaxed max-w-xs">
+              A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
+            </p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Platform</h4>
+            <Link href="#" className="hover:text-white transition-colors text-sm">Action Hub</Link>
+            <Link href="#" className="hover:text-white transition-colors text-sm">Timeline</Link>
+            <Link href="#" className="hover:text-white transition-colors text-sm">Modules</Link>
+          </div>
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Company</h4>
+            <Link href="#" className="hover:text-white transition-colors text-sm">About</Link>
+            <Link href="#" className="hover:text-white transition-colors text-sm">Manifesto</Link>
+            <Link href="#" className="hover:text-white transition-colors text-sm">Privacy Policy</Link>
+          </div>
+          <div className="flex flex-col gap-4">
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Contact</h4>
+            <Link href="#" className="hover:text-white transition-colors text-sm">support@notmoodle.dev</Link>
+            <Link href="#" className="hover:text-white transition-colors text-sm">@notmoodle</Link>
+          </div>
+        </div>
+      </footer>
+
+      <Drawer
+        isOpen={!!selectedAssignment}
+        onClose={() => setSelectedAssignment(null)}
+        title="Assignment Details"
+      >
+        {selectedAssignment && <AssignmentDetails assignment={selectedAssignment} />}
+      </Drawer>
+    </main>
+  )
+}
