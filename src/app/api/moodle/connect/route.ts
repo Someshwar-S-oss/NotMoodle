@@ -26,6 +26,17 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString()
     })
+
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const rawText = await res.text()
+      console.error('[connect] Moodle returned non-JSON:', res.status, rawText.slice(0, 300))
+      return NextResponse.json(
+        { error: `Moodle server returned an unexpected response (HTTP ${res.status}). The server may be blocking requests from this region.` },
+        { status: 502 }
+      )
+    }
+
     moodleData = await res.json()
   } catch (e) {
     console.error('[connect] Moodle fetch failed:', e)

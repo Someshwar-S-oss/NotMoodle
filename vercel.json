@@ -1,0 +1,16 @@
+{
+  "functions": {
+    "src/app/api/moodle/**": {
+      "regions": ["bom1"]
+    },
+    "src/app/api/notifications/**": {
+      "regions": ["bom1"]
+    },
+    "src/app/api/calendar/**": {
+      "regions": ["bom1"]
+    },
+    "src/app/api/cron/**": {
+      "regions": ["bom1"]
+    }
+  }
+}
