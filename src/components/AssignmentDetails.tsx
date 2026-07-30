@@ -18,6 +18,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
   const [success, setSuccess] = useState(false)
   const [status, setStatus] = useState<MoodleSubmissionStatus | null>(null)
   const [statusLoading, setStatusLoading] = useState(true)
+  const [moodleToken, setMoodleToken] = useState<string>('')
 
   useEffect(() => {
     loadStatus()
@@ -27,6 +28,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
     setStatusLoading(true)
     try {
       const token = await getMoodleToken()
+      setMoodleToken(token)
       const s = await getSubmissionStatus(token, assignment.id)
       setStatus(s)
     } catch {
@@ -92,13 +94,39 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       </div>
 
       {/* Instructions */}
-      {assignment.intro && (
+      {(assignment.intro || (assignment.introattachments && assignment.introattachments.length > 0)) && (
         <div className="bg-white p-6 border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)]">
-          <h4 className="font-bold mb-4 pb-2 border-b-2 border-[#111111] text-xs uppercase tracking-widest">Instructions</h4>
-          <div
-            className="text-base prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:clash-title prose-headings:uppercase prose-a:text-[#111111] prose-a:font-bold"
-            dangerouslySetInnerHTML={{ __html: assignment.intro }}
-          />
+          <h4 className="font-bold mb-4 pb-2 border-b-2 border-[#111111] text-xs uppercase tracking-widest">Instructions & Attachments</h4>
+          {assignment.intro && (
+            <div
+              className="text-base prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:clash-title prose-headings:uppercase prose-a:text-[#111111] prose-a:font-bold mb-6"
+              dangerouslySetInnerHTML={{ __html: assignment.intro }}
+            />
+          )}
+          {assignment.introattachments && assignment.introattachments.length > 0 && (
+            <div className="space-y-3">
+              {assignment.introattachments.map((attachment: any, i: number) => {
+                const url = new URL(attachment.fileurl)
+                if (moodleToken) url.searchParams.set('token', moodleToken)
+                
+                return (
+                  <a 
+                    key={i} 
+                    href={url.toString()} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-sm font-medium bg-[#f2f2f2] hover:bg-[#111111] hover:text-white border-2 border-[#111111] shadow-[2px_2px_0px_rgba(17,17,17,1)] px-4 py-3 transition-colors group"
+                  >
+                    <FileText className="h-4 w-4 shrink-0 stroke-[2px] group-hover:text-white" />
+                    <span className="truncate">{attachment.filename}</span>
+                    <span className="ml-auto shrink-0 opacity-60 font-bold text-[10px] uppercase tracking-widest">
+                      {formatSize(attachment.filesize)}
+                    </span>
+                  </a>
+                )
+              })}
+            </div>
+          )}
         </div>
       )}
 

@@ -5,10 +5,21 @@ import { X } from 'lucide-react'
 
 export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, fullScreen?: boolean }) {
   useEffect(() => {
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: true, fullScreen } }))
+    } else {
+      window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
+    }
+
     const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handleEsc)
-    return () => window.removeEventListener('keydown', handleEsc)
-  }, [onClose])
+    return () => {
+      window.removeEventListener('keydown', handleEsc)
+      if (isOpen) {
+        window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
+      }
+    }
+  }, [isOpen, onClose, fullScreen])
 
   if (!isOpen) return null
 

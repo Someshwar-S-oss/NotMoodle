@@ -59,6 +59,7 @@ export interface MoodleAssignment {
   cutoffdate: number
   allowsubmissionsfromdate: number
   intro: string
+  introattachments?: { filename: string; fileurl: string; filesize: number; mimetype?: string }[]
   grade: number
   configs?: any[]
 }
