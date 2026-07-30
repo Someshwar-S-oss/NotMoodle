@@ -44,7 +44,7 @@ export default function OnboardingPage() {
     return <div className="flex min-h-[calc(100vh-80px)] items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-foreground/50" /></div>
   }
 
-  if (profile && !profile.is_approved) {
+  if (!profile || !profile.is_approved) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6">
         <h1 className="clash-title text-4xl md:text-6xl uppercase tracking-widest text-center mb-6">Request Raised</h1>

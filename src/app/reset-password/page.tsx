@@ -11,8 +11,8 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
 
   const params = await searchParams;
   return (
-    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12">
-      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-12 border border-border/20 bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)]">
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12 px-4">
+      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)]">
         <div className="flex flex-col items-center gap-2 mb-4">
           <h1 className="clash-title text-4xl text-center uppercase">New Password</h1>
           <p className="text-center text-sm font-medium text-foreground/60 uppercase tracking-widest">

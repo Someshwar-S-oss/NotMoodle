@@ -201,12 +201,12 @@ export default function Home() {
           <span className="text-xs uppercase tracking-widest font-bold text-foreground/50 animate-pulse">Synthesizing...</span>
         </div>
       ) : (
-        <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
+        <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
           {/* Hero Section */}
           <section className="py-16 md:py-24 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
-              className="clash-title uppercase text-[11vw] leading-[0.8] text-center"
-              style={{ fontSize: "clamp(80px, 11vw, 180px)" }}
+              className="clash-title uppercase leading-[0.8] text-center"
+              style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
             >
               <span className="echo-stack" data-text="WORKSPACE">
                 WORKSPACE
@@ -217,7 +217,7 @@ export default function Home() {
           {/* Philosophy / Narrative Section */}
           <section className="flex flex-col items-center mb-32 relative">
             <div className="hairline-divider h-24 mb-12"></div>
-            <h2 className="clash-title text-4xl md:text-6xl text-center max-w-4xl mb-24">
+            <h2 className="clash-title text-3xl md:text-6xl text-center max-w-4xl mb-16 md:mb-24">
               Your academic life,{" "}
               <span className="font-serif italic font-normal">
                 synthesized.
@@ -399,7 +399,7 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-6 md:px-12 border-t border-white/5">
+      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <h2 className="clash-title text-2xl text-white mb-6 uppercase">

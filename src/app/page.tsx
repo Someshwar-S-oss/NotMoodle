@@ -9,39 +9,39 @@ export default async function LandingPage() {
   if (user) { redirect('/dashboard') }
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
-      <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
+    <main className="min-h-screen bg-background text-foreground flex flex-col items-center overflow-x-hidden">
+      <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
         
         {/* Header */}
-        <header className="w-full py-8 flex justify-between items-center">
-          <img src="/notmoodlelogo.png" alt="NotMoodle Logo" className="h-12 w-auto object-contain" />
+        <header className="w-full py-4 md:py-8 flex justify-between items-center">
+          <img src="/notmoodlelogo.png" alt="NotMoodle Logo" className="h-8 md:h-12 w-auto object-contain" />
         </header>
 
         {/* Hero Section */}
         <section className="h-[70vh] md:h-[90vh] w-full flex flex-col items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
-          <h1 className="clash-title uppercase leading-[0.8] text-center" style={{ fontSize: 'clamp(60px, 11vw, 180px)' }}>
+          <h1 className="clash-title uppercase leading-[0.8] text-center" style={{ fontSize: 'clamp(40px, 13vw, 180px)' }}>
             <span className="echo-stack" data-text="NOT MOODLE">
               NOT MOODLE
             </span>
           </h1>
-          <p className="mt-8 text-foreground/70 max-w-lg text-center font-medium">
+          <p className="mt-6 md:mt-8 text-foreground/70 max-w-lg text-center font-medium text-sm md:text-base px-4">
             A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
           </p>
-          <div className="mt-12 flex gap-4">
-            <Link href="/login" className="px-8 py-3 bg-[#111111] text-[#f2f2f2] font-medium uppercase tracking-widest text-sm rounded-full hover:scale-105 transition-transform duration-300">
+          <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4">
+            <Link href="/login" className="px-8 py-3 bg-[#111111] text-[#f2f2f2] font-medium uppercase tracking-widest text-sm rounded-full hover:scale-105 transition-transform duration-300 text-center w-full sm:w-auto">
               Log In
             </Link>
-            <Link href="/signup" className="px-8 py-3 border border-[#1e1e1e] text-[#111111] font-medium uppercase tracking-widest text-sm rounded-full hover:bg-[#111111] hover:text-[#f2f2f2] transition-colors duration-300">
+            <Link href="/signup" className="px-8 py-3 border border-[#1e1e1e] text-[#111111] font-medium uppercase tracking-widest text-sm rounded-full hover:bg-[#111111] hover:text-[#f2f2f2] transition-colors duration-300 text-center w-full sm:w-auto">
               Sign Up
             </Link>
           </div>
         </section>
 
         {/* Philosophy / Narrative Section */}
-        <section className="flex flex-col items-center mb-32 relative">
-          <div className="hairline-divider h-24 mb-12"></div>
-          <h2 className="clash-title text-4xl md:text-6xl text-center max-w-4xl mb-24">
-            Your academic life, <span className="font-serif italic font-normal">synthesized.</span>
+        <section className="flex flex-col items-center mb-20 md:mb-32 relative px-2">
+          <div className="hairline-divider h-16 md:h-24 mb-8 md:mb-12"></div>
+          <h2 className="clash-title text-3xl md:text-6xl text-center max-w-4xl mb-16 md:mb-24 leading-tight">
+            Your academic life, <br className="md:hidden" /><span className="font-serif italic font-normal">synthesized.</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
@@ -115,7 +115,7 @@ export default async function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-6 md:px-12 border-t border-white/5">
+      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <h2 className="clash-title text-2xl text-white mb-6 uppercase">The NotMoodle</h2>

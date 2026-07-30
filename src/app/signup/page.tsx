@@ -10,8 +10,8 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
 
   const params = await searchParams;
   return (
-    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12">
-      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-12 border border-border/20 bg-white">
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12 px-4">
+      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-white">
         <h1 className="clash-title text-4xl mb-4 text-center uppercase">Sign Up</h1>
         {params?.error && <p className="text-[#CC0000] bg-[#CC0000]/10 p-3 text-sm font-medium border border-[#CC0000]/20">{params.error}</p>}
         
