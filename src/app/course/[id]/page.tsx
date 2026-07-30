@@ -100,73 +100,73 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground newsprint-texture flex flex-col relative">
+    <main className="min-h-screen bg-background text-foreground flex flex-col relative">
       {/* Top Header Navigation */}
-      <div className="flex items-center gap-6 p-4 md:px-8 md:py-6 border-b-4 border-border bg-background z-10 sticky top-0">
+      <div className="flex items-center gap-6 p-4 md:px-8 md:py-6 border-b border-border/10 bg-background z-10 sticky top-0">
         <button 
           onClick={() => router.push('/')}
-          className="p-3 border border-border bg-background hover:bg-muted text-foreground transition-all duration-200"
+          className="p-3 border border-border/20 bg-background hover:bg-[#f2f2f2] text-foreground transition-colors duration-300"
         >
           <ArrowLeft className="h-6 w-6 stroke-1" />
         </button>
-        <h1 className="text-3xl md:text-5xl font-serif font-black uppercase tracking-tighter truncate">
+        <h1 className="text-3xl md:text-4xl clash-title uppercase tracking-widest truncate">
           Course Library
         </h1>
       </div>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Left Column: The Library (Flattened & Searchable) */}
-        <div className="flex-1 flex flex-col overflow-y-auto border-r-4 border-border bg-background/50">
+        <div className="flex-1 flex flex-col overflow-y-auto border-r border-border/10 bg-background">
           <div className="p-4 md:p-8 space-y-8 max-w-4xl w-full mx-auto">
             
             {/* Search Bar */}
-            <div className="relative hard-shadow-hover">
+            <div className="relative">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 stroke-1 text-neutral-500" />
               <input 
                 type="text"
                 placeholder="SEARCH LECTURES, ASSIGNMENTS, AND FILES..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background border-4 border-border pl-16 pr-6 py-5 text-lg font-mono uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none focus:bg-muted transition-all"
+                className="w-full bg-background border border-border/20 pl-16 pr-6 py-5 text-sm uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none hover:bg-[#f2f2f2] transition-colors"
               />
             </div>
 
             {error && (
-              <div className="p-6 bg-accent border-4 border-border text-background font-mono uppercase tracking-widest text-sm font-bold">
+              <div className="p-6 border border-red-500/20 text-red-500 text-sm uppercase tracking-widest font-bold bg-red-500/5">
                 {error}
               </div>
             )}
 
             {loading ? (
-              <div className="flex justify-center items-center py-32 border-4 border-border bg-background">
-                <Loader2 className="h-10 w-10 animate-spin stroke-1 text-foreground" />
+              <div className="flex justify-center items-center py-32">
+                <Loader2 className="h-10 w-10 animate-spin stroke-1 text-foreground/50" />
               </div>
             ) : (
-              <div className="border-4 border-border bg-background hard-shadow-hover">
-                <div className="px-6 py-4 border-b-4 border-border bg-foreground text-background flex justify-between items-center">
-                  <h2 className="text-xl font-serif font-bold uppercase">All Materials</h2>
-                  <span className="text-xs font-mono uppercase tracking-widest">{filteredModules.length} ITEMS</span>
+              <div className="border border-border/20 bg-background">
+                <div className="px-6 py-4 border-b border-border/20 bg-[#f2f2f2] text-[#111111] flex justify-between items-center">
+                  <h2 className="text-xl clash-title uppercase">All Materials</h2>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-[#111111]/50">{filteredModules.length} ITEMS</span>
                 </div>
                 
-                <div className="divide-y-4 divide-border">
+                <div className="divide-y divide-border/10">
                   {filteredModules.length > 0 ? (
                     filteredModules.map((mod: any) => {
                       const isFile = mod.modname === 'resource' && mod.contents?.[0]?.fileurl;
                       
                       const InnerContent = (
                         <>
-                          <div className="p-4 border-2 border-border bg-background group-hover:bg-foreground group-hover:text-background transition-colors">
+                          <div className="p-4 border border-border/20 bg-[#f2f2f2] text-[#111111] group-hover:bg-[#111111] group-hover:text-white transition-colors duration-500">
                             {getModuleIcon(mod.modname)}
                           </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h3 className="text-lg md:text-xl font-serif font-bold group-hover:underline decoration-2 truncate">
+                            <h3 className="text-lg md:text-xl clash-title group-hover:translate-x-2 transition-transform duration-500 truncate text-[#111111]">
                               {mod.name}
                             </h3>
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              <span className="text-xs font-mono text-background bg-foreground px-2 py-1 uppercase tracking-widest">
+                              <span className="text-[10px] font-bold text-background bg-[#111111] px-2 py-1 uppercase tracking-widest">
                                 {mod.modname}
                               </span>
-                              <span className="text-xs font-mono text-neutral-500 uppercase tracking-widest border border-border px-2 py-1 truncate max-w-[200px]">
+                              <span className="text-[10px] font-bold text-[#111111]/50 uppercase tracking-widest border border-border/20 px-2 py-1 truncate max-w-[200px]">
                                 {mod.sectionName}
                               </span>
                             </div>
@@ -179,7 +179,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           <button
                             key={mod.id}
                             onClick={() => setSelectedMod(mod)}
-                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-muted transition-colors group"
+                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
                           >
                             {InnerContent}
                           </button>
@@ -192,14 +192,14 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           href={mod.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-muted transition-colors group"
+                          className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
                         >
                           {InnerContent}
                         </a>
                       )
                     })
                   ) : (
-                    <div className="p-12 text-center text-neutral-500 font-mono uppercase tracking-widest">
+                    <div className="p-12 text-center text-[#111111]/50 text-xs uppercase font-bold tracking-widest">
                       No materials found matching "{searchQuery}"
                     </div>
                   )}
@@ -210,7 +210,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         </div>
 
         {/* Right Column: AI Assistant (Always On) */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 border-t-4 lg:border-t-0 border-border bg-background flex flex-col h-[500px] lg:h-auto">
+        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 border-t lg:border-t-0 lg:border-l border-border/10 bg-background flex flex-col h-[500px] lg:h-auto">
           {!loading && !error && (
             <ChatBox courseId={courseId.toString()} />
           )}

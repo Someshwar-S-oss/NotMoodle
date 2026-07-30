@@ -14,6 +14,7 @@ export default function Home() {
   const [isConnected, setIsConnected] = useState(false)
   const [events, setEvents] = useState<MoodleTimelineEvent[]>([])
   const [courses, setCourses] = useState<MoodleCourse[]>([])
+  const [allAssignments, setAllAssignments] = useState<MoodleAssignment[]>([])
   const [moodleError, setMoodleError] = useState<string | null>(null)
   const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
 
@@ -41,6 +42,7 @@ export default function Home() {
           const parsed = JSON.parse(cached)
           setCourses(parsed.courses || [])
           setEvents(parsed.events || [])
+          setAllAssignments(parsed.assignments || [])
           setLoading(false)
         } catch (e) {}
       }
@@ -84,6 +86,7 @@ export default function Home() {
       
       setCourses(currentCourses)
       setEvents(allEvents)
+      setAllAssignments(assignments)
 
       // Silently push the freshest assignments to our backend cache for the Calendar Feed
       fetch('/api/moodle/sync', {
@@ -95,6 +98,7 @@ export default function Home() {
       localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
         courses: currentCourses,
         events: allEvents,
+        assignments: assignments,
         timestamp: Date.now()
       }))
     } catch (err: any) {
@@ -188,13 +192,22 @@ export default function Home() {
                   const day = date.getDate().toString().padStart(2, '0');
                   const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
                   const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                  const isAssignment = event.eventtype === 'assign';
                   
                   return (
-                    <Link 
+                    <button 
                       key={event.id}
-                      href={event.url || `/course/${event.course?.id || ''}`}
-                      target={event.url ? "_blank" : undefined}
-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-[#f2f2f2] transition-colors duration-500 text-left px-4 md:px-6"
+                      onClick={() => {
+                        if (isAssignment) {
+                          const assignmentData = allAssignments.find(a => a.id === event.instance);
+                          if (assignmentData) {
+                            setSelectedAssignment(assignmentData);
+                            return;
+                          }
+                        }
+                        window.location.href = `/course/${event.course?.id || ''}`;
+                      }}
+                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-[#f2f2f2] transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
                     >
                       {/* Date Column */}
                       <div className="md:col-span-3 flex flex-col justify-start">
@@ -224,7 +237,7 @@ export default function Home() {
                       <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
                          <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-[#111111]" />
                       </div>
-                    </Link>
+                    </button>
                   )
                 })
               )}
