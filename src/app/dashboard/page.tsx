@@ -172,62 +172,63 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Asymmetrical Showcase Grid */}
+          {/* Swiss UI Style Timeline */}
           <section className="mb-32">
             <div className="flex items-center gap-6 mb-12">
               <h2 className="clash-title text-3xl uppercase">Timeline</h2>
               <div className="flex-1 hairline-divider h-px w-full"></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-[300px]">
-              {/* 1. Large 8-column rectangular card */}
-              <div className="md:col-span-8 rounded-sm overflow-hidden relative group reveal-transition bg-[#e5e5e5]">
-                <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
-                <div className="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
-                  <h3 className="clash-title text-3xl mb-2 z-10 text-white mix-blend-difference">{events[0]?.name || 'Priority Task'}</h3>
-                  <p className="font-medium text-white/80 z-10 mix-blend-difference">{events[0]?.course?.fullname || 'System Default'}</p>
-                </div>
-              </div>
-
-              {/* 2. Vertical 4-column pill-shaped card */}
-              <div className="md:col-span-4 md:row-span-2 rounded-[9999px] overflow-hidden relative group reveal-transition bg-[#d1d1d1]">
-                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
-                <div className="absolute inset-0 bg-background/40 group-hover:bg-transparent transition-colors duration-500 z-0"></div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
-                  <div className="w-32 h-32 rounded-full border border-background/20 backdrop-blur-md flex flex-col items-center justify-center text-center p-4">
-                    <span className="text-xs uppercase tracking-widest font-bold text-white">Inspect</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 3. Circular 5-column aspect-square */}
-              <div className="md:col-span-5 rounded-full overflow-hidden relative group reveal-transition bg-[#c9c9c9] aspect-square md:aspect-auto">
-                <img src="https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=1974&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
-                <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center bg-background/20 pointer-events-none">
-                  <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">{events[1]?.name || 'Secondary Task'}</h3>
-                </div>
-              </div>
-
-              {/* 4. Wide 7-column rectangle */}
-              <div className="md:col-span-7 rounded-sm overflow-hidden relative group reveal-transition bg-[#bfbfbf]">
-                <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
-                <div className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
-                  <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">{events[2]?.name || 'Tertiary Task'}</h3>
-                </div>
-              </div>
+            <div className="flex flex-col border-t border-border/20">
+              {events.length === 0 ? (
+                <div className="py-16 text-center text-foreground/50 font-medium">No upcoming events.</div>
+              ) : (
+                events.map((event) => {
+                  const date = new Date(event.timestart * 1000);
+                  const day = date.getDate().toString().padStart(2, '0');
+                  const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
+                  const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                  
+                  return (
+                    <Link 
+                      key={event.id}
+                      href={event.url || `/course/${event.course?.id || ''}`}
+                      target={event.url ? "_blank" : undefined}
+                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-[#f2f2f2] transition-colors duration-500 text-left px-4 md:px-6"
+                    >
+                      {/* Date Column */}
+                      <div className="md:col-span-3 flex flex-col justify-start">
+                        <div className="text-5xl clash-title font-medium leading-none text-[#111111]">{day}</div>
+                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-[#111111]/50">{month} {date.getFullYear()}</div>
+                        <div className="text-xs font-mono mt-4 text-[#111111]/40 uppercase">{time}</div>
+                      </div>
+                      
+                      {/* Content Column */}
+                      <div className="md:col-span-8 flex flex-col justify-center">
+                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-[#111111]/50 flex items-center gap-3">
+                          <span className="w-1.5 h-1.5 bg-[#111111] rounded-full"></span>
+                          {event.course?.fullname || 'System Event'}
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-medium clash-title text-[#111111] group-hover:translate-x-4 transition-transform duration-500">
+                          {event.name}
+                        </h3>
+                        {event.description && (
+                          <div 
+                            className="mt-4 text-[#111111]/70 line-clamp-2 text-sm max-w-2xl font-medium" 
+                            dangerouslySetInnerHTML={{__html: event.description}} 
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Action Column */}
+                      <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                         <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-[#111111]" />
+                      </div>
+                    </Link>
+                  )
+                })
+              )}
             </div>
-            
-            {/* The rest of the events can be listed minimally */}
-            {events.length > 3 && (
-              <div className="mt-8 flex flex-col gap-4">
-                {events.slice(3, 7).map((event: any) => (
-                  <button key={event.id} onClick={() => {}} className="text-left py-4 border-b border-border/10 flex justify-between items-center group hover:bg-white transition-colors px-4">
-                    <span className="clash-title text-xl group-hover:translate-x-2 transition-transform duration-300">{event.name}</span>
-                    <ArrowRight className="w-5 h-5 opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300" />
-                  </button>
-                ))}
-              </div>
-            )}
           </section>
 
           {/* Bespoke Service Cards */}
