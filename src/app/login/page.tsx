@@ -22,7 +22,10 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         
         <div className="flex flex-col gap-2">
-          <label className="text-xs uppercase tracking-widest font-bold" htmlFor="password">Password</label>
+          <div className="flex justify-between items-center">
+            <label className="text-xs uppercase tracking-widest font-bold" htmlFor="password">Password</label>
+            <Link href="/forgot-password" className="text-[10px] uppercase tracking-widest font-bold text-foreground/50 hover:text-foreground transition-colors underline underline-offset-4">Forgot Password?</Link>
+          </div>
           <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" type="password" name="password" placeholder="••••••••" required />
         </div>
         

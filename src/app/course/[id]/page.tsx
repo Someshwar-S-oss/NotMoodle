@@ -226,10 +226,14 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                         )
                       }
 
+                      const externalLink = (mod.modname === 'url' && mod.contents?.[0]?.fileurl) 
+                        ? mod.contents[0].fileurl 
+                        : mod.url;
+
                       return (
                         <a
                           key={mod.id}
-                          href={mod.url}
+                          href={externalLink}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
@@ -253,7 +257,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         {!loading && !error && (
           <div className="fixed bottom-24 right-8 z-50 flex flex-col items-end">
             {isChatOpen && (
-              <div className="mb-4 w-[380px] h-[550px] border-2 border-[#111111] bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+              <div className="mb-4 w-[380px] h-[550px] min-w-[300px] min-h-[400px] max-w-[80vw] max-h-[80vh] resize border-2 border-[#111111] bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
                 <div className="flex justify-between items-center p-3 border-b-2 border-[#111111] bg-[#111111] text-white">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />

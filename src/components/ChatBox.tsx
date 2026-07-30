@@ -31,10 +31,10 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
     initialMessages,
   })
 
-  // Auto-scroll to bottom
+  // Auto-scroll to bottom only when a new message is added, not on every stream update
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages.length])
 
   if (loadingHistory) {
     return (
@@ -83,7 +83,9 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
                   ? 'bg-[#111111] text-white' 
                   : 'bg-white text-[#111111]'
               }`}>
-                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#111111] prose-pre:text-white prose-pre:border-2 prose-pre:border-border prose-pre:rounded-none prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide">
+                <div className={`prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#111111] prose-pre:text-white prose-pre:border-2 prose-pre:border-border prose-pre:rounded-none prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide ${
+                  m.role === 'user' ? 'text-white prose-p:text-white prose-strong:text-white prose-headings:text-white prose-a:text-white' : 'text-[#111111]'
+                }`}>
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {m.content}
                   </ReactMarkdown>
