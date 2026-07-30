@@ -24,6 +24,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
   const [token, setToken] = useState<string>('')
   const [assignments, setAssignments] = useState<MoodleAssignment[]>([])
+  const [isChatOpen, setIsChatOpen] = useState(false)
   
   // New state for unified search
   const [searchQuery, setSearchQuery] = useState('')
@@ -248,12 +249,34 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
           </div>
         </div>
 
-        {/* Right Column: AI Assistant (Always On) */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 border-t lg:border-t-0 lg:border-l border-border/10 bg-background flex flex-col h-[500px] lg:h-full overflow-hidden">
-          {!loading && !error && (
-            <ChatBox courseId={courseId.toString()} />
-          )}
-        </div>
+        {/* AI Assistant Floating Popup */}
+        {!loading && !error && (
+          <div className="fixed bottom-24 right-8 z-50 flex flex-col items-end">
+            {isChatOpen && (
+              <div className="mb-4 w-[380px] h-[550px] border-2 border-[#111111] bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="flex justify-between items-center p-3 border-b-2 border-[#111111] bg-[#111111] text-white">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    <span className="font-bold uppercase tracking-widest text-xs">Course AI</span>
+                  </div>
+                  <button onClick={() => setIsChatOpen(false)} className="hover:text-[#ff4444] transition-colors">
+                    <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-hidden relative">
+                  <ChatBox courseId={courseId.toString()} />
+                </div>
+              </div>
+            )}
+            
+            <button
+              onClick={() => setIsChatOpen(!isChatOpen)}
+              className={`p-4 rounded-full border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(17,17,17,1)] transition-all flex items-center justify-center ${isChatOpen ? 'bg-[#111111] text-white' : 'bg-white text-[#111111]'}`}
+            >
+              <Sparkles className="h-6 w-6" />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Full-Screen File Viewer Drawer */}

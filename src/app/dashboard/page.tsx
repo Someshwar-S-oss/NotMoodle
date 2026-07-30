@@ -202,7 +202,7 @@ export default function Home() {
       ) : (
         <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
           {/* Hero Section */}
-          <section className="h-[70vh] md:h-[90vh] w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
+          <section className="py-16 md:py-24 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
               className="clash-title uppercase text-[11vw] leading-[0.8] text-center"
               style={{ fontSize: "clamp(80px, 11vw, 180px)" }}
