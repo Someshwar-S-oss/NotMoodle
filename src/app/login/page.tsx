@@ -1,4 +1,4 @@
-import { login } from './actions'
+import { login, signInWithGoogle } from './actions'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
