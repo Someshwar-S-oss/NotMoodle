@@ -157,8 +157,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             )}
 
             {loading ? (
-              <div className="flex justify-center items-center py-32">
-                <Loader2 className="h-10 w-10 animate-spin stroke-1 text-foreground/50" />
+              <div className="flex flex-col justify-center items-center py-32 gap-6">
+                <img src="/notmoodlelogo.png" alt="Loading..." className="h-16 w-auto object-contain animate-pulse" />
+                <span className="text-[10px] uppercase tracking-widest font-bold text-foreground/50 animate-pulse">Loading Course...</span>
               </div>
             ) : (
               <div className="border border-border/20 bg-background">

@@ -12,6 +12,11 @@ export default async function LandingPage() {
     <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
       <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
         
+        {/* Header */}
+        <header className="w-full py-8 flex justify-between items-center">
+          <img src="/notmoodlelogo.png" alt="NotMoodle Logo" className="h-12 w-auto object-contain" />
+        </header>
+
         {/* Hero Section */}
         <section className="h-[70vh] md:h-[90vh] w-full flex flex-col items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
           <h1 className="clash-title uppercase leading-[0.8] text-center" style={{ fontSize: 'clamp(60px, 11vw, 180px)' }}>

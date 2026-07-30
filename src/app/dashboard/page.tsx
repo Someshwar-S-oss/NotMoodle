@@ -196,8 +196,9 @@ export default function Home() {
   return (
     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
       {loading ? (
-        <div className="flex h-[50vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#111111] border-t-transparent" />
+        <div className="flex h-[70vh] w-full flex-col items-center justify-center gap-6">
+          <img src="/notmoodlelogo.png" alt="Loading..." className="h-20 w-auto object-contain animate-pulse" />
+          <span className="text-xs uppercase tracking-widest font-bold text-foreground/50 animate-pulse">Synthesizing...</span>
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
