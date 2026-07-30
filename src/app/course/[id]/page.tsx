@@ -3,10 +3,12 @@
 import { useEffect, useState, use, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2, Search, Sparkles } from 'lucide-react'
-import { getCourseContents } from '@/lib/moodle-client'
+import { getCourseContents, getAssignments, type MoodleAssignment } from '@/lib/moodle-client'
+import { createClient } from '@/utils/supabase/client'
 import { Drawer } from '@/components/Drawer'
 import { FileViewer } from '@/components/FileViewer'
 import { ChatBox } from '@/components/ChatBox'
+import { AssignmentDetails } from '@/components/AssignmentDetails'
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
@@ -19,7 +21,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [sections, setSections] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [selectedMod, setSelectedMod] = useState<any>(null)
+  const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
   const [token, setToken] = useState<string>('')
+  const [assignments, setAssignments] = useState<MoodleAssignment[]>([])
   
   // New state for unified search
   const [searchQuery, setSearchQuery] = useState('')
@@ -45,19 +49,33 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     setError(null)
     
     try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { window.location.href = '/login'; return }
+
+      const { data: profile } = await supabase.from('profiles').select('is_approved').eq('id', user.id).maybeSingle()
+      if (!profile || !profile.is_approved) {
+        window.location.href = '/onboarding'
+        return
+      }
+
       const tokenRes = await fetch('/api/moodle/token')
       if (tokenRes.status === 401) { window.location.href = '/login'; return }
-      if (!tokenRes.ok) throw new Error('Not connected to Moodle')
+      if (!tokenRes.ok) { window.location.href = '/onboarding'; return }
       const { token } = await tokenRes.json()
       setToken(token)
 
-      const contents = await getCourseContents(token, courseId)
+      const [contents, courseAssignments] = await Promise.all([
+        getCourseContents(token, courseId),
+        getAssignments(token, [courseId])
+      ])
       
       if (contents?.exception) {
         throw new Error(contents.message || 'Failed to load course contents')
       }
       
       setSections(contents || [])
+      setAssignments(courseAssignments)
     } catch (err: any) {
       console.error(err)
       setError(err.message || 'An error occurred loading the course.')
@@ -153,6 +171,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                     filteredModules.map((mod: any) => {
                       const isFile = mod.modname === 'resource' && mod.contents?.[0]?.fileurl;
                       
+                      const isAssign = mod.modname === 'assign';
+                      
                       const InnerContent = (
                         <>
                           <div className="p-4 border border-border/20 bg-[#f2f2f2] text-[#111111] group-hover:bg-[#111111] group-hover:text-white transition-colors duration-500">
@@ -179,6 +199,25 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           <button
                             key={mod.id}
                             onClick={() => setSelectedMod(mod)}
+                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
+                          >
+                            {InnerContent}
+                          </button>
+                        )
+                      }
+                      
+                      if (isAssign) {
+                        return (
+                          <button
+                            key={mod.id}
+                            onClick={() => {
+                              const assignData = assignments.find(a => a.cmid === mod.id);
+                              if (assignData) {
+                                setSelectedAssignment(assignData)
+                              } else {
+                                window.open(mod.url, '_blank')
+                              }
+                            }}
                             className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
                           >
                             {InnerContent}
@@ -225,6 +264,15 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         fullScreen={true}
       >
         {selectedMod && <FileViewer mod={selectedMod} courseId={courseId} token={token} />}
+      </Drawer>
+
+      {/* Assignment Details Drawer */}
+      <Drawer
+        isOpen={!!selectedAssignment}
+        onClose={() => setSelectedAssignment(null)}
+        title="Assignment Details"
+      >
+        {selectedAssignment && <AssignmentDetails assignment={selectedAssignment} />}
       </Drawer>
     </main>
   )

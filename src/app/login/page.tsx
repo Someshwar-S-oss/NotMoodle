@@ -1,7 +1,13 @@
 import { login } from './actions'
 import Link from 'next/link'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error: string; message: string }> }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) { redirect('/dashboard') }
+
   const params = await searchParams;
   return (
     <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12">

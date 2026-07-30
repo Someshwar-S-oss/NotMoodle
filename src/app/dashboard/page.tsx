@@ -1,159 +1,212 @@
-'use client'
+"use client";
 
-import Link from 'next/link'
-import { useEffect, useState, useMemo } from 'react'
-import { MoodleConnect } from '@/components/MoodleConnect'
-import { Drawer } from '@/components/Drawer'
-import { AssignmentDetails } from '@/components/AssignmentDetails'
-import { createClient } from '@/utils/supabase/client'
-import { ArrowRight, Hexagon, Circle, Square, Triangle } from 'lucide-react'
-import { getSiteInfo, getCurrentCourses, getTimelineEvents, getAssignments, getSubmissionStatus, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
+import Link from "next/link";
+import { useEffect, useState, useMemo } from "react";
+import { MoodleConnect } from "@/components/MoodleConnect";
+import { Drawer } from "@/components/Drawer";
+import { AssignmentDetails } from "@/components/AssignmentDetails";
+import { createClient } from "@/utils/supabase/client";
+import { ArrowRight, Hexagon, Circle, Square, Triangle } from "lucide-react";
+import {
+  getSiteInfo,
+  getCurrentCourses,
+  getTimelineEvents,
+  getAssignments,
+  getSubmissionStatus,
+  type MoodleCourse,
+  type MoodleAssignment,
+  type MoodleTimelineEvent,
+} from "@/lib/moodle-client";
 
 export default function Home() {
-  const [loading, setLoading] = useState(true)
-  const [isConnected, setIsConnected] = useState(false)
-  const [events, setEvents] = useState<MoodleTimelineEvent[]>([])
-  const [courses, setCourses] = useState<MoodleCourse[]>([])
-  const [allAssignments, setAllAssignments] = useState<MoodleAssignment[]>([])
-  const [moodleError, setMoodleError] = useState<string | null>(null)
-  const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
+  const [loading, setLoading] = useState(true);
+  const [isConnected, setIsConnected] = useState(false);
+  const [events, setEvents] = useState<MoodleTimelineEvent[]>([]);
+  const [courses, setCourses] = useState<MoodleCourse[]>([]);
+  const [allAssignments, setAllAssignments] = useState<MoodleAssignment[]>([]);
+  const [moodleError, setMoodleError] = useState<string | null>(null);
+  const [selectedAssignment, setSelectedAssignment] =
+    useState<MoodleAssignment | null>(null);
 
   useEffect(() => {
-    checkConnection()
-  }, [])
+    checkConnection();
+  }, []);
 
   const checkConnection = async () => {
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_approved")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || !profile.is_approved) {
+      window.location.href = "/onboarding";
+      return;
+    }
 
     const { data } = await supabase
-      .from('moodle_connections')
-      .select('created_at')
-      .eq('user_id', user.id)
-      .maybeSingle()
+      .from("moodle_connections")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .maybeSingle();
 
     if (data) {
-      setIsConnected(true)
-      
-      const cached = localStorage.getItem('moodle_dashboard_cache')
+      setIsConnected(true);
+
+      const cached = localStorage.getItem("moodle_dashboard_cache");
       if (cached) {
         try {
-          const parsed = JSON.parse(cached)
-          setCourses(parsed.courses || [])
-          setEvents(parsed.events || [])
-          setAllAssignments(parsed.assignments || [])
-          setLoading(false)
+          const parsed = JSON.parse(cached);
+          setCourses(parsed.courses || []);
+          setEvents(parsed.events || []);
+          setAllAssignments(parsed.assignments || []);
+          setLoading(false);
         } catch (e) {}
       }
 
-      await loadMoodleData(!cached)
+      await loadMoodleData(!cached);
     } else {
-      setLoading(false)
+      window.location.href = "/onboarding";
     }
-  }
+  };
 
   const loadMoodleData = async (showLoadingSpinner = true) => {
-    if (showLoadingSpinner) setLoading(true)
-    setMoodleError(null)
+    if (showLoadingSpinner) setLoading(true);
+    setMoodleError(null);
     try {
-      const tokenRes = await fetch('/api/moodle/token')
-      if (tokenRes.status === 401) { window.location.href = '/login'; return }
-      if (!tokenRes.ok) { setMoodleError('Not connected to Moodle.'); setLoading(false); return }
-      const { token } = await tokenRes.json()
+      const tokenRes = await fetch("/api/moodle/token");
+      if (tokenRes.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+      if (!tokenRes.ok) {
+        setMoodleError("Not connected to Moodle.");
+        setLoading(false);
+        return;
+      }
+      const { token } = await tokenRes.json();
 
-      const info = await getSiteInfo(token)
-      const currentCourses = await getCurrentCourses(token, info.userid)
-      const upcomingEvents = await getTimelineEvents(token)
-      
-      const assignments = await getAssignments(token, currentCourses.map(c => c.id))
-      const existingAssignInstances = new Set(upcomingEvents.filter(e => e.eventtype === 'assign').map(e => e.instance))
+      const info = await getSiteInfo(token);
+      const currentCourses = await getCurrentCourses(token, info.userid);
+      const upcomingEvents = await getTimelineEvents(token);
+
+      const assignments = await getAssignments(
+        token,
+        currentCourses.map((c) => c.id),
+      );
+      const existingAssignInstances = new Set(
+        upcomingEvents
+          .filter((e) => e.eventtype === "assign")
+          .map((e) => e.instance),
+      );
       const newAssignmentEvents = assignments
-        .filter(a => !existingAssignInstances.has(a.id))
-        .map(a => ({
+        .filter((a) => !existingAssignInstances.has(a.id))
+        .map((a) => ({
           id: -a.id, // Negative to avoid collision with calendar events
           name: a.name,
           description: a.intro,
-          eventtype: 'assign',
-          course: { id: a.course, fullname: a.coursename, shortname: '' },
+          eventtype: "assign",
+          course: { id: a.course, fullname: a.coursename, shortname: "" },
           timestart: a.duedate,
           timeduration: 0,
           instance: a.id,
-          url: ''
-        }))
+          url: "",
+        }));
 
-      const allEvents = [...upcomingEvents, ...newAssignmentEvents].sort((a, b) => a.timestart - b.timestart)
-      
-      const assignEvents = allEvents.filter(e => e.eventtype === 'assign')
+      const allEvents = [...upcomingEvents, ...newAssignmentEvents].sort(
+        (a, b) => a.timestart - b.timestart,
+      );
+
+      const assignEvents = allEvents.filter((e) => e.eventtype === "assign");
       const statuses = await Promise.all(
-        assignEvents.map(e => getSubmissionStatus(token, e.instance).catch(() => null))
-      )
+        assignEvents.map((e) =>
+          getSubmissionStatus(token, e.instance).catch(() => null),
+        ),
+      );
       const submittedInstances = new Set(
-        assignEvents.filter((_, i) => statuses[i]?.submitted).map(e => e.instance)
-      )
-      
-      const filteredEvents = allEvents.filter(e => {
-        if (e.eventtype === 'assign' && submittedInstances.has(e.instance)) return false;
-        return true;
-      })
+        assignEvents
+          .filter((_, i) => statuses[i]?.submitted)
+          .map((e) => e.instance),
+      );
 
-      setCourses(currentCourses)
-      setEvents(filteredEvents)
-      setAllAssignments(assignments)
+      const filteredEvents = allEvents.filter((e) => {
+        if (e.eventtype === "assign" && submittedInstances.has(e.instance))
+          return false;
+        return true;
+      });
+
+      setCourses(currentCourses);
+      setEvents(filteredEvents);
+      setAllAssignments(assignments);
 
       // Silently push the freshest assignments to our backend cache for the Calendar Feed
-      fetch('/api/moodle/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignments })
-      }).catch(err => console.error('Failed to sync assignments to backend cache', err))
+      fetch("/api/moodle/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assignments }),
+      }).catch((err) =>
+        console.error("Failed to sync assignments to backend cache", err),
+      );
 
-      localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
-        courses: currentCourses,
-        events: filteredEvents,
-        assignments: assignments,
-        timestamp: Date.now()
-      }))
+      localStorage.setItem(
+        "moodle_dashboard_cache",
+        JSON.stringify({
+          courses: currentCourses,
+          events: filteredEvents,
+          assignments: assignments,
+          timestamp: Date.now(),
+        }),
+      );
     } catch (err: any) {
-      console.error('Moodle load failed:', err)
-      setMoodleError(err.message || 'Failed to load Moodle data.')
+      console.error("Moodle load failed:", err);
+      setMoodleError(err.message || "Failed to load Moodle data.");
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const formatDate = (ts: number) =>
     ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
 
   const { overdue, today, upcoming } = useMemo(() => {
-    const now = Date.now()
-    const buckets = { overdue: [] as any[], today: [] as any[], upcoming: [] as any[] }
-    
-    events.forEach(e => {
-      const diff = Math.ceil((e.timestart * 1000 - now) / (1000 * 60 * 60 * 24))
-      if (diff < 0) buckets.overdue.push(e)
-      else if (diff === 0) buckets.today.push(e)
-      else buckets.upcoming.push(e)
-    })
-    
-    return buckets
-  }, [events])
+    const now = Date.now();
+    const buckets = {
+      overdue: [] as any[],
+      today: [] as any[],
+      upcoming: [] as any[],
+    };
+
+    events.forEach((e) => {
+      const diff = Math.ceil(
+        (e.timestart * 1000 - now) / (1000 * 60 * 60 * 24),
+      );
+      if (diff < 0) buckets.overdue.push(e);
+      else if (diff === 0) buckets.today.push(e);
+      else buckets.upcoming.push(e);
+    });
+
+    return buckets;
+  }, [events]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
-      {!isConnected && !loading ? (
-        <div className="w-full h-[70vh] flex flex-col items-center justify-center px-6">
-          <div className="flex flex-col items-center justify-center p-12 border border-border/20 bg-white max-w-lg mx-auto w-full">
-            <h2 className="clash-title text-3xl uppercase mb-4 text-center">Not Connected</h2>
-            <p className="text-foreground/70 mb-8 text-center font-medium">You need to link your Moodle account to access the workspace.</p>
-            <Link href="/settings" className="bg-[#111111] text-[#f2f2f2] hover:scale-105 transition-transform duration-300 rounded-full px-8 py-3 font-medium uppercase tracking-widest text-sm text-center">Go to Settings</Link>
-          </div>
+    <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
+      {loading ? (
+        <div className="flex h-[50vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#111111] border-t-transparent" />
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
-          
           {/* Hero Section */}
           <section className="h-[70vh] md:h-[90vh] w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
-            <h1 className="clash-title uppercase text-[11vw] leading-[0.8] text-center" style={{ fontSize: 'clamp(80px, 11vw, 180px)' }}>
+            <h1
+              className="clash-title uppercase text-[11vw] leading-[0.8] text-center"
+              style={{ fontSize: "clamp(80px, 11vw, 180px)" }}
+            >
               <span className="echo-stack" data-text="WORKSPACE">
                 WORKSPACE
               </span>
@@ -164,29 +217,47 @@ export default function Home() {
           <section className="flex flex-col items-center mb-32 relative">
             <div className="hairline-divider h-24 mb-12"></div>
             <h2 className="clash-title text-4xl md:text-6xl text-center max-w-4xl mb-24">
-              Your academic life, <span className="font-serif italic font-normal">synthesized.</span>
+              Your academic life,{" "}
+              <span className="font-serif italic font-normal">
+                synthesized.
+              </span>
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Overdue</h3>
                 <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">{overdue.length}</span>
-                  <span className="flex-1">critical items require immediate attention. Focus here to eliminate backlog.</span>
+                  <span className="clash-title text-5xl text-foreground mr-3">
+                    {overdue.length}
+                  </span>
+                  <span className="flex-1">
+                    critical items require immediate attention. Focus here to
+                    eliminate backlog.
+                  </span>
                 </p>
               </div>
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Due Today</h3>
                 <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">{today.length}</span>
-                  <span className="flex-1">tasks scheduled for completion today. Prioritize these executions.</span>
+                  <span className="clash-title text-5xl text-foreground mr-3">
+                    {today.length}
+                  </span>
+                  <span className="flex-1">
+                    tasks scheduled for completion today. Prioritize these
+                    executions.
+                  </span>
                 </p>
               </div>
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Upcoming</h3>
                 <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">{upcoming.length}</span>
-                  <span className="flex-1">planned assignments on the horizon. Preparation is key to systemic success.</span>
+                  <span className="clash-title text-5xl text-foreground mr-3">
+                    {upcoming.length}
+                  </span>
+                  <span className="flex-1">
+                    planned assignments on the horizon. Preparation is key to
+                    systemic success.
+                  </span>
                 </p>
               </div>
             </div>
@@ -201,60 +272,77 @@ export default function Home() {
 
             <div className="flex flex-col border-t border-border/20">
               {events.length === 0 ? (
-                <div className="py-16 text-center text-foreground/50 font-medium">No upcoming events.</div>
+                <div className="py-16 text-center text-foreground/50 font-medium">
+                  No upcoming events.
+                </div>
               ) : (
                 events.map((event) => {
                   const date = new Date(event.timestart * 1000);
-                  const day = date.getDate().toString().padStart(2, '0');
-                  const month = date.toLocaleString('default', { month: 'short' }).toUpperCase();
-                  const time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                  const isAssignment = event.eventtype === 'assign';
-                  
+                  const day = date.getDate().toString().padStart(2, "0");
+                  const month = date
+                    .toLocaleString("default", { month: "short" })
+                    .toUpperCase();
+                  const time = date.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+                  const isAssignment = event.eventtype === "assign";
+
                   return (
-                    <button 
+                    <button
                       key={event.id}
                       onClick={() => {
                         if (isAssignment) {
-                          const assignmentData = allAssignments.find(a => a.id === event.instance);
+                          const assignmentData = allAssignments.find(
+                            (a) => a.id === event.instance,
+                          );
                           if (assignmentData) {
                             setSelectedAssignment(assignmentData);
                             return;
                           }
                         }
-                        window.location.href = `/course/${event.course?.id || ''}`;
+                        window.location.href = `/course/${event.course?.id || ""}`;
                       }}
                       className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-[#f2f2f2] transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
                     >
                       {/* Date Column */}
                       <div className="md:col-span-3 flex flex-col justify-start">
-                        <div className="text-5xl clash-title font-medium leading-none text-[#111111]">{day}</div>
-                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-[#111111]/50">{month} {date.getFullYear()}</div>
-                        <div className="text-xs font-mono mt-4 text-[#111111]/40 uppercase">{time}</div>
+                        <div className="text-5xl clash-title font-medium leading-none text-[#111111]">
+                          {day}
+                        </div>
+                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-[#111111]/50">
+                          {month} {date.getFullYear()}
+                        </div>
+                        <div className="text-xs font-mono mt-4 text-[#111111]/40 uppercase">
+                          {time}
+                        </div>
                       </div>
-                      
+
                       {/* Content Column */}
                       <div className="md:col-span-8 flex flex-col justify-center">
                         <div className="text-xs font-bold tracking-widest uppercase mb-3 text-[#111111]/50 flex items-center gap-3">
                           <span className="w-1.5 h-1.5 bg-[#111111] rounded-full"></span>
-                          {event.course?.fullname || 'System Event'}
+                          {event.course?.fullname || "System Event"}
                         </div>
                         <h3 className="text-2xl md:text-3xl font-medium clash-title text-[#111111] group-hover:translate-x-4 transition-transform duration-500">
                           {event.name}
                         </h3>
                         {event.description && (
-                          <div 
-                            className="mt-4 text-[#111111]/70 line-clamp-2 text-sm max-w-2xl font-medium" 
-                            dangerouslySetInnerHTML={{__html: event.description}} 
+                          <div
+                            className="mt-4 text-[#111111]/70 line-clamp-2 text-sm max-w-2xl font-medium"
+                            dangerouslySetInnerHTML={{
+                              __html: event.description,
+                            }}
                           />
                         )}
                       </div>
-                      
+
                       {/* Action Column */}
                       <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                         <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-[#111111]" />
+                        <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-[#111111]" />
                       </div>
                     </button>
-                  )
+                  );
                 })
               )}
             </div>
@@ -263,33 +351,49 @@ export default function Home() {
           {/* Bespoke Service Cards */}
           <section className="mb-16">
             <div className="flex items-center gap-6 mb-12">
-              <h2 className="clash-title text-3xl uppercase">Enrolled Modules</h2>
+              <h2 className="clash-title text-3xl uppercase">
+                Enrolled Modules
+              </h2>
               <div className="flex-1 hairline-divider h-px w-full"></div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {courses.map((course, i) => {
-                const Icon = i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
+                const Icon =
+                  i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
                 return (
-                  <Link href={`/course/${course.id}`} key={course.id} className="group p-8 border border-[#1e1e1e]/10 bg-transparent hover:bg-[#ffffff] transition-colors duration-500 flex flex-col justify-between min-h-[320px]">
+                  <Link
+                    href={`/course/${course.id}`}
+                    key={course.id}
+                    className="group p-8 border border-[#1e1e1e]/10 bg-transparent hover:bg-[#ffffff] transition-colors duration-500 flex flex-col justify-between min-h-[320px]"
+                  >
                     <div className="w-16 h-16 border border-[#1e1e1e]/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-[#f2f2f2]">
-                      <Icon className="w-6 h-6 text-[#111111]" strokeWidth={1} />
+                      <Icon
+                        className="w-6 h-6 text-[#111111]"
+                        strokeWidth={1}
+                      />
                     </div>
                     <div>
-                      <h3 className="clash-title text-2xl mb-4 line-clamp-2">{course.fullname}</h3>
+                      <h3 className="clash-title text-2xl mb-4 line-clamp-2">
+                        {course.fullname}
+                      </h3>
                       <div className="flex items-center gap-2 uppercase tracking-widest font-bold text-xs">
                         Enter Module <ArrowRight className="w-4 h-4" />
                       </div>
                     </div>
                   </Link>
-                )
+                );
               })}
-              {courses.length === 0 && loading && [1, 2, 3].map(i => (
-                <div key={i} className="p-8 border border-border/10 animate-pulse bg-white/50 min-h-[320px]"></div>
-              ))}
+              {courses.length === 0 &&
+                loading &&
+                [1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="p-8 border border-border/10 animate-pulse bg-white/50 min-h-[320px]"
+                  ></div>
+                ))}
             </div>
           </section>
-
         </div>
       )}
 
@@ -297,27 +401,76 @@ export default function Home() {
       <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-6 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
-            <h2 className="clash-title text-2xl text-white mb-6 uppercase">The NotMoodle</h2>
+            <h2 className="clash-title text-2xl text-white mb-6 uppercase">
+              The NotMoodle
+            </h2>
             <p className="text-sm font-medium leading-relaxed max-w-xs">
-              A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
+              A sophisticated synthesis of academic workflows, emphasizing
+              typographic clarity and minimal resistance.
             </p>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Platform</h4>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Action Hub</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Timeline</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Modules</Link>
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+              Platform
+            </h4>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              Action Hub
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              Timeline
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              Modules
+            </Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Company</h4>
-            <Link href="#" className="hover:text-white transition-colors text-sm">About</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Manifesto</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Privacy Policy</Link>
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+              Company
+            </h4>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              About
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              Manifesto
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              Privacy Policy
+            </Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Contact</h4>
-            <Link href="#" className="hover:text-white transition-colors text-sm">support@notmoodle.dev</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">@notmoodle</Link>
+            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+              Contact
+            </h4>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              support@notmoodle.dev
+            </Link>
+            <Link
+              href="#"
+              className="hover:text-white transition-colors text-sm"
+            >
+              @notmoodle
+            </Link>
           </div>
         </div>
       </footer>
@@ -327,8 +480,10 @@ export default function Home() {
         onClose={() => setSelectedAssignment(null)}
         title="Assignment Details"
       >
-        {selectedAssignment && <AssignmentDetails assignment={selectedAssignment} />}
+        {selectedAssignment && (
+          <AssignmentDetails assignment={selectedAssignment} />
+        )}
       </Drawer>
     </main>
-  )
+  );
 }

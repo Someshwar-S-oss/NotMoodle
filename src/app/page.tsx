@@ -1,7 +1,13 @@
 import Link from 'next/link'
 import { ArrowRight, Hexagon, Circle, Triangle } from 'lucide-react'
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) { redirect('/dashboard') }
+
   return (
     <main className="min-h-screen bg-background text-foreground flex flex-col items-center">
       <div className="w-full max-w-[1440px] px-6 md:px-12 pb-24">
