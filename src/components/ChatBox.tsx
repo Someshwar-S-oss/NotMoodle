@@ -2,7 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useChat, type Message } from 'ai/react'
-import { Send, Bot, User, Loader2, Sparkles, History } from 'lucide-react'
+import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export function ChatBox({ courseId, courseName }: { courseId: string; courseName?: string }) {
   const [initialMessages, setInitialMessages] = useState<Message[]>([])
@@ -44,55 +46,53 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
   }
 
   return (
-    <div className="flex flex-col h-full w-full bg-background relative">
+    <div className="flex flex-col h-full w-full bg-white relative min-h-0">
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-background border-b-4 border-border shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 bg-[#f2f2f2] border-b-2 border-[#111111] shrink-0">
         <div className="flex items-center gap-4">
-          <div className="p-3 border border-border text-foreground">
-            <Sparkles className="h-6 w-6 stroke-1" />
+          <div className="p-2 border-2 border-[#111111] bg-white text-[#111111]">
+            <Sparkles className="h-5 w-5 stroke-[2px]" />
           </div>
           <div>
-            <h3 className="font-serif font-bold text-2xl uppercase tracking-tight">Course AI Assistant</h3>
-            {courseName && <p className="text-xs font-mono uppercase tracking-widest text-neutral-500 mt-1">{courseName}</p>}
+            <h3 className="clash-title text-xl uppercase tracking-wide">Course AI Assistant</h3>
+            {courseName && <p className="text-[10px] font-bold uppercase tracking-widest text-[#111111]/70 mt-1">{courseName}</p>}
           </div>
         </div>
       </div>
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-8 bg-muted">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-white custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-6">
-            <Bot className="h-16 w-16 stroke-1 text-foreground" />
-            <p className="font-serif text-xl max-w-sm text-foreground">
-              "All the news that's fit to print." Ask me any questions about the course materials, syllabus, or topics.
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+            <Bot className="h-12 w-12 stroke-[1.5] text-[#111111]/40" />
+            <p className="font-bold text-sm uppercase tracking-widest max-w-sm text-[#111111]/60">
+              Ask me any questions about the course materials, syllabus, or topics.
             </p>
           </div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className={`flex gap-4 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
-                  <Bot className="h-6 w-6 stroke-1" />
+                <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
+                  <Bot className="h-5 w-5 stroke-[2px] text-[#111111]" />
                 </div>
               )}
               
-              <div className={`px-6 py-4 max-w-[85%] text-base font-body leading-relaxed border border-border ${
+              <div className={`px-5 py-4 max-w-[85%] text-sm leading-relaxed border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] ${
                 m.role === 'user' 
-                  ? 'bg-foreground text-background' 
-                  : 'bg-background text-foreground'
+                  ? 'bg-[#111111] text-white' 
+                  : 'bg-white text-[#111111]'
               }`}>
-                {/* Minimal markdown rendering just for bold and breaks */}
-                {m.content.split('\n').map((line, i) => (
-                  <span key={i}>
-                    {line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}
-                    {i !== m.content.split('\n').length - 1 && <br />}
-                  </span>
-                ))}
+                <div className="prose prose-sm max-w-none prose-p:leading-relaxed prose-pre:bg-[#111111] prose-pre:text-white prose-pre:border-2 prose-pre:border-border prose-pre:rounded-none prose-headings:font-bold prose-headings:uppercase prose-headings:tracking-wide">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {m.content}
+                  </ReactMarkdown>
+                </div>
               </div>
 
               {m.role === 'user' && (
-                <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
-                  <User className="h-6 w-6 stroke-1" />
+                <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
+                  <User className="h-5 w-5 stroke-[2px] text-[#111111]" />
                 </div>
               )}
             </div>
@@ -100,14 +100,14 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
         )}
         
         {isLoading && (
-          <div className="flex gap-4 justify-start">
-             <div className="w-12 h-12 bg-background border border-border flex items-center justify-center shrink-0">
-              <Bot className="h-6 w-6 stroke-1 animate-pulse" />
+          <div className="flex gap-3 justify-start">
+             <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
+              <Bot className="h-5 w-5 stroke-[2px] text-[#111111] animate-pulse" />
             </div>
-            <div className="px-6 py-4 bg-background text-foreground border border-border flex items-center gap-2">
-              <span className="w-2 h-2 bg-foreground animate-bounce [animation-delay:-0.3s]"></span>
-              <span className="w-2 h-2 bg-foreground animate-bounce [animation-delay:-0.15s]"></span>
-              <span className="w-2 h-2 bg-foreground animate-bounce"></span>
+            <div className="px-5 py-4 bg-white text-[#111111] border-2 border-[#111111] flex items-center gap-2 shadow-[4px_4px_0px_rgba(17,17,17,1)]">
+              <span className="w-2 h-2 bg-[#111111] animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-2 h-2 bg-[#111111] animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-2 h-2 bg-[#111111] animate-bounce"></span>
             </div>
           </div>
         )}
@@ -115,24 +115,24 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
       </div>
 
       {/* Chat Input */}
-      <div className="p-6 bg-background border-t-4 border-border shrink-0">
+      <div className="p-4 bg-[#f2f2f2] border-t-2 border-[#111111] shrink-0">
         <form onSubmit={handleSubmit} className="flex gap-4 relative">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="TYPE YOUR INQUIRY..."
-            className="flex-1 bg-background border border-border px-6 py-4 text-base font-mono uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none focus:bg-muted transition-all"
+            className="flex-1 bg-white border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] px-4 py-3 text-sm font-bold uppercase tracking-widest text-[#111111] placeholder-[#111111]/50 focus:outline-none focus:translate-y-1 focus:shadow-[0px_0px_0px_rgba(17,17,17,1)] transition-all"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-6 py-4 bg-foreground border border-transparent hover:border-border hover:bg-background hover:text-foreground text-background transition-all duration-200 disabled:bg-muted disabled:border-border disabled:text-neutral-500"
+            className="px-6 py-3 bg-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] text-white hover:bg-white hover:text-[#111111] active:translate-y-1 active:shadow-none transition-all duration-200 disabled:bg-[#e5e5e5] disabled:text-[#111111]/30 disabled:border-[#111111]/30 disabled:shadow-none"
           >
-            <Send className="h-6 w-6 stroke-1" />
+            <Send className="h-5 w-5 stroke-[2px]" />
           </button>
         </form>
-        <div className="text-center mt-4 text-xs font-mono uppercase tracking-widest text-neutral-500">
+        <div className="text-center mt-3 text-[10px] font-bold uppercase tracking-widest text-[#111111]/50">
           AI MAY PRODUCE INACCURACIES. VERIFY ALL INFORMATION.
         </div>
       </div>

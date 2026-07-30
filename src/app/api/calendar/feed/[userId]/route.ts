@@ -15,15 +15,13 @@ export async function GET(
 
   const { userId } = await params
   
-  const { data: conn } = await supabase.from('moodle_connections').select('encrypted_token').eq('user_id', userId).single()
+  const { data: conn } = await supabase.from('moodle_connections').select('cached_assignments').eq('user_id', userId).single()
   
   if (!conn) {
     return new NextResponse('User not found or not connected to Moodle', { status: 404 })
   }
 
-  // Fetch deadlines from Moodle
-  const assignRes = await fetch(`https://hselearning.sriher.com/webservice/rest/server.php?wstoken=${conn.encrypted_token}&wsfunction=mod_assign_get_assignments&moodlewsrestformat=json`)
-  const assignData = await assignRes.json()
+  const assignments = conn.cached_assignments || []
 
   let icsContent = [
     'BEGIN:VCALENDAR',
@@ -33,31 +31,27 @@ export async function GET(
     'METHOD:PUBLISH'
   ]
 
-  if (assignData.courses) {
-    for (const course of assignData.courses) {
-      for (const assignment of course.assignments) {
-        if (assignment.duedate > 0) {
-          const startDate = new Date(assignment.duedate * 1000)
-          
-          // ICS requires YYYYMMDDTHHMMSSZ format
-          const startFormat = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-          
-          // Set end time to 1 hour after due date so it shows up as a block
-          const endDate = new Date((assignment.duedate + 3600) * 1000)
-          const endFormat = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-          
-          icsContent.push(
-            'BEGIN:VEVENT',
-            `UID:assign_${assignment.id}@notmoodle.com`,
-            `SUMMARY:[Due] ${assignment.name}`,
-            `DESCRIPTION:Course: ${course.fullname}`,
-            `DTSTAMP:${startFormat}`,
-            `DTSTART:${startFormat}`,
-            `DTEND:${endFormat}`,
-            'END:VEVENT'
-          )
-        }
-      }
+  for (const assignment of assignments) {
+    if (assignment.duedate > 0) {
+      const startDate = new Date(assignment.duedate * 1000)
+      
+      // ICS requires YYYYMMDDTHHMMSSZ format
+      const startFormat = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+      
+      // Set end time to 1 hour after due date so it shows up as a block
+      const endDate = new Date((assignment.duedate + 3600) * 1000)
+      const endFormat = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+      
+      icsContent.push(
+        'BEGIN:VEVENT',
+        `UID:assign_${assignment.id}@notmoodle.com`,
+        `SUMMARY:[Due] ${assignment.name}`,
+        `DESCRIPTION:Course: ${assignment.coursename}`,
+        `DTSTAMP:${startFormat}`,
+        `DTSTART:${startFormat}`,
+        `DTEND:${endFormat}`,
+        'END:VEVENT'
+      )
     }
   }
 

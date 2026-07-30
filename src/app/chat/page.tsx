@@ -34,42 +34,45 @@ export default function GlobalChatPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground p-4 md:p-8 flex flex-col items-center newsprint-texture">
-      <div className="w-full max-w-screen-xl flex flex-col md:flex-row md:items-baseline justify-between gap-6 mb-8 border-b-4 border-border pb-6 relative z-10">
+    <main className="min-h-screen h-screen bg-background text-foreground p-4 md:p-6 flex flex-col items-center overflow-hidden">
+      <div className="w-full max-w-[1400px] flex items-center justify-between gap-6 mb-4 pb-4 border-b-4 border-[#111111] shrink-0">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.push('/')}
-            className="p-3 border border-border bg-background hover:bg-muted text-foreground transition-all duration-200"
+            className="p-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition-colors duration-200"
           >
-            <ArrowLeft className="h-5 w-5 stroke-1" />
+            <ArrowLeft className="h-5 w-5 stroke-[2px]" />
           </button>
-          <h1 className="text-4xl md:text-6xl font-serif font-black uppercase tracking-tighter flex items-center gap-4">
-            <Sparkles className="h-8 w-8 stroke-1" />
+          <h1 className="clash-title text-2xl md:text-4xl uppercase tracking-wide flex items-center gap-3">
+            <Sparkles className="h-6 w-6 stroke-[2px]" />
             Global Study Chat
           </h1>
         </div>
-        <p className="text-xs font-mono uppercase tracking-widest text-neutral-500">Select a course to ask questions based on its materials.</p>
+        <p className="hidden md:block text-xs font-bold uppercase tracking-widest text-[#111111]/60">Select a module to begin.</p>
       </div>
 
-      <div className="w-full max-w-screen-xl flex-1 flex flex-col bg-background border-4 border-border relative z-10 hard-shadow-hover">
+      <div className="w-full max-w-[1400px] flex-1 flex flex-col md:flex-row bg-white border-2 border-[#111111] shadow-[8px_8px_0px_rgba(17,17,17,1)] min-h-0">
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-neutral-500 bg-muted">
-            <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-1 text-foreground" />
-            <p className="font-mono text-sm uppercase tracking-widest">Loading your courses...</p>
+          <div className="flex-1 flex flex-col items-center justify-center text-foreground/50 bg-[#f2f2f2]">
+            <Loader2 className="h-10 w-10 animate-spin mb-6 text-[#111111]" strokeWidth={2} />
+            <p className="font-bold text-xs uppercase tracking-widest">Loading your courses...</p>
           </div>
         ) : (
-          <div className="flex flex-col h-full w-full">
-            {/* Course Selector Header */}
-            <div className="p-6 bg-background border-b-4 border-border flex items-center gap-4 shrink-0 overflow-x-auto custom-scrollbar">
-              <Book className="h-6 w-6 stroke-1 shrink-0" />
+          <>
+            {/* Sidebar Course Selector */}
+            <div className="w-full md:w-64 lg:w-80 bg-[#f2f2f2] border-b-2 md:border-b-0 md:border-r-2 border-[#111111] flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto shrink-0 custom-scrollbar">
+              <div className="p-4 border-b-2 border-[#111111] hidden md:flex items-center gap-2 bg-[#111111] text-white">
+                <Book className="h-5 w-5 stroke-[2px]" />
+                <span className="clash-title text-sm uppercase tracking-wide">Modules</span>
+              </div>
               {courses.map(c => (
                 <button
                   key={c.id}
                   onClick={() => setSelectedCourse(c.id.toString())}
-                  className={`px-6 py-3 border border-border text-xs font-mono uppercase tracking-widest whitespace-nowrap transition-colors shrink-0 ${
+                  className={`p-4 text-left border-b border-[#111111]/20 border-r md:border-r-0 font-bold text-xs uppercase tracking-wider shrink-0 md:shrink transition-colors ${
                     selectedCourse === c.id.toString() 
-                      ? 'bg-foreground text-background' 
-                      : 'bg-background text-foreground hover:bg-muted'
+                      ? 'bg-[#111111] text-white' 
+                      : 'bg-transparent text-[#111111] hover:bg-white'
                   }`}
                 >
                   {c.fullname}
@@ -78,18 +81,17 @@ export default function GlobalChatPage() {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 relative min-h-[500px] bg-muted">
+            <div className="flex-1 relative flex flex-col min-w-0 h-full">
               {selectedCourse ? (
-                // We use key={selectedCourse} to force unmount/remount when course changes, ensuring it re-fetches history
                 <ChatBox key={selectedCourse} courseId={selectedCourse} />
               ) : (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-neutral-500">
-                  <Sparkles className="h-12 w-12 mb-6 stroke-1 text-foreground" />
-                  <p className="font-serif font-bold text-3xl text-foreground">Select a course above to start studying!</p>
+                <div className="flex flex-col items-center justify-center h-full text-foreground/50 bg-white">
+                  <Sparkles className="h-12 w-12 mb-6 text-[#111111]" strokeWidth={2} />
+                  <p className="clash-title text-2xl text-[#111111] uppercase">Select a module to start</p>
                 </div>
               )}
             </div>
-          </div>
+          </>
         )}
       </div>
     </main>

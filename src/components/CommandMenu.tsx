@@ -59,11 +59,11 @@ export function CommandMenu() {
     : items.slice(0, 10)
 
   const getIcon = (type: string) => {
-    if (type === 'course') return <Book className="mr-2 h-4 w-4 text-indigo-400 shrink-0" />
-    if (type === 'forum') return <MessageSquare className="mr-2 h-4 w-4 text-blue-400 shrink-0" />
-    if (type === 'resource') return <FileText className="mr-2 h-4 w-4 text-green-400 shrink-0" />
-    if (type === 'assign') return <ClipboardList className="mr-2 h-4 w-4 text-orange-400 shrink-0" />
-    return <LinkIcon className="mr-2 h-4 w-4 text-gray-400 shrink-0" />
+    if (type === 'course') return <Book className="mr-3 h-4 w-4 text-[#111111] shrink-0" strokeWidth={1.5} />
+    if (type === 'forum') return <MessageSquare className="mr-3 h-4 w-4 text-[#111111] shrink-0" strokeWidth={1.5} />
+    if (type === 'resource') return <FileText className="mr-3 h-4 w-4 text-[#111111] shrink-0" strokeWidth={1.5} />
+    if (type === 'assign') return <ClipboardList className="mr-3 h-4 w-4 text-[#111111] shrink-0" strokeWidth={1.5} />
+    return <LinkIcon className="mr-3 h-4 w-4 text-foreground/50 shrink-0" strokeWidth={1.5} />
   }
 
   if (!open) return null
@@ -72,34 +72,34 @@ export function CommandMenu() {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
       <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
 
-      <div className="relative w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-2xl bg-white border-2 border-[#111111] shadow-[8px_8px_0px_rgba(17,17,17,0.1)] rounded-none overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         <Command label="Global Command Menu" shouldFilter={false} className="flex flex-col">
-          <div className="flex items-center px-4 border-b border-gray-800">
+          <div className="flex items-center px-6 py-2 border-b-2 border-[#111111] bg-[#f2f2f2]">
             {indexing
-              ? <Loader2 className="h-5 w-5 text-indigo-400 animate-spin" />
-              : <Search className="h-5 w-5 text-gray-400" />
+              ? <Loader2 className="h-6 w-6 text-[#111111] animate-spin shrink-0" />
+              : <Search className="h-6 w-6 text-[#111111] shrink-0" strokeWidth={2} />
             }
             <Command.Input
               autoFocus
               value={query}
               onValueChange={setQuery}
-              placeholder={indexing ? 'Building search index...' : 'Search courses, files, assignments...'}
-              className="flex-1 bg-transparent border-0 outline-none text-white px-4 py-4 placeholder-gray-500 text-sm"
+              placeholder={indexing ? 'Building search index...' : 'Search modules, files, assignments...'}
+              className="flex-1 bg-transparent border-0 outline-none text-[#111111] px-4 py-4 placeholder-foreground/50 text-lg font-medium font-sans"
             />
-            <kbd className="hidden sm:flex items-center gap-0.5 text-xs text-gray-600 bg-gray-800 border border-gray-700 rounded px-1.5 py-0.5">
-              Esc
+            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] uppercase tracking-widest font-bold text-[#111111] bg-white border border-[#111111] px-2 py-1">
+              ESC
             </kbd>
           </div>
 
-          <Command.List className="max-h-[55vh] overflow-y-auto p-2">
+          <Command.List className="max-h-[55vh] overflow-y-auto p-0">
             {indexing ? (
-              <div className="p-8 text-center text-gray-500 text-sm">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2 text-indigo-400" />
-                Indexing your Moodle content...
+              <div className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest flex flex-col items-center">
+                <Loader2 className="h-8 w-8 animate-spin mb-4 text-[#111111]" />
+                Indexing your workspace...
               </div>
             ) : (
               <>
-                <Command.Empty className="p-8 text-center text-gray-500 text-sm">
+                <Command.Empty className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest">
                   No results for &ldquo;{query}&rdquo;
                 </Command.Empty>
 
@@ -114,12 +114,12 @@ export function CommandMenu() {
                         router.push(item.url)
                       }
                     }}
-                    className="flex items-center px-4 py-3 rounded-xl text-sm text-gray-200 cursor-pointer hover:bg-gray-800 hover:text-white aria-selected:bg-indigo-600 aria-selected:text-white group transition-colors"
+                    className="flex items-center px-6 py-4 border-b border-border/10 text-sm cursor-pointer aria-selected:bg-[#111111] aria-selected:text-[#f2f2f2] group transition-colors"
                   >
                     {getIcon(item.type)}
                     <div className="flex flex-col min-w-0">
-                      <span className="font-medium truncate">{item.title}</span>
-                      <span className="text-xs text-gray-400 group-aria-selected:text-indigo-200 truncate">
+                      <span className="font-bold uppercase tracking-wide truncate group-aria-selected:text-[#f2f2f2]">{item.title}</span>
+                      <span className="text-xs font-medium text-foreground/50 group-aria-selected:text-[#f2f2f2]/70 truncate mt-1">
                         {item.course} · {item.type}
                       </span>
                     </div>
@@ -129,14 +129,14 @@ export function CommandMenu() {
             )}
           </Command.List>
 
-          <div className="bg-gray-950 px-4 py-2 border-t border-gray-800 flex justify-between items-center text-xs text-gray-500">
-            <span>
-              <kbd className="bg-gray-800 px-1 py-0.5 rounded border border-gray-700">↑</kbd>{' '}
-              <kbd className="bg-gray-800 px-1 py-0.5 rounded border border-gray-700">↓</kbd> navigate
+          <div className="bg-[#f2f2f2] px-6 py-3 border-t-2 border-[#111111] flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-[#111111]">
+            <span className="flex items-center gap-2">
+              <kbd className="bg-white px-2 py-1 border border-[#111111]">↑</kbd>
+              <kbd className="bg-white px-2 py-1 border border-[#111111]">↓</kbd> NAVIGATE
             </span>
-            {items.length > 0 && <span>{items.length} items indexed</span>}
-            <span>
-              <kbd className="bg-gray-800 px-1 py-0.5 rounded border border-gray-700">Enter</kbd> open
+            {items.length > 0 && <span>{items.length} INDEXED</span>}
+            <span className="flex items-center gap-2">
+              <kbd className="bg-white px-2 py-1 border border-[#111111]">ENTER</kbd> SELECT
             </span>
           </div>
         </Command>

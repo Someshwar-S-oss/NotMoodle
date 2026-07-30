@@ -85,6 +85,13 @@ export default function Home() {
       setCourses(currentCourses)
       setEvents(allEvents)
 
+      // Silently push the freshest assignments to our backend cache for the Calendar Feed
+      fetch('/api/moodle/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignments })
+      }).catch(err => console.error('Failed to sync assignments to backend cache', err))
+
       localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
         courses: currentCourses,
         events: allEvents,
