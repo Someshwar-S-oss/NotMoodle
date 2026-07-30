@@ -210,7 +210,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         </div>
 
         {/* Right Column: AI Assistant (Always On) */}
-        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 border-t lg:border-t-0 lg:border-l border-border/10 bg-background flex flex-col h-[500px] lg:h-auto">
+        <div className="w-full lg:w-[400px] xl:w-[450px] shrink-0 border-t lg:border-t-0 lg:border-l border-border/10 bg-background flex flex-col h-[500px] lg:h-full overflow-hidden">
           {!loading && !error && (
             <ChatBox courseId={courseId.toString()} />
           )}

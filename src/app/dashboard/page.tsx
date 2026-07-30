@@ -7,7 +7,7 @@ import { Drawer } from '@/components/Drawer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { createClient } from '@/utils/supabase/client'
 import { ArrowRight, Hexagon, Circle, Square, Triangle } from 'lucide-react'
-import { getSiteInfo, getCurrentCourses, getTimelineEvents, getAssignments, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
+import { getSiteInfo, getCurrentCourses, getTimelineEvents, getAssignments, getSubmissionStatus, type MoodleCourse, type MoodleAssignment, type MoodleTimelineEvent } from '@/lib/moodle-client'
 
 export default function Home() {
   const [loading, setLoading] = useState(true)
@@ -84,8 +84,21 @@ export default function Home() {
 
       const allEvents = [...upcomingEvents, ...newAssignmentEvents].sort((a, b) => a.timestart - b.timestart)
       
+      const assignEvents = allEvents.filter(e => e.eventtype === 'assign')
+      const statuses = await Promise.all(
+        assignEvents.map(e => getSubmissionStatus(token, e.instance).catch(() => null))
+      )
+      const submittedInstances = new Set(
+        assignEvents.filter((_, i) => statuses[i]?.submitted).map(e => e.instance)
+      )
+      
+      const filteredEvents = allEvents.filter(e => {
+        if (e.eventtype === 'assign' && submittedInstances.has(e.instance)) return false;
+        return true;
+      })
+
       setCourses(currentCourses)
-      setEvents(allEvents)
+      setEvents(filteredEvents)
       setAllAssignments(assignments)
 
       // Silently push the freshest assignments to our backend cache for the Calendar Feed
@@ -97,7 +110,7 @@ export default function Home() {
 
       localStorage.setItem('moodle_dashboard_cache', JSON.stringify({
         courses: currentCourses,
-        events: allEvents,
+        events: filteredEvents,
         assignments: assignments,
         timestamp: Date.now()
       }))
@@ -157,20 +170,23 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Overdue</h3>
-                <p className="text-foreground/70 font-medium">
-                  {overdue.length} critical items require immediate attention. Focus here to eliminate backlog.
+                <p className="text-foreground/70 font-medium flex items-baseline">
+                  <span className="clash-title text-5xl text-foreground mr-3">{overdue.length}</span>
+                  <span className="flex-1">critical items require immediate attention. Focus here to eliminate backlog.</span>
                 </p>
               </div>
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Due Today</h3>
-                <p className="text-foreground/70 font-medium">
-                  {today.length} tasks scheduled for completion today. Prioritize these executions.
+                <p className="text-foreground/70 font-medium flex items-baseline">
+                  <span className="clash-title text-5xl text-foreground mr-3">{today.length}</span>
+                  <span className="flex-1">tasks scheduled for completion today. Prioritize these executions.</span>
                 </p>
               </div>
               <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
                 <h3 className="clash-title text-2xl uppercase">Upcoming</h3>
-                <p className="text-foreground/70 font-medium">
-                  {upcoming.length} planned assignments on the horizon. Preparation is key to systemic success.
+                <p className="text-foreground/70 font-medium flex items-baseline">
+                  <span className="clash-title text-5xl text-foreground mr-3">{upcoming.length}</span>
+                  <span className="flex-1">planned assignments on the horizon. Preparation is key to systemic success.</span>
                 </p>
               </div>
             </div>

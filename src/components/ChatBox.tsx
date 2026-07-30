@@ -48,10 +48,10 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
   return (
     <div className="flex flex-col h-full w-full bg-white relative min-h-0">
       {/* Chat Header */}
-      <div className="flex items-center justify-between px-6 py-4 bg-[#f2f2f2] border-b-2 border-[#111111] shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-border/10 shrink-0 bg-background">
         <div className="flex items-center gap-4">
-          <div className="p-2 border-2 border-[#111111] bg-white text-[#111111]">
-            <Sparkles className="h-5 w-5 stroke-[2px]" />
+          <div className="p-2 border border-border/20 bg-[#f2f2f2] text-[#111111]">
+            <Sparkles className="h-5 w-5 stroke-1" />
           </div>
           <div>
             <h3 className="clash-title text-xl uppercase tracking-wide">Course AI Assistant</h3>
@@ -73,12 +73,12 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
           messages.map((m) => (
             <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               {m.role === 'assistant' && (
-                <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
-                  <Bot className="h-5 w-5 stroke-[2px] text-[#111111]" />
+                <div className="w-8 h-8 bg-[#f2f2f2] border border-border/20 flex items-center justify-center shrink-0">
+                  <Bot className="h-4 w-4 stroke-1 text-[#111111]" />
                 </div>
               )}
               
-              <div className={`px-5 py-4 max-w-[85%] text-sm leading-relaxed border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] ${
+              <div className={`px-5 py-4 max-w-[85%] text-sm leading-relaxed border border-border/20 ${
                 m.role === 'user' 
                   ? 'bg-[#111111] text-white' 
                   : 'bg-white text-[#111111]'
@@ -91,8 +91,8 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
               </div>
 
               {m.role === 'user' && (
-                <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
-                  <User className="h-5 w-5 stroke-[2px] text-[#111111]" />
+                <div className="w-8 h-8 bg-[#f2f2f2] border border-border/20 flex items-center justify-center shrink-0">
+                  <User className="h-4 w-4 stroke-1 text-[#111111]" />
                 </div>
               )}
             </div>
@@ -101,13 +101,13 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
         
         {isLoading && (
           <div className="flex gap-3 justify-start">
-             <div className="w-10 h-10 bg-[#f2f2f2] border-2 border-[#111111] flex items-center justify-center shrink-0">
-              <Bot className="h-5 w-5 stroke-[2px] text-[#111111] animate-pulse" />
+             <div className="w-8 h-8 bg-[#f2f2f2] border border-border/20 flex items-center justify-center shrink-0">
+              <Bot className="h-4 w-4 stroke-1 text-[#111111] animate-pulse" />
             </div>
-            <div className="px-5 py-4 bg-white text-[#111111] border-2 border-[#111111] flex items-center gap-2 shadow-[4px_4px_0px_rgba(17,17,17,1)]">
-              <span className="w-2 h-2 bg-[#111111] animate-bounce [animation-delay:-0.3s]"></span>
-              <span className="w-2 h-2 bg-[#111111] animate-bounce [animation-delay:-0.15s]"></span>
-              <span className="w-2 h-2 bg-[#111111] animate-bounce"></span>
+            <div className="px-5 py-4 bg-white text-[#111111] border border-border/20 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-[#111111] rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+              <span className="w-1.5 h-1.5 bg-[#111111] rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+              <span className="w-1.5 h-1.5 bg-[#111111] rounded-full animate-bounce"></span>
             </div>
           </div>
         )}
@@ -115,21 +115,21 @@ export function ChatBox({ courseId, courseName }: { courseId: string; courseName
       </div>
 
       {/* Chat Input */}
-      <div className="p-4 bg-[#f2f2f2] border-t-2 border-[#111111] shrink-0">
+      <div className="p-4 bg-background border-t border-border/10 shrink-0">
         <form onSubmit={handleSubmit} className="flex gap-4 relative">
           <input
             value={input}
             onChange={handleInputChange}
             placeholder="TYPE YOUR INQUIRY..."
-            className="flex-1 bg-white border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] px-4 py-3 text-sm font-bold uppercase tracking-widest text-[#111111] placeholder-[#111111]/50 focus:outline-none focus:translate-y-1 focus:shadow-[0px_0px_0px_rgba(17,17,17,1)] transition-all"
+            className="flex-1 bg-white border border-border/20 px-4 py-3 text-sm uppercase tracking-widest text-[#111111] placeholder-[#111111]/50 focus:outline-none focus:bg-[#f2f2f2] transition-colors"
             disabled={isLoading}
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-6 py-3 bg-[#111111] border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] text-white hover:bg-white hover:text-[#111111] active:translate-y-1 active:shadow-none transition-all duration-200 disabled:bg-[#e5e5e5] disabled:text-[#111111]/30 disabled:border-[#111111]/30 disabled:shadow-none"
+            className="px-6 py-3 bg-[#111111] border border-[#111111] text-white hover:bg-white hover:text-[#111111] transition-colors duration-300 disabled:bg-[#e5e5e5] disabled:text-[#111111]/30 disabled:border-transparent"
           >
-            <Send className="h-5 w-5 stroke-[2px]" />
+            <Send className="h-4 w-4 stroke-1" />
           </button>
         </form>
         <div className="text-center mt-3 text-[10px] font-bold uppercase tracking-widest text-[#111111]/50">
