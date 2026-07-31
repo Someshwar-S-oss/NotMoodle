@@ -215,35 +215,25 @@ export async function getSubmissionStatus(token: string, assignid: number): Prom
  * NOTE: This is a direct browser → Moodle upload, no server involved.
  */
 export async function uploadFileToDraft(token: string, file: File): Promise<number> {
-  // 1. Get an unused draft itemid via REST API (which supports CORS)
-  const draftData = await moodleGet(token, 'core_files_get_unused_draft_itemid')
-  const itemid = draftData?.itemid
-  
-  if (!itemid) {
-    throw new Error('Failed to get a draft itemid from Moodle.')
-  }
-
-  // 2. Upload the file to that specific itemid via upload.php.
-  // upload.php does NOT support CORS properly in some Moodle versions,
-  // so we use mode: 'no-cors'. The browser will upload the file but hide the response.
   const formData = new FormData()
-  formData.append('itemid', String(itemid))
   formData.append('file', file, file.name)
 
-  try {
-    await fetch(`${MOODLE_BASE}/webservice/upload.php?token=${token}`, {
-      method: 'POST',
-      body: formData,
-      mode: 'no-cors', // Bypass CORS read restrictions
-    })
-    // Since response is opaque, we can't check res.ok or res.json().
-    // We just assume the upload succeeded. If it failed, saveSubmission will fail later.
-  } catch (err) {
-    console.error('Upload error (could be network or CORS):', err)
-    throw new Error('Failed to upload file to Moodle.')
+  // Use our Next.js Edge proxy to bypass the University WAF blocking browser origins
+  const res = await fetch(`/api/moodle/upload?token=${token}`, {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!res.ok) {
+    const errText = await res.text()
+    throw new Error(`Upload proxy failed: ${res.status} ${errText}`)
   }
 
-  return itemid
+  const data = await res.json()
+  if (data?.error) throw new Error(data.error)
+  if (!Array.isArray(data) || !data[0]?.itemid) throw new Error('Upload failed: no itemid returned')
+
+  return data[0].itemid
 }
 
 /**

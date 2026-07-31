@@ -210,24 +210,28 @@ export default function Home() {
       ) : (
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
           {/* Hero Section */}
-          <section className="py-16 md:py-24 w-full flex flex-col justify-center relative overflow-hidden border-b border-border/10 mb-16">
+          <section className="py-16 md:py-24 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
-              className="clash-title uppercase leading-[0.8] text-center w-full"
+              className="clash-title uppercase leading-[0.8] text-center"
               style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
             >
               <span className="echo-stack" data-text="WORKSPACE">
                 WORKSPACE
               </span>
             </h1>
-            {userName && (
-              <h2
-                className="font-bold text-left w-full mt-4"
-                style={{ fontSize: "clamp(24px, 8vw, 100px)", lineHeight: 1 }}
-              >
-                Hello <i>{userName}</i>
-              </h2>
-            )}
           </section>
+
+          {/* Greeting Section */}
+          {userName && (
+            <section className="w-full mb-12">
+              <h2 className="clash-title text-4xl md:text-6xl text-left">
+                Hello,{" "}
+                <span className="font-serif italic font-normal">
+                  {userName}
+                </span>
+              </h2>
+            </section>
+          )}
 
           {/* Philosophy / Narrative Section */}
           <section className="flex flex-col items-center mb-32 relative">
