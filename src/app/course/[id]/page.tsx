@@ -124,7 +124,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
       <div className="flex items-center gap-6 p-4 md:px-8 md:py-6 border-b border-border/10 bg-background z-10 sticky top-0">
         <button 
           onClick={() => router.push('/')}
-          className="p-3 border border-border/20 bg-background hover:bg-[#f2f2f2] text-foreground transition-colors duration-300"
+          className="p-3 border border-border/20 bg-background hover:bg-background text-foreground transition-colors duration-300"
         >
           <ArrowLeft className="h-6 w-6 stroke-1" />
         </button>
@@ -146,7 +146,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                 placeholder="SEARCH LECTURES, ASSIGNMENTS, AND FILES..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background border border-border/20 pl-16 pr-6 py-5 text-sm uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none hover:bg-[#f2f2f2] transition-colors"
+                className="w-full bg-background border border-border/20 pl-16 pr-6 py-5 text-sm uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none hover:bg-background transition-colors"
               />
             </div>
 
@@ -163,9 +163,9 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
               </div>
             ) : (
               <div className="border border-border/20 bg-background">
-                <div className="px-6 py-4 border-b border-border/20 bg-[#f2f2f2] text-[#111111] flex justify-between items-center">
+                <div className="px-6 py-4 border-b border-border/20 bg-background text-foreground flex justify-between items-center">
                   <h2 className="text-xl clash-title uppercase">All Materials</h2>
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-[#111111]/50">{filteredModules.length} ITEMS</span>
+                  <span className="text-[10px] uppercase tracking-widest font-bold text-foreground/50">{filteredModules.length} ITEMS</span>
                 </div>
                 
                 <div className="divide-y divide-border/10">
@@ -177,18 +177,18 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                       
                       const InnerContent = (
                         <>
-                          <div className="p-4 border border-border/20 bg-[#f2f2f2] text-[#111111] group-hover:bg-[#111111] group-hover:text-white transition-colors duration-500">
+                          <div className="p-4 border border-border/20 bg-background text-foreground group-hover:bg-foreground group-hover:text-background transition-colors duration-500">
                             {getModuleIcon(mod.modname)}
                           </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h3 className="text-lg md:text-xl clash-title group-hover:translate-x-2 transition-transform duration-500 truncate text-[#111111]">
+                            <h3 className="text-lg md:text-xl clash-title group-hover:translate-x-2 transition-transform duration-500 truncate text-foreground">
                               {mod.name}
                             </h3>
                             <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              <span className="text-[10px] font-bold text-background bg-[#111111] px-2 py-1 uppercase tracking-widest">
+                              <span className="text-[10px] font-bold text-background bg-foreground px-2 py-1 uppercase tracking-widest">
                                 {mod.modname}
                               </span>
-                              <span className="text-[10px] font-bold text-[#111111]/50 uppercase tracking-widest border border-border/20 px-2 py-1 truncate max-w-[200px]">
+                              <span className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest border border-border/20 px-2 py-1 truncate max-w-[200px]">
                                 {mod.sectionName}
                               </span>
                             </div>
@@ -201,7 +201,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           <button
                             key={mod.id}
                             onClick={() => setSelectedMod(mod)}
-                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
+                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
                           >
                             {InnerContent}
                           </button>
@@ -220,7 +220,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                                 window.open(mod.url, '_blank')
                               }
                             }}
-                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
+                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
                           >
                             {InnerContent}
                           </button>
@@ -237,14 +237,14 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
                           href={externalLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-[#f2f2f2] transition-colors duration-500 group"
+                          className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
                         >
                           {InnerContent}
                         </a>
                       )
                     })
                   ) : (
-                    <div className="p-12 text-center text-[#111111]/50 text-xs uppercase font-bold tracking-widest">
+                    <div className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest">
                       No materials found matching "{searchQuery}"
                     </div>
                   )}
@@ -258,8 +258,8 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
         {!loading && !error && (
           <div className="fixed bottom-24 right-4 md:right-8 z-50 flex flex-col items-end">
             {isChatOpen && (
-              <div className="mb-4 w-[380px] h-[550px] min-w-[300px] min-h-[400px] max-w-[calc(100vw-2rem)] max-h-[70vh] resize border-2 border-[#111111] bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-                <div className="flex justify-between items-center p-3 border-b-2 border-[#111111] bg-[#111111] text-white">
+              <div className="mb-4 w-[380px] h-[550px] min-w-[300px] min-h-[400px] max-w-[calc(100vw-2rem)] max-h-[70vh] resize border-2 border-foreground bg-card shadow-[8px_8px_0px_var(--color-foreground)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="flex justify-between items-center p-3 border-b-2 border-foreground bg-foreground text-background">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
                     <span className="font-bold uppercase tracking-widest text-xs">Course AI</span>
@@ -276,7 +276,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
             
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`p-4 rounded-full border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(17,17,17,1)] transition-all flex items-center justify-center ${isChatOpen ? 'bg-[#111111] text-white' : 'bg-white text-[#111111]'}`}
+              className={`p-4 rounded-full border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_var(--color-foreground)] transition-all flex items-center justify-center ${isChatOpen ? 'bg-foreground text-background' : 'bg-card text-foreground'}`}
             >
               <Sparkles className="h-6 w-6" />
             </button>

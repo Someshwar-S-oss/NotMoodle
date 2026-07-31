@@ -28,10 +28,10 @@ export default async function LandingPage() {
             A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
           </p>
           <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4">
-            <Link href="/login" className="px-8 py-3 bg-[#111111] text-[#f2f2f2] font-medium uppercase tracking-widest text-sm rounded-full hover:scale-105 transition-transform duration-300 text-center w-full sm:w-auto">
+            <Link href="/login" className="px-8 py-3 bg-foreground text-background font-medium uppercase tracking-widest text-sm rounded-full hover:scale-105 transition-transform duration-300 text-center w-full sm:w-auto">
               Log In
             </Link>
-            <Link href="/signup" className="px-8 py-3 border border-[#1e1e1e] text-[#111111] font-medium uppercase tracking-widest text-sm rounded-full hover:bg-[#111111] hover:text-[#f2f2f2] transition-colors duration-300 text-center w-full sm:w-auto">
+            <Link href="/signup" className="px-8 py-3 border border-border text-foreground font-medium uppercase tracking-widest text-sm rounded-full hover:bg-foreground hover:text-background transition-colors duration-300 text-center w-full sm:w-auto">
               Sign Up
             </Link>
           </div>
@@ -78,8 +78,8 @@ export default async function LandingPage() {
             <div className="md:col-span-8 rounded-sm overflow-hidden relative group reveal-transition bg-[#e5e5e5]">
               <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
               <div className="absolute inset-0 p-8 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
-                <h3 className="clash-title text-3xl mb-2 z-10 text-white mix-blend-difference">Action Hub</h3>
-                <p className="font-medium text-white/80 z-10 mix-blend-difference">Your centralized command center.</p>
+                <h3 className="clash-title text-3xl mb-2 z-10 text-background mix-blend-difference">Action Hub</h3>
+                <p className="font-medium text-background/80 z-10 mix-blend-difference">Your centralized command center.</p>
               </div>
             </div>
 
@@ -89,7 +89,7 @@ export default async function LandingPage() {
               <div className="absolute inset-0 bg-background/40 group-hover:bg-transparent transition-colors duration-500 z-0"></div>
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10">
                 <div className="w-32 h-32 rounded-full border border-background/20 backdrop-blur-md flex flex-col items-center justify-center text-center p-4">
-                  <span className="text-xs uppercase tracking-widest font-bold text-white">Explore</span>
+                  <span className="text-xs uppercase tracking-widest font-bold text-background">Explore</span>
                 </div>
               </div>
             </div>
@@ -98,7 +98,7 @@ export default async function LandingPage() {
             <div className="md:col-span-5 rounded-full overflow-hidden relative group reveal-transition bg-[#c9c9c9] aspect-square md:aspect-auto">
               <img src="https://images.unsplash.com/photo-1604871000636-074fa5117945?q=80&w=1974&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
               <div className="absolute inset-0 p-8 flex flex-col items-center justify-center text-center bg-background/20 pointer-events-none">
-                <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">Analytics</h3>
+                <h3 className="clash-title text-2xl z-10 text-background mix-blend-difference">Analytics</h3>
               </div>
             </div>
 
@@ -106,7 +106,7 @@ export default async function LandingPage() {
             <div className="md:col-span-7 rounded-sm overflow-hidden relative group reveal-transition bg-[#bfbfbf]">
               <img src="https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=2070&auto=format&fit=crop" className="absolute inset-0 w-full h-full object-cover grayscale-hover hover-scale opacity-80" alt="Showcase" />
               <div className="absolute inset-0 p-6 flex flex-col justify-end bg-gradient-to-t from-background/90 to-transparent pointer-events-none">
-                <h3 className="clash-title text-2xl z-10 text-white mix-blend-difference">Timeline Sync</h3>
+                <h3 className="clash-title text-2xl z-10 text-background mix-blend-difference">Timeline Sync</h3>
               </div>
             </div>
           </div>
@@ -115,27 +115,27 @@ export default async function LandingPage() {
       </div>
 
       {/* Footer */}
-      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
+      <footer className="w-full bg-border text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
-            <h2 className="clash-title text-2xl text-white mb-6 uppercase">The NotMoodle</h2>
+            <h2 className="clash-title text-2xl text-background mb-6 uppercase">The NotMoodle</h2>
             <p className="text-sm font-medium leading-relaxed max-w-xs">
               A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
             </p>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Platform</h4>
-            <Link href="/login" className="hover:text-white transition-colors text-sm">Log In</Link>
-            <Link href="/signup" className="hover:text-white transition-colors text-sm">Sign Up</Link>
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Platform</h4>
+            <Link href="/login" className="hover:text-background transition-colors text-sm">Log In</Link>
+            <Link href="/signup" className="hover:text-background transition-colors text-sm">Sign Up</Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Company</h4>
-            <Link href="#" className="hover:text-white transition-colors text-sm">About</Link>
-            <Link href="#" className="hover:text-white transition-colors text-sm">Manifesto</Link>
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Company</h4>
+            <Link href="#" className="hover:text-background transition-colors text-sm">About</Link>
+            <Link href="#" className="hover:text-background transition-colors text-sm">Manifesto</Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">Contact</h4>
-            <Link href="#" className="hover:text-white transition-colors text-sm">hello@notmoodle.dev</Link>
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Contact</h4>
+            <Link href="#" className="hover:text-background transition-colors text-sm">hello@notmoodle.dev</Link>
           </div>
         </div>
       </footer>

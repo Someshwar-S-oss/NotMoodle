@@ -91,22 +91,22 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-foreground/50 border-2 border-[#111111] bg-white shadow-[4px_4px_0px_rgba(17,17,17,1)]">
-        <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-[2px] text-[#111111]" />
-        <p className="font-bold text-[#111111] uppercase tracking-widest text-sm">Syncing file securely...</p>
-        <p className="text-[10px] mt-2 font-bold uppercase tracking-widest text-[#111111]/50">Checking local cache and Moodle.</p>
+      <div className="flex flex-col items-center justify-center py-32 text-foreground/50 border-2 border-foreground bg-card shadow-[4px_4px_0px_var(--color-foreground)]">
+        <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-[2px] text-foreground" />
+        <p className="font-bold text-foreground uppercase tracking-widest text-sm">Syncing file securely...</p>
+        <p className="text-[10px] mt-2 font-bold uppercase tracking-widest text-foreground/50">Checking local cache and Moodle.</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-[#111111] text-white border-2 border-[#111111] shadow-[8px_8px_0px_rgba(17,17,17,1)] p-6">
+      <div className="flex flex-col items-center justify-center py-20 bg-foreground text-background border-2 border-foreground shadow-[8px_8px_0px_var(--color-foreground)] p-6">
         <AlertCircle className="h-12 w-12 mb-6 stroke-[2px]" />
         <p className="clash-title text-2xl uppercase text-center">{error}</p>
-        <p className="text-[10px] font-bold uppercase tracking-widest mt-2 mb-8 text-white/50">Could not load preview.</p>
+        <p className="text-[10px] font-bold uppercase tracking-widest mt-2 mb-8 text-background/50">Could not load preview.</p>
         {fallbackUrl && (
-          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 bg-white text-[#111111] hover:bg-[#f2f2f2] border-2 border-[#111111] transition-colors font-bold text-xs uppercase tracking-widest shadow-[4px_4px_0px_rgba(242,242,242,0.2)]">
+          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 bg-card text-foreground hover:bg-background border-2 border-foreground transition-colors font-bold text-xs uppercase tracking-widest shadow-[4px_4px_0px_rgba(242,242,242,0.2)]">
             <ExternalLink className="h-4 w-4 stroke-[2px]" />
             Download Original File
           </a>
@@ -117,24 +117,24 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   return (
     <div className="space-y-6 h-full">
-      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b-2 border-[#111111] pb-3">
-        <span className="text-[#111111]/60">
+      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b-2 border-foreground pb-3">
+        <span className="text-foreground/60">
           {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
         </span>
         <a 
           href={fallbackUrl || previewUrl!} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-[#111111] hover:text-[#111111]/70 transition-colors"
+          className="flex items-center gap-2 text-foreground hover:text-foreground/70 transition-colors"
         >
           <ExternalLink className="h-4 w-4 stroke-[2px]" />
           Download Direct
         </a>
       </div>
-      <div className="w-full h-[calc(100vh-180px)] bg-white border-2 border-[#111111] shadow-[8px_8px_0px_rgba(17,17,17,1)] relative overflow-hidden">
+      <div className="w-full h-[calc(100vh-180px)] bg-card border-2 border-foreground shadow-[8px_8px_0px_var(--color-foreground)] relative overflow-hidden">
         <iframe 
           src={previewUrl!} 
-          className="w-full h-full border-0 bg-white relative z-10" 
+          className="w-full h-full border-0 bg-card relative z-10" 
           title={mod.name}
         />
       </div>

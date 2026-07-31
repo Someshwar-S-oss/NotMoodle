@@ -35,11 +35,11 @@ export default function GlobalChatPage() {
 
   return (
     <main className="min-h-screen h-screen bg-background text-foreground p-4 md:p-6 flex flex-col items-center overflow-hidden">
-      <div className="w-full max-w-[1400px] flex items-center justify-between gap-6 mb-4 pb-4 border-b-4 border-[#111111] shrink-0">
+      <div className="w-full max-w-[1400px] flex items-center justify-between gap-6 mb-4 pb-4 border-b-4 border-foreground shrink-0">
         <div className="flex items-center gap-4">
           <button 
             onClick={() => router.push('/')}
-            className="p-2 border-2 border-[#111111] bg-white hover:bg-[#111111] hover:text-white transition-colors duration-200"
+            className="p-2 border-2 border-foreground bg-card hover:bg-foreground hover:text-background transition-colors duration-200"
           >
             <ArrowLeft className="h-5 w-5 stroke-[2px]" />
           </button>
@@ -48,20 +48,20 @@ export default function GlobalChatPage() {
             Global Study Chat
           </h1>
         </div>
-        <p className="hidden md:block text-xs font-bold uppercase tracking-widest text-[#111111]/60">Select a module to begin.</p>
+        <p className="hidden md:block text-xs font-bold uppercase tracking-widest text-foreground/60">Select a module to begin.</p>
       </div>
 
-      <div className="w-full max-w-[1400px] flex-1 flex flex-col md:flex-row bg-white border-2 border-[#111111] shadow-[8px_8px_0px_rgba(17,17,17,1)] min-h-0">
+      <div className="w-full max-w-[1400px] flex-1 flex flex-col md:flex-row bg-card border-2 border-foreground shadow-[8px_8px_0px_var(--color-foreground)] min-h-0">
         {loading ? (
-          <div className="flex-1 flex flex-col items-center justify-center text-foreground/50 bg-[#f2f2f2]">
-            <Loader2 className="h-10 w-10 animate-spin mb-6 text-[#111111]" strokeWidth={2} />
+          <div className="flex-1 flex flex-col items-center justify-center text-foreground/50 bg-background">
+            <Loader2 className="h-10 w-10 animate-spin mb-6 text-foreground" strokeWidth={2} />
             <p className="font-bold text-xs uppercase tracking-widest">Loading your courses...</p>
           </div>
         ) : (
           <>
             {/* Sidebar Course Selector */}
-            <div className="w-full md:w-64 lg:w-80 bg-[#f2f2f2] border-b-2 md:border-b-0 md:border-r-2 border-[#111111] flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto shrink-0 custom-scrollbar">
-              <div className="p-4 border-b-2 border-[#111111] hidden md:flex items-center gap-2 bg-[#111111] text-white">
+            <div className="w-full md:w-64 lg:w-80 bg-background border-b-2 md:border-b-0 md:border-r-2 border-foreground flex flex-row md:flex-col overflow-x-auto md:overflow-y-auto shrink-0 custom-scrollbar">
+              <div className="p-4 border-b-2 border-foreground hidden md:flex items-center gap-2 bg-foreground text-background">
                 <Book className="h-5 w-5 stroke-[2px]" />
                 <span className="clash-title text-sm uppercase tracking-wide">Modules</span>
               </div>
@@ -69,10 +69,10 @@ export default function GlobalChatPage() {
                 <button
                   key={c.id}
                   onClick={() => setSelectedCourse(c.id.toString())}
-                  className={`p-4 text-left border-b border-[#111111]/20 border-r md:border-r-0 font-bold text-xs uppercase tracking-wider shrink-0 md:shrink transition-colors ${
+                  className={`p-4 text-left border-b border-foreground/20 border-r md:border-r-0 font-bold text-xs uppercase tracking-wider shrink-0 md:shrink transition-colors ${
                     selectedCourse === c.id.toString() 
-                      ? 'bg-[#111111] text-white' 
-                      : 'bg-transparent text-[#111111] hover:bg-white'
+                      ? 'bg-foreground text-background' 
+                      : 'bg-transparent text-foreground hover:bg-card'
                   }`}
                 >
                   {c.fullname}
@@ -85,9 +85,9 @@ export default function GlobalChatPage() {
               {selectedCourse ? (
                 <ChatBox key={selectedCourse} courseId={selectedCourse} />
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-foreground/50 bg-white">
-                  <Sparkles className="h-12 w-12 mb-6 text-[#111111]" strokeWidth={2} />
-                  <p className="clash-title text-2xl text-[#111111] uppercase">Select a module to start</p>
+                <div className="flex flex-col items-center justify-center h-full text-foreground/50 bg-card">
+                  <Sparkles className="h-12 w-12 mb-6 text-foreground" strokeWidth={2} />
+                  <p className="clash-title text-2xl text-foreground uppercase">Select a module to start</p>
                 </div>
               )}
             </div>

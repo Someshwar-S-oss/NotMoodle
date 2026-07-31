@@ -25,6 +25,7 @@ export default function Home() {
   const [courses, setCourses] = useState<MoodleCourse[]>([]);
   const [allAssignments, setAllAssignments] = useState<MoodleAssignment[]>([]);
   const [moodleError, setMoodleError] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>("");
   const [selectedAssignment, setSelectedAssignment] =
     useState<MoodleAssignment | null>(null);
 
@@ -41,13 +42,19 @@ export default function Home() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("is_approved")
+      .select("is_approved, full_name")
       .eq("id", user.id)
       .maybeSingle();
 
     if (!profile || !profile.is_approved) {
       window.location.href = "/onboarding";
       return;
+    }
+
+    if (profile.full_name) {
+      setUserName(profile.full_name.split(" ")[0]);
+    } else if (user.user_metadata?.full_name) {
+      setUserName(user.user_metadata.full_name.split(" ")[0]);
     }
 
     const { data } = await supabase
@@ -203,15 +210,23 @@ export default function Home() {
       ) : (
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
           {/* Hero Section */}
-          <section className="py-16 md:py-24 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
+          <section className="py-16 md:py-24 w-full flex flex-col justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
-              className="clash-title uppercase leading-[0.8] text-center"
+              className="clash-title uppercase leading-[0.8] text-center w-full"
               style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
             >
               <span className="echo-stack" data-text="WORKSPACE">
                 WORKSPACE
               </span>
             </h1>
+            {userName && (
+              <h2
+                className="font-bold text-left w-full mt-4"
+                style={{ fontSize: "clamp(24px, 8vw, 100px)", lineHeight: 1 }}
+              >
+                Hello <i>{userName}</i>
+              </h2>
+            )}
           </section>
 
           {/* Philosophy / Narrative Section */}
@@ -304,33 +319,33 @@ export default function Home() {
                         }
                         window.location.href = `/course/${event.course?.id || ""}`;
                       }}
-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-[#f2f2f2] transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
+                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-background transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
                     >
                       {/* Date Column */}
                       <div className="md:col-span-3 flex flex-col justify-start">
-                        <div className="text-5xl clash-title font-medium leading-none text-[#111111]">
+                        <div className="text-5xl clash-title font-medium leading-none text-foreground">
                           {day}
                         </div>
-                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-[#111111]/50">
+                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-foreground/50">
                           {month} {date.getFullYear()}
                         </div>
-                        <div className="text-xs font-mono mt-4 text-[#111111]/40 uppercase">
+                        <div className="text-xs font-mono mt-4 text-foreground/40 uppercase">
                           {time}
                         </div>
                       </div>
 
                       {/* Content Column */}
                       <div className="md:col-span-8 flex flex-col justify-center">
-                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-[#111111]/50 flex items-center gap-3">
-                          <span className="w-1.5 h-1.5 bg-[#111111] rounded-full"></span>
+                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-foreground/50 flex items-center gap-3">
+                          <span className="w-1.5 h-1.5 bg-foreground rounded-full"></span>
                           {event.course?.fullname || "System Event"}
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-medium clash-title text-[#111111] group-hover:translate-x-4 transition-transform duration-500">
+                        <h3 className="text-2xl md:text-3xl font-medium clash-title text-foreground group-hover:translate-x-4 transition-transform duration-500">
                           {event.name}
                         </h3>
                         {event.description && (
                           <div
-                            className="mt-4 text-[#111111]/70 line-clamp-2 text-sm max-w-2xl font-medium"
+                            className="mt-4 text-foreground/70 line-clamp-2 text-sm max-w-2xl font-medium"
                             dangerouslySetInnerHTML={{
                               __html: event.description,
                             }}
@@ -340,7 +355,7 @@ export default function Home() {
 
                       {/* Action Column */}
                       <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-[#111111]" />
+                        <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-foreground" />
                       </div>
                     </button>
                   );
@@ -366,11 +381,11 @@ export default function Home() {
                   <Link
                     href={`/course/${course.id}`}
                     key={course.id}
-                    className="group p-8 border border-[#1e1e1e]/10 bg-transparent hover:bg-[#ffffff] transition-colors duration-500 flex flex-col justify-between min-h-[320px]"
+                    className="group p-8 border border-border/10 bg-transparent hover:bg-card transition-colors duration-500 flex flex-col justify-between min-h-[320px]"
                   >
-                    <div className="w-16 h-16 border border-[#1e1e1e]/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-[#f2f2f2]">
+                    <div className="w-16 h-16 border border-border/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-background">
                       <Icon
-                        className="w-6 h-6 text-[#111111]"
+                        className="w-6 h-6 text-foreground"
                         strokeWidth={1}
                       />
                     </div>
@@ -390,7 +405,7 @@ export default function Home() {
                 [1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="p-8 border border-border/10 animate-pulse bg-white/50 min-h-[320px]"
+                    className="p-8 border border-border/10 animate-pulse bg-card/50 min-h-[320px]"
                   ></div>
                 ))}
             </div>
@@ -399,10 +414,10 @@ export default function Home() {
       )}
 
       {/* Footer */}
-      <footer className="w-full bg-[#1e1e1e] text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
+      <footer className="w-full bg-border text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
         <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
-            <h2 className="clash-title text-2xl text-white mb-6 uppercase">
+            <h2 className="clash-title text-2xl text-background mb-6 uppercase">
               The NotMoodle
             </h2>
             <p className="text-sm font-medium leading-relaxed max-w-xs">
@@ -411,64 +426,64 @@ export default function Home() {
             </p>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
               Platform
             </h4>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               Action Hub
             </Link>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               Timeline
             </Link>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               Modules
             </Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
               Company
             </h4>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               About
             </Link>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               Manifesto
             </Link>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               Privacy Policy
             </Link>
           </div>
           <div className="flex flex-col gap-4">
-            <h4 className="text-white text-xs uppercase tracking-widest font-bold mb-2">
+            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
               Contact
             </h4>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               support@notmoodle.dev
             </Link>
             <Link
               href="#"
-              className="hover:text-white transition-colors text-sm"
+              className="hover:text-background transition-colors text-sm"
             >
               @notmoodle
             </Link>

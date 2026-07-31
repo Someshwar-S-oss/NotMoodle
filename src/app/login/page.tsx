@@ -11,7 +11,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   return (
     <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12 px-4">
-      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-white">
+      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-card">
         <h1 className="clash-title text-4xl mb-4 text-center uppercase">Log In</h1>
         {params?.error && <p className="text-[#CC0000] bg-[#CC0000]/10 p-3 text-sm font-medium border border-[#CC0000]/20">{params.error}</p>}
         {params?.message && <p className="text-foreground bg-border/10 p-3 text-sm font-medium border border-border/20">{params.message}</p>}
@@ -29,7 +29,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" type="password" name="password" placeholder="••••••••" required />
         </div>
         
-        <button formAction={login} className="bg-[#111111] text-[#f2f2f2] hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 mt-4 font-medium uppercase tracking-widest text-sm">Log In</button>
+        <button formAction={login} className="bg-foreground text-background hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 mt-4 font-medium uppercase tracking-widest text-sm">Log In</button>
         
         <div className="relative flex items-center py-2">
           <div className="flex-grow border-t border-border/20"></div>
@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="flex-grow border-t border-border/20"></div>
         </div>
 
-        <button formNoValidate formAction={signInWithGoogle} className="flex items-center justify-center gap-3 bg-white text-[#111111] border-2 border-border/20 hover:bg-[#f2f2f2] transition-colors duration-300 rounded-full px-4 py-3 font-medium uppercase tracking-widest text-sm w-full">
+        <button formNoValidate formAction={signInWithGoogle} className="flex items-center justify-center gap-3 bg-card text-foreground border-2 border-border/20 hover:bg-background transition-colors duration-300 rounded-full px-4 py-3 font-medium uppercase tracking-widest text-sm w-full">
           <svg className="w-4 h-4" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>

@@ -12,7 +12,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   const params = await searchParams;
   return (
     <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center bg-background text-foreground py-12 px-4">
-      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-white shadow-[8px_8px_0px_rgba(17,17,17,1)]">
+      <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-card shadow-[8px_8px_0px_var(--color-foreground)]">
         <div className="flex flex-col items-center gap-2 mb-4">
           <h1 className="clash-title text-4xl text-center uppercase">New Password</h1>
           <p className="text-center text-sm font-medium text-foreground/60 uppercase tracking-widest">
@@ -27,7 +27,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
           <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" name="password" type="password" placeholder="••••••••" required />
         </div>
         
-        <button formAction={updatePassword} className="bg-[#111111] text-[#f2f2f2] hover:-translate-y-1 hover:shadow-[4px_4px_0px_rgba(17,17,17,1)] transition-all duration-300 rounded-none px-4 py-3 mt-4 font-bold uppercase tracking-widest text-sm border-2 border-transparent hover:border-[#111111] hover:bg-white hover:text-[#111111]">
+        <button formAction={updatePassword} className="bg-foreground text-background hover:-translate-y-1 hover:shadow-[4px_4px_0px_var(--color-foreground)] transition-all duration-300 rounded-none px-4 py-3 mt-4 font-bold uppercase tracking-widest text-sm border-2 border-transparent hover:border-foreground hover:bg-card hover:text-foreground">
           Update Password
         </button>
       </form>

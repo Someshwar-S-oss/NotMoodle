@@ -4,14 +4,18 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { MoodleConnect } from '@/components/MoodleConnect'
 import { Copy, Check } from 'lucide-react'
+import { useTheme } from 'next-themes'
 
 export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [geminiKey, setGeminiKey] = useState('')
   const [geminiSaved, setGeminiSaved] = useState(false)
   const [calendarCopied, setCalendarCopied] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id)
@@ -53,15 +57,49 @@ export default function SettingsPage() {
             <input 
               readOnly 
               value={calendarUrl || 'Loading...'} 
-              className="flex-1 rounded-none border border-border/20 bg-white px-4 py-3 focus:outline-none font-mono text-sm text-foreground/60"
+              className="flex-1 rounded-none border border-border/20 bg-card px-4 py-3 focus:outline-none font-mono text-sm text-foreground/60"
             />
             <button 
               onClick={copyCalendarUrl}
               disabled={!calendarUrl}
-              className="bg-[#111111] text-[#f2f2f2] hover:bg-[#111111]/80 transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm flex items-center justify-center gap-2 h-full"
+              className="bg-foreground text-background hover:bg-foreground/80 transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm flex items-center justify-center gap-2 h-full"
             >
               {calendarCopied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
             </button>
+          </div>
+        </section>
+
+        <div className="hairline-divider w-full h-px bg-border/10"></div>
+
+        {/* Appearance Section */}
+        <section className="flex flex-col gap-6">
+          <div>
+            <h2 className="clash-title text-2xl uppercase mb-2">Appearance</h2>
+            <p className="text-foreground/70 font-medium">Customize the platform aesthetic to your preference.</p>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            {mounted && (
+              <>
+                <button 
+                  onClick={() => setTheme('light')}
+                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'light' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+                >
+                  Light Mode
+                </button>
+                <button 
+                  onClick={() => setTheme('dark')}
+                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'dark' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+                >
+                  Dark Mode
+                </button>
+                <button 
+                  onClick={() => setTheme('system')}
+                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'system' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+                >
+                  System
+                </button>
+              </>
+            )}
           </div>
         </section>
 
@@ -82,11 +120,11 @@ export default function SettingsPage() {
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
                 placeholder="AIzaSy..."
-                className="flex-1 rounded-none border border-border/20 bg-white px-4 py-3 focus:outline-none focus:border-border transition-colors font-mono text-sm"
+                className="flex-1 rounded-none border border-border/20 bg-card px-4 py-3 focus:outline-none focus:border-border transition-colors font-mono text-sm"
               />
               <button 
                 onClick={saveGeminiKey}
-                className="bg-transparent border border-[#1e1e1e] text-[#111111] hover:bg-[#111111] hover:text-[#f2f2f2] transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm whitespace-nowrap"
+                className="bg-transparent border border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm whitespace-nowrap"
               >
                 {geminiSaved ? 'Saved' : 'Save Key'}
               </button>

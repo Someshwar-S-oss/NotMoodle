@@ -201,7 +201,7 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators }
           complete: { scale: 1, backgroundColor: '#111111', color: '#ffffff', border: '2px solid #111111' }
         }}
         transition={{ duration: 0.3 }}
-        className="step-indicator-inner shadow-[2px_2px_0px_rgba(17,17,17,1)]"
+        className="step-indicator-inner shadow-[2px_2px_0px_var(--color-foreground)]"
       >
         {status === 'complete' ? (
           <CheckIcon className="check-icon" />

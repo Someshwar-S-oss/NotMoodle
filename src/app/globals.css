@@ -10,6 +10,14 @@
   --border: #1e1e1e;
 }
 
+.dark {
+  --background: #111111;
+  --foreground: #f2f2f2;
+  --muted: #333333;
+  --accent: #a0a0a0;
+  --border: #e1e1e1;
+}
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -51,7 +59,7 @@ body {
 .echo-stack {
   position: relative;
   display: inline-block;
-  color: #111111;
+  color: var(--foreground);
   z-index: 10;
 }
 
@@ -69,21 +77,25 @@ body {
 
 .echo-stack::before { /* layer 2 */
   transform: translate(-0.04em, -0.04em);
-  color: #bfbfbf;
+  color: var(--muted);
+  opacity: 0.8;
 }
 .echo-stack::after { /* layer 3 */
   transform: translate(-0.08em, -0.08em);
-  color: #c9c9c9;
+  color: var(--muted);
+  opacity: 0.6;
   z-index: -2;
 }
 .echo-layer-3 { /* layer 4 */
   transform: translate(-0.12em, -0.12em);
-  color: #d1d1d1;
+  color: var(--muted);
+  opacity: 0.4;
   z-index: -3;
 }
 .echo-layer-4 { /* layer 5 */
   transform: translate(-0.16em, -0.16em);
-  color: #d9d9d9;
+  color: var(--muted);
+  opacity: 0.2;
   z-index: -4;
 }
 
@@ -97,5 +109,6 @@ body {
 
 .hairline-divider {
   width: 1px;
-  background-color: rgba(30, 30, 30, 0.1);
+  background-color: var(--border);
+  opacity: 0.1;
 }

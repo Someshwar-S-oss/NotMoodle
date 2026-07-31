@@ -70,7 +70,7 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
   }
 
   return (
-    <div className="p-8 border border-border/20 bg-white flex flex-col gap-6 w-full">
+    <div className="p-8 border border-border/20 bg-card flex flex-col gap-6 w-full">
       {error && <p className="text-[#CC0000] bg-[#CC0000]/10 p-3 text-sm font-medium border border-[#CC0000]/20">{error}</p>}
       
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -82,7 +82,7 @@ export function MoodleConnect({ onConnected }: { onConnected: () => void }) {
           <label className="text-xs uppercase tracking-widest font-bold" htmlFor="moodle-password">Moodle Password</label>
           <input id="moodle-password" type="password" className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" value={password} onChange={e => setPassword(e.target.value)} required />
         </div>
-        <button disabled={loading} className="bg-[#111111] text-[#f2f2f2] disabled:opacity-50 hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 font-medium uppercase tracking-widest text-sm mt-2">
+        <button disabled={loading} className="bg-foreground text-background disabled:opacity-50 hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 font-medium uppercase tracking-widest text-sm mt-2">
           {loading ? 'Connecting...' : 'Connect Account'}
         </button>
       </form>

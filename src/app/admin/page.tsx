@@ -60,7 +60,7 @@ export default function AdminPage() {
       
       <div className="flex flex-col gap-4">
         {profiles.map(profile => (
-          <div key={profile.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 border-2 border-[#111111] bg-white shadow-[4px_4px_0px_rgba(17,17,17,1)] gap-4 transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_rgba(17,17,17,1)]">
+          <div key={profile.id} className="flex flex-col md:flex-row md:items-center justify-between p-6 border-2 border-foreground bg-card shadow-[4px_4px_0px_var(--color-foreground)] gap-4 transition-transform hover:-translate-y-1 hover:shadow-[6px_6px_0px_var(--color-foreground)]">
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg">{profile.full_name || 'No Name Provided'}</span>
@@ -73,14 +73,14 @@ export default function AdminPage() {
             
             <div className="flex items-center gap-4">
               {profile.is_superuser && (
-                <span className="text-xs uppercase tracking-widest font-bold bg-[#111111] text-white px-3 py-1">Superuser</span>
+                <span className="text-xs uppercase tracking-widest font-bold bg-foreground text-background px-3 py-1">Superuser</span>
               )}
               <button
                 onClick={() => toggleApproval(profile.id, profile.is_approved)}
-                className={`flex items-center gap-2 px-4 py-2 border-2 border-[#111111] text-xs font-bold uppercase tracking-widest transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 border-2 border-foreground text-xs font-bold uppercase tracking-widest transition-colors ${
                   profile.is_approved 
-                    ? 'bg-white text-[#111111] hover:bg-[#ff4444] hover:text-white hover:border-[#ff4444]' 
-                    : 'bg-[#111111] text-white hover:bg-white hover:text-[#111111]'
+                    ? 'bg-card text-foreground hover:bg-[#ff4444] hover:text-background hover:border-[#ff4444]' 
+                    : 'bg-foreground text-background hover:bg-card hover:text-foreground'
                 }`}
               >
                 {profile.is_approved ? <XCircle size={16} /> : <CheckCircle size={16} />}

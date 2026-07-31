@@ -31,10 +31,10 @@ export default function NotificationsPage() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'grade': return <BookOpen className="text-[#111111]" strokeWidth={1.5} />
-      case 'message': return <MessageCircle className="text-[#111111]" strokeWidth={1.5} />
-      case 'deadline': return <Clock className="text-[#111111]" strokeWidth={1.5} />
-      default: return <Bell className="text-[#111111]" strokeWidth={1.5} />
+      case 'grade': return <BookOpen className="text-foreground" strokeWidth={1.5} />
+      case 'message': return <MessageCircle className="text-foreground" strokeWidth={1.5} />
+      case 'deadline': return <Clock className="text-foreground" strokeWidth={1.5} />
+      default: return <Bell className="text-foreground" strokeWidth={1.5} />
     }
   }
 
@@ -53,12 +53,12 @@ export default function NotificationsPage() {
 
         {loading ? (
           <div className="space-y-4">
-            <div className="h-24 bg-white border border-border/20 animate-pulse"></div>
-            <div className="h-24 bg-white border border-border/20 animate-pulse"></div>
+            <div className="h-24 bg-card border border-border/20 animate-pulse"></div>
+            <div className="h-24 bg-card border border-border/20 animate-pulse"></div>
           </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center py-24 bg-white border border-border/20 flex flex-col items-center">
-            <Bell className="h-12 w-12 mb-6 text-[#111111]/30" strokeWidth={1} />
+          <div className="text-center py-24 bg-card border border-border/20 flex flex-col items-center">
+            <Bell className="h-12 w-12 mb-6 text-foreground/30" strokeWidth={1} />
             <p className="clash-title text-2xl uppercase">All caught up</p>
             <p className="text-foreground/70 font-medium mt-2">Zero pending items in the queue.</p>
           </div>
@@ -70,19 +70,19 @@ export default function NotificationsPage() {
                 className={`flex flex-col sm:flex-row sm:items-start p-6 border transition-colors duration-300 ${
                   n.is_read 
                     ? 'bg-transparent border-border/20 opacity-60 hover:opacity-100' 
-                    : 'bg-white border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,0.1)]'
+                    : 'bg-card border-foreground shadow-[4px_4px_0px_var(--color-foreground),0.1)]'
                 }`}
               >
-                <div className="mr-6 mb-4 sm:mb-0 w-12 h-12 bg-[#f2f2f2] border border-border/20 flex items-center justify-center shrink-0">
+                <div className="mr-6 mb-4 sm:mb-0 w-12 h-12 bg-background border border-border/20 flex items-center justify-center shrink-0">
                   {getIcon(n.type)}
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className={`clash-title text-xl uppercase tracking-wide ${!n.is_read ? 'text-[#111111]' : 'text-foreground/80'}`}>
+                    <h3 className={`clash-title text-xl uppercase tracking-wide ${!n.is_read ? 'text-foreground' : 'text-foreground/80'}`}>
                       {n.title}
                     </h3>
                     {!n.is_read && (
-                      <span className="bg-[#111111] text-[#f2f2f2] text-[10px] uppercase font-bold tracking-widest px-2 py-0.5">
+                      <span className="bg-foreground text-background text-[10px] uppercase font-bold tracking-widest px-2 py-0.5">
                         New
                       </span>
                     )}
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
                 {!n.is_read && (
                   <button 
                     onClick={() => markAsRead(n.id)} 
-                    className="mt-4 sm:mt-0 sm:ml-6 px-4 py-2 bg-transparent border border-[#111111] text-[#111111] hover:bg-[#111111] hover:text-[#f2f2f2] transition-colors uppercase tracking-widest text-xs font-bold shrink-0 flex items-center gap-2"
+                    className="mt-4 sm:mt-0 sm:ml-6 px-4 py-2 bg-transparent border border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors uppercase tracking-widest text-xs font-bold shrink-0 flex items-center gap-2"
                   >
                     Acknowledge <Check size={16} />
                   </button>

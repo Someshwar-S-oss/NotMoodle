@@ -51,7 +51,7 @@ export default function OnboardingPage() {
         <p className="text-foreground/70 font-medium text-center max-w-lg mb-8">
           Your request has been raised, admins will shortly approve your access.
         </p>
-        <button onClick={() => window.location.reload()} className="px-6 py-3 bg-[#111111] text-white border-2 border-[#111111] uppercase tracking-widest font-bold text-xs shadow-[4px_4px_0px_rgba(17,17,17,1)] hover:bg-white hover:text-[#111111] transition-all">
+        <button onClick={() => window.location.reload()} className="px-6 py-3 bg-foreground text-background border-2 border-foreground uppercase tracking-widest font-bold text-xs shadow-[4px_4px_0px_var(--color-foreground)] hover:bg-card hover:text-foreground transition-all">
           Refresh Status
         </button>
       </div>
@@ -90,7 +90,7 @@ export default function OnboardingPage() {
                   value={geminiKey} 
                   onChange={(e) => setGeminiKey(e.target.value)} 
                   placeholder="AIzaSy..." 
-                  className="rounded-none border-2 border-[#111111] bg-white px-4 py-3 focus:outline-none focus:translate-y-1 focus:shadow-none shadow-[4px_4px_0px_rgba(17,17,17,1)] transition-all font-medium"
+                  className="rounded-none border-2 border-foreground bg-card px-4 py-3 focus:outline-none focus:translate-y-1 focus:shadow-none shadow-[4px_4px_0px_var(--color-foreground)] transition-all font-medium"
                 />
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function OnboardingPage() {
                 Connect your university Moodle account. We encrypt your token and communicate directly with the server.
               </p>
               {hasMoodle ? (
-                <div className="w-full p-4 bg-[#111111] text-white font-bold uppercase tracking-widest text-center border-2 border-[#111111] shadow-[4px_4px_0px_rgba(17,17,17,1)]">
+                <div className="w-full p-4 bg-foreground text-background font-bold uppercase tracking-widest text-center border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)]">
                   Moodle Connected Successfully!
                 </div>
               ) : (
