@@ -209,86 +209,53 @@ export async function getSubmissionStatus(token: string, assignid: number): Prom
 
 // ─── File Upload + Submission ─────────────────────────────────────────────────
 
+import { createClient } from '@/utils/supabase/client'
+
 /**
- * Upload a file to Moodle's draft area.
- * Returns the itemid needed for mod_assign_save_submission.
- * NOTE: This is a direct browser → Moodle upload, no server involved.
+ * Upload a file to Moodle's draft area using Supabase as a staging ground.
+ * This completely bypasses:
+ * 1. Vercel's 4.5MB payload limit (we upload directly to Supabase Storage up to 50MB).
+ * 2. Sriher's WAF (the browser Origin is blocked, but our Vercel backend impersonates Postman).
+ * 3. CORS restrictions (Vercel backend parses the response).
  */
 export async function uploadFileToDraft(token: string, file: File): Promise<number> {
-  // 1. Get an unused draft itemid via REST API (which supports CORS)
-  const draftData = await moodleGet(token, 'core_files_get_unused_draft_itemid')
-  const itemid = draftData?.itemid
-  
-  if (!itemid) {
-    throw new Error('Failed to get a draft itemid from Moodle.')
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Must be logged in to upload.')
+
+  // 1. Stage the file in Supabase Storage
+  const filepath = `${user.id}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+  const { error: uploadError } = await supabase.storage
+    .from('submissions')
+    .upload(filepath, file)
+
+  if (uploadError) {
+    throw new Error(`Failed to stage file in Supabase: ${uploadError.message}`)
   }
 
-  // 2. Upload the file using a hidden iframe.
-  // This bypasses Vercel's 4.5MB payload limit (because the browser uploads directly to Moodle)
-  // and bypasses the WAF 403 errors (because it looks like a standard form submission, not a no-cors fetch).
-  await new Promise<void>((resolve, reject) => {
-    const iframeName = 'moodle_upload_iframe_' + Date.now()
-    const iframe = document.createElement('iframe')
-    iframe.name = iframeName
-    iframe.style.display = 'none'
-    document.body.appendChild(iframe)
-
-    const form = document.createElement('form')
-    form.method = 'POST'
-    form.action = `${MOODLE_BASE}/webservice/upload.php?token=${token}`
-    form.enctype = 'multipart/form-data'
-    form.target = iframeName
-    form.style.display = 'none'
-
-    const itemidInput = document.createElement('input')
-    itemidInput.type = 'hidden'
-    itemidInput.name = 'itemid'
-    itemidInput.value = String(itemid)
-    form.appendChild(itemidInput)
-
-    const fileInput = document.createElement('input')
-    fileInput.type = 'file'
-    fileInput.name = 'file'
-    
-    // Attach the file to the input using DataTransfer
-    const dt = new DataTransfer()
-    dt.items.add(file)
-    fileInput.files = dt.files
-    form.appendChild(fileInput)
-
-    document.body.appendChild(form)
-
-    let handled = false
-    const cleanup = () => {
-      if (handled) return
-      handled = true
-      setTimeout(() => {
-        if (document.body.contains(form)) document.body.removeChild(form)
-        if (document.body.contains(iframe)) document.body.removeChild(iframe)
-      }, 1000)
-    }
-
-    // When the iframe finishes loading, the upload is complete.
-    // Due to CORS, we can't read the response, so we just assume success.
-    iframe.onload = () => {
-      cleanup()
-      resolve()
-    }
-    
-    iframe.onerror = () => {
-      cleanup()
-      reject(new Error('Iframe upload failed due to network error'))
-    }
-
-    try {
-      form.submit()
-    } catch (e) {
-      cleanup()
-      reject(e)
-    }
+  // 2. Trigger the Vercel backend to stream the file from Supabase to Moodle
+  const res = await fetch('/api/moodle/upload-from-supabase', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token,
+      filepath,
+      filename: file.name
+    })
   })
 
-  return itemid
+  if (!res.ok) {
+    const errText = await res.text()
+    // Fallback cleanup in case the backend crashed before deleting
+    await supabase.storage.from('submissions').remove([filepath]).catch(() => {})
+    throw new Error(`Upload proxy failed: ${res.status} ${errText}`)
+  }
+
+  const data = await res.json()
+  if (data?.error) throw new Error(data.error)
+  if (!Array.isArray(data) || !data[0]?.itemid) throw new Error('Upload failed: no itemid returned from Moodle')
+
+  return data[0].itemid
 }
 
 /**
