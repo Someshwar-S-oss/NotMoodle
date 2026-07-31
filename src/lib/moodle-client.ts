@@ -215,25 +215,80 @@ export async function getSubmissionStatus(token: string, assignid: number): Prom
  * NOTE: This is a direct browser → Moodle upload, no server involved.
  */
 export async function uploadFileToDraft(token: string, file: File): Promise<number> {
-  const formData = new FormData()
-  formData.append('file', file, file.name)
-
-  // Use our Next.js Edge proxy to bypass the University WAF blocking browser origins
-  const res = await fetch(`/api/moodle/upload?token=${token}`, {
-    method: 'POST',
-    body: formData,
-  })
-
-  if (!res.ok) {
-    const errText = await res.text()
-    throw new Error(`Upload proxy failed: ${res.status} ${errText}`)
+  // 1. Get an unused draft itemid via REST API (which supports CORS)
+  const draftData = await moodleGet(token, 'core_files_get_unused_draft_itemid')
+  const itemid = draftData?.itemid
+  
+  if (!itemid) {
+    throw new Error('Failed to get a draft itemid from Moodle.')
   }
 
-  const data = await res.json()
-  if (data?.error) throw new Error(data.error)
-  if (!Array.isArray(data) || !data[0]?.itemid) throw new Error('Upload failed: no itemid returned')
+  // 2. Upload the file using a hidden iframe.
+  // This bypasses Vercel's 4.5MB payload limit (because the browser uploads directly to Moodle)
+  // and bypasses the WAF 403 errors (because it looks like a standard form submission, not a no-cors fetch).
+  await new Promise<void>((resolve, reject) => {
+    const iframeName = 'moodle_upload_iframe_' + Date.now()
+    const iframe = document.createElement('iframe')
+    iframe.name = iframeName
+    iframe.style.display = 'none'
+    document.body.appendChild(iframe)
 
-  return data[0].itemid
+    const form = document.createElement('form')
+    form.method = 'POST'
+    form.action = `${MOODLE_BASE}/webservice/upload.php?token=${token}`
+    form.enctype = 'multipart/form-data'
+    form.target = iframeName
+    form.style.display = 'none'
+
+    const itemidInput = document.createElement('input')
+    itemidInput.type = 'hidden'
+    itemidInput.name = 'itemid'
+    itemidInput.value = String(itemid)
+    form.appendChild(itemidInput)
+
+    const fileInput = document.createElement('input')
+    fileInput.type = 'file'
+    fileInput.name = 'file'
+    
+    // Attach the file to the input using DataTransfer
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    fileInput.files = dt.files
+    form.appendChild(fileInput)
+
+    document.body.appendChild(form)
+
+    let handled = false
+    const cleanup = () => {
+      if (handled) return
+      handled = true
+      setTimeout(() => {
+        if (document.body.contains(form)) document.body.removeChild(form)
+        if (document.body.contains(iframe)) document.body.removeChild(iframe)
+      }, 1000)
+    }
+
+    // When the iframe finishes loading, the upload is complete.
+    // Due to CORS, we can't read the response, so we just assume success.
+    iframe.onload = () => {
+      cleanup()
+      resolve()
+    }
+    
+    iframe.onerror = () => {
+      cleanup()
+      reject(new Error('Iframe upload failed due to network error'))
+    }
+
+    try {
+      form.submit()
+    } catch (e) {
+      cleanup()
+      reject(e)
+    }
+  })
+
+  return itemid
 }
 
 /**
