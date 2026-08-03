@@ -211,8 +211,8 @@ export default function Home() {
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
           {/* Greeting Section */}
           {userName && (
-            <section className="w-full pt-16 flex justify-center">
-              <h2 className="clash-title text-2xl md:text-3xl text-center">
+            <section className="w-full mt-12 mb-8">
+              <h2 className="clash-title text-4xl md:text-6xl text-left">
                 Hello,{" "}
                 <span className="font-serif italic font-normal">
                   {userName}
@@ -222,7 +222,7 @@ export default function Home() {
           )}
 
           {/* Hero Section */}
-          <section className="pb-16 pt-8 md:pb-24 md:pt-12 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
+          <section className="pb-16 pt-4 md:pb-24 md:pt-8 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
               className="clash-title uppercase leading-[0.8] text-center"
               style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
