@@ -34,6 +34,12 @@ export default async function RootLayout({
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let isApproved = false;
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('is_approved').eq('id', user.id).maybeSingle();
+    isApproved = !!profile?.is_approved;
+  }
+
   return (
     <html
       lang="en"
@@ -72,7 +78,7 @@ export default async function RootLayout({
             <div className="flex-1">
               {children}
             </div>
-            {user && <NavigationDock />}
+            {isApproved && <NavigationDock />}
           </div>
           <CommandMenu />
         </ThemeProvider>

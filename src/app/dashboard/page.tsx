@@ -209,8 +209,20 @@ export default function Home() {
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
+          {/* Greeting Section */}
+          {userName && (
+            <section className="w-full pt-16 flex justify-center">
+              <h2 className="clash-title text-2xl md:text-3xl text-center">
+                Hello,{" "}
+                <span className="font-serif italic font-normal">
+                  {userName}
+                </span>
+              </h2>
+            </section>
+          )}
+
           {/* Hero Section */}
-          <section className="py-16 md:py-24 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
+          <section className="pb-16 pt-8 md:pb-24 md:pt-12 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
             <h1
               className="clash-title uppercase leading-[0.8] text-center"
               style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
@@ -220,18 +232,6 @@ export default function Home() {
               </span>
             </h1>
           </section>
-
-          {/* Greeting Section */}
-          {userName && (
-            <section className="w-full mb-12">
-              <h2 className="clash-title text-4xl md:text-6xl text-left">
-                Hello,{" "}
-                <span className="font-serif italic font-normal">
-                  {userName}
-                </span>
-              </h2>
-            </section>
-          )}
 
           {/* Philosophy / Narrative Section */}
           <section className="flex flex-col items-center mb-32 relative">
@@ -416,84 +416,6 @@ export default function Home() {
           </section>
         </div>
       )}
-
-      {/* Footer */}
-      <footer className="w-full bg-border text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div>
-            <h2 className="clash-title text-2xl text-background mb-6 uppercase">
-              The NotMoodle
-            </h2>
-            <p className="text-sm font-medium leading-relaxed max-w-xs">
-              A sophisticated synthesis of academic workflows, emphasizing
-              typographic clarity and minimal resistance.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
-              Platform
-            </h4>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              Action Hub
-            </Link>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              Timeline
-            </Link>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              Modules
-            </Link>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
-              Company
-            </h4>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              About
-            </Link>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              Manifesto
-            </Link>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              Privacy Policy
-            </Link>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">
-              Contact
-            </h4>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              support@notmoodle.dev
-            </Link>
-            <Link
-              href="#"
-              className="hover:text-background transition-colors text-sm"
-            >
-              @notmoodle
-            </Link>
-          </div>
-        </div>
-      </footer>
 
       <Drawer
         isOpen={!!selectedAssignment}

@@ -8,6 +8,7 @@
   --muted: #d9d9d9;
   --accent: #838282;
   --border: #1e1e1e;
+  --card: #f2f2f2;
 }
 
 .dark {
@@ -16,6 +17,7 @@
   --muted: #333333;
   --accent: #a0a0a0;
   --border: #e1e1e1;
+  --card: #111111;
 }
 
 @theme {
@@ -24,6 +26,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-border: var(--border);
+  --color-card: var(--card);
   --font-serif: 'Clash Display', sans-serif;
   --font-sans: 'Satoshi', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;

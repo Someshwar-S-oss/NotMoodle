@@ -57,7 +57,7 @@ export default function Stepper({
 
   return (
     <div className="outer-container" {...rest}>
-      <div className={`step-circle-container ${stepCircleContainerClassName}`} style={{ border: '2px solid #111111' }}>
+      <div className={`step-circle-container ${stepCircleContainerClassName}`} style={{ border: '2px solid var(--border)' }}>
         <div className={`step-indicator-row ${stepContainerClassName}`}>
           {stepsArray.map((_, index) => {
             const stepNumber = index + 1;
@@ -196,9 +196,9 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators }
     <motion.div onClick={handleClick} className="step-indicator" style={disableStepIndicators ? { pointerEvents: 'none', opacity: 0.5 } : {}} animate={status} initial={false}>
       <motion.div
         variants={{
-          inactive: { scale: 1, backgroundColor: '#f2f2f2', color: '#111111', border: '2px solid #111111' },
-          active: { scale: 1, backgroundColor: '#111111', color: '#ffffff', border: '2px solid #111111' },
-          complete: { scale: 1, backgroundColor: '#111111', color: '#ffffff', border: '2px solid #111111' }
+          inactive: { scale: 1, backgroundColor: 'var(--background)', color: 'var(--foreground)', border: '2px solid var(--foreground)' },
+          active: { scale: 1, backgroundColor: 'var(--foreground)', color: 'var(--background)', border: '2px solid var(--foreground)' },
+          complete: { scale: 1, backgroundColor: 'var(--foreground)', color: 'var(--background)', border: '2px solid var(--foreground)' }
         }}
         transition={{ duration: 0.3 }}
         className="step-indicator-inner shadow-[2px_2px_0px_var(--color-foreground)]"
@@ -206,7 +206,7 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators }
         {status === 'complete' ? (
           <CheckIcon className="check-icon" />
         ) : status === 'active' ? (
-          <div className="active-dot" style={{ backgroundColor: '#ffffff' }} />
+          <div className="active-dot" style={{ backgroundColor: 'var(--background)' }} />
         ) : (
           <span className="step-number clash-title">{step}</span>
         )}
@@ -218,7 +218,7 @@ function StepIndicator({ step, currentStep, onClickStep, disableStepIndicators }
 function StepConnector({ isComplete }: any) {
   const lineVariants = {
     incomplete: { width: 0, backgroundColor: 'transparent' },
-    complete: { width: '100%', backgroundColor: '#111111' }
+    complete: { width: '100%', backgroundColor: 'var(--foreground)' }
   };
 
   return (

@@ -114,31 +114,6 @@ export default async function LandingPage() {
 
       </div>
 
-      {/* Footer */}
-      <footer className="w-full bg-border text-[#f6f6f6]/60 py-16 px-4 md:px-12 border-t border-white/5">
-        <div className="max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div>
-            <h2 className="clash-title text-2xl text-background mb-6 uppercase">The NotMoodle</h2>
-            <p className="text-sm font-medium leading-relaxed max-w-xs">
-              A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
-            </p>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Platform</h4>
-            <Link href="/login" className="hover:text-background transition-colors text-sm">Log In</Link>
-            <Link href="/signup" className="hover:text-background transition-colors text-sm">Sign Up</Link>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Company</h4>
-            <Link href="#" className="hover:text-background transition-colors text-sm">About</Link>
-            <Link href="#" className="hover:text-background transition-colors text-sm">Manifesto</Link>
-          </div>
-          <div className="flex flex-col gap-4">
-            <h4 className="text-background text-xs uppercase tracking-widest font-bold mb-2">Contact</h4>
-            <Link href="#" className="hover:text-background transition-colors text-sm">hello@notmoodle.dev</Link>
-          </div>
-        </div>
-      </footer>
     </main>
   )
 }

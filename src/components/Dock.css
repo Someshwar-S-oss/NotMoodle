@@ -15,12 +15,12 @@
   width: fit-content;
   gap: 1rem;
   border-radius: 0;
-  background-color: rgba(255, 255, 255, 0.95);
+  background-color: var(--background);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(17, 17, 17, 0.2);
+  border: 1px solid var(--border);
   padding: 0 0.5rem 0.5rem;
   z-index: 100;
-  box-shadow: 4px 4px 0px rgba(17, 17, 17, 0.1);
+  box-shadow: 4px 4px 0px var(--border);
 }
 
 .dock-item {
@@ -29,17 +29,17 @@
   align-items: center;
   justify-content: center;
   border-radius: 0;
-  background-color: #f2f2f2;
-  border: 1px solid rgba(17, 17, 17, 0.2);
+  background-color: var(--background);
+  border: 1px solid var(--border);
   cursor: pointer;
   outline: none;
-  color: #111111;
+  color: var(--foreground);
   transition: background-color 0.3s ease;
 }
 
 .dock-item:hover {
-  background-color: #ffffff;
-  border-color: #111111;
+  background-color: var(--muted);
+  border-color: var(--foreground);
 }
 
 .dock-icon {
@@ -55,13 +55,13 @@
   width: fit-content;
   white-space: pre;
   border-radius: 0;
-  border: 1px solid #111111;
-  background-color: #111111;
+  border: 1px solid var(--foreground);
+  background-color: var(--foreground);
   padding: 0.375rem 0.875rem;
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #f2f2f2;
+  color: var(--background);
   transform: translateX(-50%);
 }
