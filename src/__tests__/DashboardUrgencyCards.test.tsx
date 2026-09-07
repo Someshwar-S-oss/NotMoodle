@@ -110,9 +110,9 @@ describe('Dashboard Urgency Metric Cards & Interactive Filtering', () => {
     expect(screen.getByText('TACKLE TODAY')).toBeInTheDocument();
     expect(screen.getByText('ON SCHEDULE')).toBeInTheDocument();
 
-    expect(screen.getByText('Overdue')).toBeInTheDocument();
-    expect(screen.getByText('Due Today')).toBeInTheDocument();
-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Overdue' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Due Today' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: 'Upcoming' })).toBeInTheDocument();
   });
 
   it('displays dynamic greeting subtitle based on overdue items', async () => {

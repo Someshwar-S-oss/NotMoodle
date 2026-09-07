@@ -16,6 +16,7 @@ import {
   Clock,
   Calendar,
   X,
+  CheckCircle2,
 } from "lucide-react";
 import {
   getSiteInfo,
@@ -27,6 +28,11 @@ import {
   type MoodleAssignment,
   type MoodleTimelineEvent,
 } from "@/lib/moodle-client";
+import {
+  getRelativeTimeBadge,
+  extractCourseCode,
+  getCourseAccent,
+} from "@/lib/dashboard-utils";
 
 export default function Home() {
   const [loading, setLoading] = useState(true);
@@ -231,6 +237,18 @@ export default function Home() {
     return events;
   }, [activeFilter, overdue, today, upcoming, events]);
 
+  // Compute pending assignment/deadline count for each course
+  const coursePendingCounts = useMemo(() => {
+    const counts: Record<number, number> = {};
+    events.forEach((event) => {
+      const cid = event.course?.id;
+      if (cid) {
+        counts[cid] = (counts[cid] || 0) + 1;
+      }
+    });
+    return counts;
+  }, [events]);
+
   return (
     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
       {loading ? (
@@ -352,7 +370,7 @@ export default function Home() {
           </section>
 
           {/* Timeline */}
-          <section className="mb-16">
+          <section className="mb-16" aria-label="Deadline timeline">
             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
               <div className="flex flex-wrap items-center gap-4">
                 <h2 className="clash-title text-3xl uppercase">Timeline</h2>
@@ -390,10 +408,29 @@ export default function Home() {
 
             <div className="flex flex-col border-t border-border/20">
               {displayedEvents.length === 0 ? (
-                <div className="py-16 text-center font-medium text-secondary">
-                  {activeFilter !== "all"
-                    ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
-                    : "No upcoming deadlines. You're all clear!"}
+                <div className="py-16 px-6 my-4 text-center rounded-2xl border border-dashed border-border/40 bg-card/40 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-[var(--status-success-bg)] text-[var(--status-success)] flex items-center justify-center mb-4">
+                    <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
+                  </div>
+                  <h3 className="clash-title text-xl md:text-2xl font-medium text-foreground mb-2">
+                    {activeFilter !== "all"
+                      ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
+                      : "No deadlines here — you're all set!"}
+                  </h3>
+                  <p className="text-sm text-secondary max-w-md mb-6">
+                    {activeFilter !== "all"
+                      ? "Check your other urgency views or clear the filter to see all upcoming coursework."
+                      : "You've tackled everything on your schedule. Take a breather or explore your enrolled modules."}
+                  </p>
+                  {activeFilter !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilter("all")}
+                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
+                    >
+                      Show all deadlines
+                    </button>
+                  )}
                 </div>
               ) : (
                 displayedEvents.map((event) => {
@@ -406,50 +443,79 @@ export default function Home() {
                     hour: "2-digit",
                     minute: "2-digit",
                   });
+                  
                   const isAssignment = event.eventtype === "assign";
+                  const matchingAssignment = allAssignments.find(
+                    (a) => a.id === event.instance || (event.id > 0 && a.id === event.id),
+                  );
+
+                  const badge = getRelativeTimeBadge(event.timestart);
+                  const badgeVariantStyles =
+                    badge.variant === "overdue"
+                      ? "bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)]"
+                      : badge.variant === "today"
+                        ? "bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] text-[var(--urgency-today)]"
+                        : "bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)]";
+
+                  const handleItemClick = () => {
+                    if (matchingAssignment) {
+                      setSelectedAssignment(matchingAssignment);
+                      return;
+                    }
+                    if (event.course?.id) {
+                      window.location.href = `/course/${event.course.id}`;
+                    }
+                  };
 
                   return (
-                    <button
+                    <div
                       key={event.id}
-                      onClick={() => {
-                        if (isAssignment) {
-                          const assignmentData = allAssignments.find(
-                            (a) => a.id === event.instance,
-                          );
-                          if (assignmentData) {
-                            setSelectedAssignment(assignmentData);
-                            return;
-                          }
+                      onClick={handleItemClick}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleItemClick();
                         }
-                        window.location.href = `/course/${event.course?.id || ""}`;
                       }}
-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-background transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
+                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-card/40 transition-colors duration-300 text-left px-4 md:px-6 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-lg"
                     >
                       {/* Date Column */}
-                      <div className="md:col-span-3 flex flex-col justify-start">
-                        <div className="text-5xl clash-title font-medium leading-none text-foreground">
-                          {day}
+                      <div className="md:col-span-3 flex flex-col justify-start items-start">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-5xl clash-title font-medium leading-none text-foreground">
+                            {day}
+                          </span>
+                          <span className="text-sm font-bold tracking-widest uppercase text-tertiary">
+                            {month} {date.getFullYear()}
+                          </span>
                         </div>
-                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-tertiary">
-                          {month} {date.getFullYear()}
-                        </div>
-                        <div className="text-xs font-mono mt-4 text-tertiary uppercase">
+                        <div className="text-xs font-mono mt-2 text-tertiary uppercase">
                           {time}
+                        </div>
+                        {/* Countdown Badge */}
+                        <div className="mt-3">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border shadow-2xs ${badgeVariantStyles}`}
+                          >
+                            {badge.label}
+                          </span>
                         </div>
                       </div>
 
                       {/* Content Column */}
-                      <div className="md:col-span-8 flex flex-col justify-center">
-                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-tertiary flex items-center gap-3">
-                          <span className="w-1.5 h-1.5 bg-foreground rounded-full"></span>
-                          {event.course?.fullname || "System Event"}
+                      <div className="md:col-span-7 flex flex-col justify-center">
+                        <div className="text-xs font-bold tracking-widest uppercase mb-2 text-tertiary flex items-center gap-2">
+                          <span className="w-2 h-2 bg-foreground/60 rounded-full shrink-0"></span>
+                          <span className="truncate">{event.course?.fullname || "System Event"}</span>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-medium clash-title text-foreground group-hover:translate-x-4 transition-transform duration-500">
+                        <h3 className="text-xl md:text-2xl font-medium clash-title text-foreground group-hover:translate-x-1.5 transition-transform duration-300">
                           {event.name}
                         </h3>
                         {event.description && (
                           <div
-                            className="mt-4 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
+                            className="mt-2 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
                             dangerouslySetInnerHTML={{
                               __html: event.description,
                             }}
@@ -458,19 +524,24 @@ export default function Home() {
                       </div>
 
                       {/* Action Column */}
-                      <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-foreground" />
+                      <div className="md:col-span-2 flex items-center justify-end">
+                        <span
+                          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card transition-all duration-300 shadow-2xs"
+                        >
+                          <span>View Details</span>
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
+                        </span>
                       </div>
-                    </button>
+                    </div>
                   );
                 })
               )}
             </div>
           </section>
 
-          {/* Bespoke Service Cards */}
-          <section className="mb-16">
-            <div className="flex items-center gap-6 mb-12">
+          {/* Enrolled Course Modules */}
+          <section className="mb-16" aria-label="Enrolled courses">
+            <div className="flex items-center gap-6 mb-8">
               <h2 className="clash-title text-3xl uppercase">
                 Enrolled Modules
               </h2>
@@ -481,25 +552,61 @@ export default function Home() {
               {courses.map((course, i) => {
                 const Icon =
                   i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
+                const accent = getCourseAccent(course.id, i);
+                const courseCode = extractCourseCode(course.shortname, course.fullname);
+                const pendingCount = coursePendingCounts[course.id] || 0;
+
                 return (
                   <Link
                     href={`/course/${course.id}`}
                     key={course.id}
-                    className="group p-8 border border-border/10 bg-transparent hover:bg-card transition-colors duration-500 flex flex-col justify-between min-h-[320px]"
+                    className="group relative flex flex-col justify-between min-h-[300px] p-7 rounded-xl border border-border/20 bg-card/60 hover:bg-card hover:-translate-y-1 hover:shadow-md transition-all duration-300 overflow-hidden"
                   >
-                    <div className="w-16 h-16 border border-border/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-background">
-                      <Icon
-                        className="w-6 h-6 text-foreground"
-                        strokeWidth={1}
-                      />
-                    </div>
+                    {/* Top Accent Ribbon */}
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1.5 transition-opacity"
+                      style={{ backgroundColor: accent.hex }}
+                      aria-hidden="true"
+                    />
+
                     <div>
-                      <h3 className="clash-title text-2xl mb-4 line-clamp-2">
+                      {/* Card Header with Icon and Course Code Badge */}
+                      <div className="flex items-center justify-between gap-3 mb-6">
+                        <div className="w-12 h-12 rounded-lg border border-border/30 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-background shadow-2xs">
+                          <Icon
+                            className="w-5 h-5 text-foreground"
+                            strokeWidth={1.5}
+                          />
+                        </div>
+                        <span className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30">
+                          {courseCode}
+                        </span>
+                      </div>
+
+                      {/* Course Title */}
+                      <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
                         {course.fullname}
                       </h3>
-                      <div className="flex items-center gap-2 uppercase tracking-widest font-bold text-xs">
-                        Enter Module <ArrowRight className="w-4 h-4" />
-                      </div>
+                    </div>
+
+                    {/* Footer: Pending Deadlines Badge & Enter action */}
+                    <div className="pt-6 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
+                      {pendingCount > 0 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          {pendingCount} {pendingCount === 1 ? "deadline pending" : "deadlines pending"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
+                          <CheckCircle2 className="w-3 h-3 shrink-0" />
+                          All clear
+                        </span>
+                      )}
+
+                      <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-secondary group-hover:text-foreground transition-colors">
+                        <span>Enter</span>
+                        <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
+                      </span>
                     </div>
                   </Link>
                 );
@@ -509,7 +616,7 @@ export default function Home() {
                 [1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="p-8 border border-border/10 animate-pulse bg-card/50 min-h-[320px]"
+                    className="p-8 border border-border/10 rounded-xl animate-pulse bg-card/50 min-h-[300px]"
                   ></div>
                 ))}
             </div>
