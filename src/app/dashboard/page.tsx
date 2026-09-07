@@ -6,7 +6,17 @@ import { MoodleConnect } from "@/components/MoodleConnect";
 import { Drawer } from "@/components/Drawer";
 import { AssignmentDetails } from "@/components/AssignmentDetails";
 import { createClient } from "@/utils/supabase/client";
-import { ArrowRight, Hexagon, Circle, Square, Triangle } from "lucide-react";
+import {
+  ArrowRight,
+  Hexagon,
+  Circle,
+  Square,
+  Triangle,
+  AlertCircle,
+  Clock,
+  Calendar,
+  X,
+} from "lucide-react";
 import {
   getSiteInfo,
   getCurrentCourses,
@@ -93,7 +103,7 @@ export default function Home() {
         return;
       }
       if (!tokenRes.ok) {
-        setMoodleError("Not connected to Moodle.");
+        setMoodleError("Connect to Moodle to see your courses.");
         setLoading(false);
         return;
       }
@@ -180,12 +190,16 @@ export default function Home() {
   const formatDate = (ts: number) =>
     ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
 
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "overdue" | "today" | "upcoming"
+  >("all");
+
   const { overdue, today, upcoming } = useMemo(() => {
     const now = Date.now();
     const buckets = {
-      overdue: [] as any[],
-      today: [] as any[],
-      upcoming: [] as any[],
+      overdue: [] as MoodleTimelineEvent[],
+      today: [] as MoodleTimelineEvent[],
+      upcoming: [] as MoodleTimelineEvent[],
     };
 
     events.forEach((e) => {
@@ -200,103 +214,189 @@ export default function Home() {
     return buckets;
   }, [events]);
 
+  const greetingSubtitle = useMemo(() => {
+    if (overdue.length > 0) {
+      return `Action required: You have ${overdue.length} overdue ${overdue.length === 1 ? "item" : "items"}.`;
+    }
+    if (today.length > 0) {
+      return `Focus mode: ${today.length} ${today.length === 1 ? "deadline" : "deadlines"} scheduled today.`;
+    }
+    return "Clear horizon: You're all caught up on submissions.";
+  }, [overdue.length, today.length]);
+
+  const displayedEvents = useMemo(() => {
+    if (activeFilter === "overdue") return overdue;
+    if (activeFilter === "today") return today;
+    if (activeFilter === "upcoming") return upcoming;
+    return events;
+  }, [activeFilter, overdue, today, upcoming, events]);
+
   return (
     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
       {loading ? (
-        <div className="flex h-[70vh] w-full flex-col items-center justify-center gap-6">
-          <img src="/notmoodlelogo.png" alt="Loading..." className="h-20 w-auto object-contain animate-pulse" />
-          <span className="text-xs uppercase tracking-widest font-bold text-foreground/50 animate-pulse">Synthesizing...</span>
+        <div className="flex h-[70vh] w-full flex-col items-center justify-center gap-6" aria-live="polite" aria-busy="true">
+          <img src="/notmoodlelogo.png" alt="Loading your workspace..." className="h-20 w-auto object-contain animate-pulse" />
+          <span className="text-xs uppercase tracking-widest font-bold animate-pulse">Loading your workspace...</span>
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
           {/* Greeting Section */}
-          {userName && (
-            <section className="w-full mt-12 mb-8">
-              <h2 className="clash-title text-4xl md:text-6xl text-left">
-                Hello,{" "}
-                <span className="font-serif italic font-normal">
-                  {userName}
-                </span>
-              </h2>
-            </section>
-          )}
-
-          {/* Hero Section */}
-          <section className="pb-16 pt-4 md:pb-24 md:pt-8 w-full flex items-center justify-center relative overflow-hidden border-b border-border/10 mb-16">
-            <h1
-              className="clash-title uppercase leading-[0.8] text-center"
-              style={{ fontSize: "clamp(40px, 13vw, 180px)" }}
-            >
-              <span className="echo-stack" data-text="WORKSPACE">
-                WORKSPACE
-              </span>
-            </h1>
-          </section>
-
-          {/* Philosophy / Narrative Section */}
-          <section className="flex flex-col items-center mb-32 relative">
-            <div className="hairline-divider h-24 mb-12"></div>
-            <h2 className="clash-title text-3xl md:text-6xl text-center max-w-4xl mb-16 md:mb-24">
-              Your academic life,{" "}
+          <section className="w-full mt-12 mb-8">
+            <h2 className="clash-title text-4xl md:text-6xl text-left">
+              Hello{userName ? `, ` : ""}{" "}
               <span className="font-serif italic font-normal">
-                synthesized.
+                {userName || "there"}
               </span>
             </h2>
+            <p className="mt-3 text-base md:text-lg text-secondary font-medium">
+              {greetingSubtitle}
+            </p>
+          </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
-              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
-                <h3 className="clash-title text-2xl uppercase">Overdue</h3>
-                <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">
+          {/* Focus Overview */}
+          <section className="pb-16 pt-2 w-full" aria-label="Assignment focus overview">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              {/* Overdue Card */}
+              <button
+                type="button"
+                onClick={() => setActiveFilter(activeFilter === "overdue" ? "all" : "overdue")}
+                aria-pressed={activeFilter === "overdue"}
+                aria-label={`Overdue assignments: ${overdue.length}. Click to toggle filter.`}
+                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] hover:opacity-95 ${
+                  activeFilter === "overdue"
+                    ? "ring-2 ring-[var(--urgency-overdue)] ring-offset-2 ring-offset-background shadow-md"
+                    : "hover:shadow-xs"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
                     {overdue.length}
                   </span>
-                  <span className="flex-1">
-                    critical items require immediate attention. Focus here to
-                    eliminate backlog.
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)] shadow-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    NEEDS ATTENTION
                   </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-overdue)]">
+                  Overdue
+                </h3>
+                <p className="mt-2 text-sm font-medium text-secondary">
+                  {overdue.length > 0
+                    ? `${overdue.length} ${overdue.length === 1 ? "assignment" : "assignments"} need your attention.`
+                    : "Nothing past its deadline."}
                 </p>
-              </div>
-              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
-                <h3 className="clash-title text-2xl uppercase">Due Today</h3>
-                <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">
+              </button>
+
+              {/* Due Today Card */}
+              <button
+                type="button"
+                onClick={() => setActiveFilter(activeFilter === "today" ? "all" : "today")}
+                aria-pressed={activeFilter === "today"}
+                aria-label={`Due today assignments: ${today.length}. Click to toggle filter.`}
+                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] hover:opacity-95 ${
+                  activeFilter === "today"
+                    ? "ring-2 ring-[var(--urgency-today)] ring-offset-2 ring-offset-background shadow-md"
+                    : "hover:shadow-xs"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
                     {today.length}
                   </span>
-                  <span className="flex-1">
-                    tasks scheduled for completion today. Prioritize these
-                    executions.
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-today-border)] text-[var(--urgency-today)] shadow-xs">
+                    <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    TACKLE TODAY
                   </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-today)]">
+                  Due Today
+                </h3>
+                <p className="mt-2 text-sm font-medium text-secondary">
+                  {today.length > 0
+                    ? "Tackle these before the day is over."
+                    : "Nothing due today."}
                 </p>
-              </div>
-              <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
-                <h3 className="clash-title text-2xl uppercase">Upcoming</h3>
-                <p className="text-foreground/70 font-medium flex items-baseline">
-                  <span className="clash-title text-5xl text-foreground mr-3">
+              </button>
+
+              {/* Upcoming Card */}
+              <button
+                type="button"
+                onClick={() => setActiveFilter(activeFilter === "upcoming" ? "all" : "upcoming")}
+                aria-pressed={activeFilter === "upcoming"}
+                aria-label={`Upcoming assignments: ${upcoming.length}. Click to toggle filter.`}
+                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] hover:opacity-95 ${
+                  activeFilter === "upcoming"
+                    ? "ring-2 ring-[var(--urgency-upcoming)] ring-offset-2 ring-offset-background shadow-md"
+                    : "hover:shadow-xs"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
                     {upcoming.length}
                   </span>
-                  <span className="flex-1">
-                    planned assignments on the horizon. Preparation is key to
-                    systemic success.
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)] shadow-xs">
+                    <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    ON SCHEDULE
                   </span>
+                </div>
+                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-upcoming)]">
+                  Upcoming
+                </h3>
+                <p className="mt-2 text-sm font-medium text-secondary">
+                  {upcoming.length > 0
+                    ? "Planned deadlines on the horizon."
+                    : "Your calendar is clear."}
                 </p>
-              </div>
+              </button>
             </div>
           </section>
 
-          {/* Swiss UI Style Timeline */}
-          <section className="mb-32">
-            <div className="flex items-center gap-6 mb-12">
-              <h2 className="clash-title text-3xl uppercase">Timeline</h2>
-              <div className="flex-1 hairline-divider h-px w-full"></div>
+          {/* Timeline */}
+          <section className="mb-16">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+              <div className="flex flex-wrap items-center gap-4">
+                <h2 className="clash-title text-3xl uppercase">Timeline</h2>
+                {activeFilter !== "all" && (
+                  <div className="flex items-center gap-2" role="status" aria-live="polite">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-card border border-border text-foreground shadow-xs">
+                      Filtered:{" "}
+                      <span
+                        className={
+                          activeFilter === "overdue"
+                            ? "text-[var(--urgency-overdue)]"
+                            : activeFilter === "today"
+                              ? "text-[var(--urgency-today)]"
+                              : "text-[var(--urgency-upcoming)]"
+                        }
+                      >
+                        {activeFilter === "today" ? "Due Today" : activeFilter}
+                      </span>
+                      <span className="text-secondary font-mono">({displayedEvents.length})</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setActiveFilter("all")}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-secondary hover:text-foreground hover:bg-muted/50 rounded-md border border-border/50 transition-colors cursor-pointer"
+                      aria-label="Clear filter (Show all)"
+                    >
+                      <X className="w-3.5 h-3.5" aria-hidden="true" />
+                      Clear filter (Show all)
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="hidden md:block flex-1 hairline-divider h-px ml-4"></div>
             </div>
 
             <div className="flex flex-col border-t border-border/20">
-              {events.length === 0 ? (
-                <div className="py-16 text-center text-foreground/50 font-medium">
-                  No upcoming events.
+              {displayedEvents.length === 0 ? (
+                <div className="py-16 text-center font-medium text-secondary">
+                  {activeFilter !== "all"
+                    ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
+                    : "No upcoming deadlines. You're all clear!"}
                 </div>
               ) : (
-                events.map((event) => {
+                displayedEvents.map((event) => {
                   const date = new Date(event.timestart * 1000);
                   const day = date.getDate().toString().padStart(2, "0");
                   const month = date
@@ -330,17 +430,17 @@ export default function Home() {
                         <div className="text-5xl clash-title font-medium leading-none text-foreground">
                           {day}
                         </div>
-                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-foreground/50">
+                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-tertiary">
                           {month} {date.getFullYear()}
                         </div>
-                        <div className="text-xs font-mono mt-4 text-foreground/40 uppercase">
+                        <div className="text-xs font-mono mt-4 text-tertiary uppercase">
                           {time}
                         </div>
                       </div>
 
                       {/* Content Column */}
                       <div className="md:col-span-8 flex flex-col justify-center">
-                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-foreground/50 flex items-center gap-3">
+                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-tertiary flex items-center gap-3">
                           <span className="w-1.5 h-1.5 bg-foreground rounded-full"></span>
                           {event.course?.fullname || "System Event"}
                         </div>
@@ -349,7 +449,7 @@ export default function Home() {
                         </h3>
                         {event.description && (
                           <div
-                            className="mt-4 text-foreground/70 line-clamp-2 text-sm max-w-2xl font-medium"
+                            className="mt-4 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
                             dangerouslySetInnerHTML={{
                               __html: event.description,
                             }}
