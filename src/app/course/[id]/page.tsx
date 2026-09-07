@@ -1,18 +1,31 @@
 'use client'
 
-import { useEffect, useState, use, useMemo } from 'react'
+import { useEffect, useState, use, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, FileText, Link as LinkIcon, ClipboardList, Folder, Loader2, Search, Sparkles } from 'lucide-react'
+import {
+  ArrowLeft,
+  FileText,
+  Link as LinkIcon,
+  ClipboardList,
+  Folder,
+  Loader2,
+  Search,
+  X,
+  ExternalLink,
+  Eye,
+  RotateCcw
+} from 'lucide-react'
 import { getCourseContents, getAssignments, type MoodleAssignment } from '@/lib/moodle-client'
 import { createClient } from '@/utils/supabase/client'
 import { Drawer } from '@/components/Drawer'
 import { FileViewer } from '@/components/FileViewer'
-import { ChatBox } from '@/components/ChatBox'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
+
+type CategoryFilter = 'all' | 'assignments' | 'resources' | 'links'
 
 export default function CoursePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = use(params)
-  const courseId = parseInt(unwrappedParams.id, 10)
+  const courseId = parseInt(unwrappedParams?.id || '0', 10)
   const router = useRouter()
   const searchParams = useSearchParams()
   const modParam = searchParams.get('mod')
@@ -24,14 +37,36 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   const [selectedAssignment, setSelectedAssignment] = useState<MoodleAssignment | null>(null)
   const [token, setToken] = useState<string>('')
   const [assignments, setAssignments] = useState<MoodleAssignment[]>([])
-  const [isChatOpen, setIsChatOpen] = useState(false)
   
-  // New state for unified search
+  // Search & Category states
   const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all')
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadCourseData()
   }, [courseId])
+
+  // Keyboard shortcut '/' to focus search input (guarded against inputs, textareas, contenteditable)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const target = e.target as HTMLElement | null
+        const isEditable =
+          target?.tagName === 'INPUT' ||
+          target?.tagName === 'TEXTAREA' ||
+          target?.isContentEditable
+
+        if (!isEditable) {
+          e.preventDefault()
+          searchInputRef.current?.focus()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   useEffect(() => {
     if (modParam && sections.length > 0) {
@@ -84,7 +119,15 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     setLoading(false)
   }
 
-  // Flatten all modules into a single searchable array, stripping away the rigid Moodle sections
+  // Derive course name from assignments or fallback to "Course Library"
+  const courseName = useMemo(() => {
+    if (assignments.length > 0 && assignments[0].coursename) {
+      return assignments[0].coursename
+    }
+    return 'Course Library'
+  }, [assignments])
+
+  // Flatten all modules into a single searchable array
   const allModules = useMemo(() => {
     const modules: any[] = []
     sections.forEach(section => {
@@ -97,191 +140,403 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     return modules
   }, [sections])
 
-  // Filter modules based on search
-  const filteredModules = useMemo(() => {
-    if (!searchQuery.trim()) return allModules
-    const query = searchQuery.toLowerCase()
-    return allModules.filter(m => 
-      m.name.toLowerCase().includes(query) || 
-      m.sectionName.toLowerCase().includes(query) ||
-      m.modname.toLowerCase().includes(query)
-    )
-  }, [allModules, searchQuery])
+  // Count items by category
+  const categoryCounts = useMemo(() => {
+    let assignmentsCount = 0
+    let resourcesCount = 0
+    let linksCount = 0
 
-  const getModuleIcon = (modname: string) => {
-    switch (modname) {
-      case 'resource': return <FileText className="h-6 w-6 stroke-1 text-foreground shrink-0" />
-      case 'url': return <LinkIcon className="h-6 w-6 stroke-1 text-foreground shrink-0" />
-      case 'assign': return <ClipboardList className="h-6 w-6 stroke-1 text-foreground shrink-0" />
-      case 'folder': return <Folder className="h-6 w-6 stroke-1 text-foreground shrink-0" />
-      default: return <FileText className="h-6 w-6 stroke-1 text-foreground shrink-0" />
+    allModules.forEach(mod => {
+      if (mod.modname === 'assign') {
+        assignmentsCount++
+      } else if (mod.modname === 'resource' || mod.modname === 'folder') {
+        resourcesCount++
+      } else {
+        linksCount++
+      }
+    })
+
+    return {
+      all: allModules.length,
+      assignments: assignmentsCount,
+      resources: resourcesCount,
+      links: linksCount,
+    }
+  }, [allModules])
+
+  // Filter modules based on both activeCategory and searchQuery
+  const filteredModules = useMemo(() => {
+    return allModules.filter(m => {
+      // Category filter
+      if (activeCategory === 'assignments' && m.modname !== 'assign') {
+        return false
+      }
+      if (activeCategory === 'resources' && m.modname !== 'resource' && m.modname !== 'folder') {
+        return false
+      }
+      if (activeCategory === 'links' && (m.modname === 'assign' || m.modname === 'resource' || m.modname === 'folder')) {
+        return false
+      }
+
+      // Search query filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase()
+        const matchName = m.name?.toLowerCase().includes(query)
+        const matchSection = m.sectionName?.toLowerCase().includes(query)
+        const matchModname = m.modname?.toLowerCase().includes(query)
+        if (!matchName && !matchSection && !matchModname) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [allModules, activeCategory, searchQuery])
+
+  // Helper to determine file extension / type info
+  const getResourceMeta = (mod: any) => {
+    if (mod.modname === 'assign') {
+      return {
+        badgeText: 'ASSIGNMENT',
+        badgeBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+        iconBg: 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20',
+        icon: <ClipboardList className="h-5 w-5 stroke-1.5" />,
+        actionText: 'View Details',
+        actionIcon: <Eye className="h-3.5 w-3.5" />,
+      }
+    }
+
+    if (mod.modname === 'resource') {
+      const filename = mod.contents?.[0]?.filename || ''
+      const ext = filename.split('.').pop()?.toUpperCase() || 'FILE'
+      const isPdf = ext === 'PDF'
+
+      return {
+        badgeText: isPdf ? 'PDF / DOCUMENT' : `${ext} / DOCUMENT`,
+        badgeBg: isPdf
+          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
+          : 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
+        iconBg: isPdf
+          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
+          : 'bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20',
+        icon: <FileText className="h-5 w-5 stroke-1.5" />,
+        actionText: 'Preview',
+        actionIcon: <Eye className="h-3.5 w-3.5" />,
+      }
+    }
+
+    if (mod.modname === 'folder') {
+      return {
+        badgeText: 'FOLDER',
+        badgeBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+        iconBg: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20',
+        icon: <Folder className="h-5 w-5 stroke-1.5" />,
+        actionText: 'Open Folder',
+        actionIcon: <ExternalLink className="h-3.5 w-3.5" />,
+      }
+    }
+
+    return {
+      badgeText: 'LINK',
+      badgeBg: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+      iconBg: 'bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/20',
+      icon: <LinkIcon className="h-5 w-5 stroke-1.5" />,
+      actionText: 'Open Link',
+      actionIcon: <ExternalLink className="h-3.5 w-3.5" />,
     }
   }
 
+  const handleResetFilters = () => {
+    setSearchQuery('')
+    setActiveCategory('all')
+  }
+
+  const isFiltered = searchQuery.trim().length > 0 || activeCategory !== 'all'
+
   return (
-    <main className="min-h-screen bg-background text-foreground flex flex-col relative">
-      {/* Top Header Navigation */}
-      <div className="flex items-center gap-6 p-4 md:px-8 md:py-6 border-b border-border/10 bg-background z-10 sticky top-0">
-        <button 
-          onClick={() => router.push('/')}
-          className="p-3 border border-border/20 bg-background hover:bg-background text-foreground transition-colors duration-300"
-        >
-          <ArrowLeft className="h-6 w-6 stroke-1" />
-        </button>
-        <h1 className="text-3xl md:text-4xl clash-title uppercase tracking-widest truncate">
-          Course Library
-        </h1>
-      </div>
-
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
-        {/* Left Column: The Library (Flattened & Searchable) */}
-        <div className="flex-1 flex flex-col overflow-y-auto border-r border-border/10 bg-background">
-          <div className="p-4 md:p-8 space-y-8 max-w-4xl w-full mx-auto">
-            
-            {/* Search Bar */}
-            <div className="relative">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 stroke-1 text-neutral-500" />
-              <input 
-                type="text"
-                placeholder="SEARCH LECTURES, ASSIGNMENTS, AND FILES..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-background border border-border/20 pl-16 pr-6 py-5 text-sm uppercase tracking-widest text-foreground placeholder-neutral-500 focus:outline-none hover:bg-background transition-colors"
-              />
-            </div>
-
-            {error && (
-              <div className="p-6 border border-red-500/20 text-red-500 text-sm uppercase tracking-widest font-bold bg-red-500/5">
-                {error}
-              </div>
-            )}
-
-            {loading ? (
-              <div className="flex flex-col justify-center items-center py-32 gap-6">
-                <img src="/notmoodlelogo.png" alt="Loading..." className="h-16 w-auto object-contain animate-pulse" />
-                <span className="text-[10px] uppercase tracking-widest font-bold text-foreground/50 animate-pulse">Loading Course...</span>
-              </div>
-            ) : (
-              <div className="border border-border/20 bg-background">
-                <div className="px-6 py-4 border-b border-border/20 bg-background text-foreground flex justify-between items-center">
-                  <h2 className="text-xl clash-title uppercase">All Materials</h2>
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-foreground/50">{filteredModules.length} ITEMS</span>
-                </div>
-                
-                <div className="divide-y divide-border/10">
-                  {filteredModules.length > 0 ? (
-                    filteredModules.map((mod: any) => {
-                      const isFile = mod.modname === 'resource' && mod.contents?.[0]?.fileurl;
-                      
-                      const isAssign = mod.modname === 'assign';
-                      
-                      const InnerContent = (
-                        <>
-                          <div className="p-4 border border-border/20 bg-background text-foreground group-hover:bg-foreground group-hover:text-background transition-colors duration-500">
-                            {getModuleIcon(mod.modname)}
-                          </div>
-                          <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <h3 className="text-lg md:text-xl clash-title group-hover:translate-x-2 transition-transform duration-500 truncate text-foreground">
-                              {mod.name}
-                            </h3>
-                            <div className="flex items-center gap-3 mt-2 flex-wrap">
-                              <span className="text-[10px] font-bold text-background bg-foreground px-2 py-1 uppercase tracking-widest">
-                                {mod.modname}
-                              </span>
-                              <span className="text-[10px] font-bold text-foreground/50 uppercase tracking-widest border border-border/20 px-2 py-1 truncate max-w-[200px]">
-                                {mod.sectionName}
-                              </span>
-                            </div>
-                          </div>
-                        </>
-                      );
-
-                      if (isFile) {
-                        return (
-                          <button
-                            key={mod.id}
-                            onClick={() => setSelectedMod(mod)}
-                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
-                          >
-                            {InnerContent}
-                          </button>
-                        )
-                      }
-                      
-                      if (isAssign) {
-                        return (
-                          <button
-                            key={mod.id}
-                            onClick={() => {
-                              const assignData = assignments.find(a => a.cmid === mod.id);
-                              if (assignData) {
-                                setSelectedAssignment(assignData)
-                              } else {
-                                window.open(mod.url, '_blank')
-                              }
-                            }}
-                            className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
-                          >
-                            {InnerContent}
-                          </button>
-                        )
-                      }
-
-                      const externalLink = (mod.modname === 'url' && mod.contents?.[0]?.fileurl) 
-                        ? mod.contents[0].fileurl 
-                        : mod.url;
-
-                      return (
-                        <a
-                          key={mod.id}
-                          href={externalLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full text-left flex items-stretch gap-6 px-4 py-4 md:px-6 md:py-5 hover:bg-background transition-colors duration-500 group"
-                        >
-                          {InnerContent}
-                        </a>
-                      )
-                    })
-                  ) : (
-                    <div className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest">
-                      No materials found matching "{searchQuery}"
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* AI Assistant Floating Popup */}
-        {!loading && !error && (
-          <div className="fixed bottom-24 right-4 md:right-8 z-50 flex flex-col items-end">
-            {isChatOpen && (
-              <div className="mb-4 w-[380px] h-[550px] min-w-[300px] min-h-[400px] max-w-[calc(100vw-2rem)] max-h-[70vh] resize border-2 border-foreground bg-card shadow-[8px_8px_0px_var(--color-foreground)] flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 fade-in duration-300">
-                <div className="flex justify-between items-center p-3 border-b-2 border-foreground bg-foreground text-background">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4" />
-                    <span className="font-bold uppercase tracking-widest text-xs">Course AI</span>
-                  </div>
-                  <button onClick={() => setIsChatOpen(false)} className="hover:text-[#ff4444] transition-colors">
-                    <svg width="16" height="16" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11.7816 4.03157C12.0062 3.80702 12.0062 3.44295 11.7816 3.2184C11.5571 2.99385 11.193 2.99385 10.9685 3.2184L7.50005 6.68682L4.03164 3.2184C3.80708 2.99385 3.44301 2.99385 3.21846 3.2184C2.99391 3.44295 2.99391 3.80702 3.21846 4.03157L6.68688 7.49999L3.21846 10.9684C2.99391 11.193 2.99391 11.557 3.21846 11.7816C3.44301 12.0061 3.80708 12.0061 4.03164 11.7816L7.50005 8.31316L10.9685 11.7816C11.193 12.0061 11.5571 12.0061 11.7816 11.7816C12.0062 11.557 12.0062 11.193 11.7816 10.9684L8.31322 7.49999L11.7816 4.03157Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
-                  </button>
-                </div>
-                <div className="flex-1 overflow-hidden relative">
-                  <ChatBox courseId={courseId.toString()} />
-                </div>
-              </div>
-            )}
-            
+    <main className="min-h-screen bg-background text-foreground flex flex-col relative font-sans">
+      {/* Top Header & Breadcrumbs */}
+      <header className="border-b border-border bg-background/95 backdrop-blur-md z-10 sticky top-0 px-4 py-4 md:px-8 md:py-5">
+        <div className="max-w-5xl mx-auto flex flex-col gap-3">
+          {/* Breadcrumbs Row */}
+          <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-secondary">
             <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`p-4 rounded-full border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)] hover:-translate-y-1 hover:shadow-[6px_6px_0px_var(--color-foreground)] transition-all flex items-center justify-center ${isChatOpen ? 'bg-foreground text-background' : 'bg-card text-foreground'}`}
+              onClick={() => router.push('/dashboard')}
+              className="inline-flex items-center gap-1.5 hover:text-foreground transition-colors group cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+              aria-label="Back to Dashboard"
             >
-              <Sparkles className="h-6 w-6" />
+              <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
+              <span>Dashboard</span>
+            </button>
+            <span className="text-tertiary">/</span>
+            <span className="text-foreground font-semibold truncate max-w-[240px] md:max-w-md">
+              {courseName}
+            </span>
+          </nav>
+
+          {/* Title and Hero Section */}
+          <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl clash-title font-semibold tracking-wide text-foreground truncate">
+              {courseName}
+            </h1>
+          </div>
+
+          {/* Stats Summary Bar */}
+          {!loading && !error && (
+            <div
+              data-testid="stats-summary-bar"
+              className="flex flex-wrap items-center gap-2 pt-1 border-t border-border/50 text-[11px] font-mono uppercase tracking-wider text-secondary"
+            >
+              <span className="px-2.5 py-1 rounded-full bg-muted/60 border border-border text-foreground font-medium">
+                {allModules.length} {allModules.length === 1 ? 'Material' : 'Materials'}
+              </span>
+              <span className="px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 font-medium">
+                {categoryCounts.assignments} {categoryCounts.assignments === 1 ? 'Assignment' : 'Assignments'}
+              </span>
+              {isFiltered && (
+                <span className="px-2.5 py-1 rounded-full bg-foreground text-background font-bold ml-auto md:ml-0">
+                  {filteredModules.length} Matching
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-y-auto bg-background">
+        <div className="p-4 md:p-8 space-y-6 max-w-5xl w-full mx-auto">
+          
+          {/* Unified Search Bar */}
+          <div className="relative flex items-center">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 stroke-1.5 text-secondary pointer-events-none" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              placeholder="Search materials by title, section, or type..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search course materials"
+              className="w-full bg-card border border-border pl-12 pr-28 py-3.5 rounded-lg text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-foreground/40 transition-all shadow-xs"
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="p-1 rounded-md text-secondary hover:text-foreground hover:bg-muted/70 transition-colors focus:outline-none cursor-pointer"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider text-secondary bg-muted border border-border select-none pointer-events-none">
+                Press / to search
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Category filters">
+            <button
+              role="tab"
+              aria-selected={activeCategory === 'all'}
+              onClick={() => setActiveCategory('all')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border cursor-pointer ${
+                activeCategory === 'all'
+                  ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                  : 'bg-card text-secondary border-border hover:border-foreground/40 hover:text-foreground'
+              }`}
+            >
+              <span>All</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                activeCategory === 'all' ? 'bg-background/20 text-background' : 'bg-muted text-secondary'
+              }`}>
+                {categoryCounts.all}
+              </span>
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={activeCategory === 'assignments'}
+              onClick={() => setActiveCategory('assignments')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border cursor-pointer ${
+                activeCategory === 'assignments'
+                  ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                  : 'bg-card text-secondary border-border hover:border-foreground/40 hover:text-foreground'
+              }`}
+            >
+              <span>Assignments</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                activeCategory === 'assignments' ? 'bg-background/20 text-background' : 'bg-muted text-secondary'
+              }`}>
+                {categoryCounts.assignments}
+              </span>
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={activeCategory === 'resources'}
+              onClick={() => setActiveCategory('resources')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border cursor-pointer ${
+                activeCategory === 'resources'
+                  ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                  : 'bg-card text-secondary border-border hover:border-foreground/40 hover:text-foreground'
+              }`}
+            >
+              <span>PDFs & Readings</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                activeCategory === 'resources' ? 'bg-background/20 text-background' : 'bg-muted text-secondary'
+              }`}>
+                {categoryCounts.resources}
+              </span>
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={activeCategory === 'links'}
+              onClick={() => setActiveCategory('links')}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 border cursor-pointer ${
+                activeCategory === 'links'
+                  ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                  : 'bg-card text-secondary border-border hover:border-foreground/40 hover:text-foreground'
+              }`}
+            >
+              <span>Links & Folders</span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                activeCategory === 'links' ? 'bg-background/20 text-background' : 'bg-muted text-secondary'
+              }`}>
+                {categoryCounts.links}
+              </span>
             </button>
           </div>
-        )}
+
+          {/* Error Banner */}
+          {error && (
+            <div className="p-4 rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 text-sm font-medium bg-red-500/5">
+              {error}
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex flex-col justify-center items-center py-28 gap-4">
+              <img src="/notmoodlelogo.png" alt="Loading..." className="h-12 w-auto object-contain animate-pulse" />
+              <span className="text-xs font-mono uppercase tracking-widest text-secondary animate-pulse">Loading Course Materials...</span>
+            </div>
+          ) : (
+            /* Resource List Card Container */
+            <div className="border border-border rounded-xl bg-card overflow-hidden shadow-xs">
+              <div className="px-5 py-4 border-b border-border bg-card flex justify-between items-center">
+                <h2 className="text-sm font-semibold uppercase tracking-wider font-mono text-secondary">
+                  Course Materials
+                </h2>
+                <span className="text-xs font-mono text-secondary font-medium">
+                  {filteredModules.length} {filteredModules.length === 1 ? 'item' : 'items'}
+                </span>
+              </div>
+              
+              <div className="divide-y divide-border/60">
+                {filteredModules.length > 0 ? (
+                  filteredModules.map((mod: any) => {
+                    const isFile = mod.modname === 'resource' && mod.contents?.[0]?.fileurl
+                    const isAssign = mod.modname === 'assign'
+                    const meta = getResourceMeta(mod)
+
+                    const handleClick = () => {
+                      if (isFile) {
+                        setSelectedMod(mod)
+                      } else if (isAssign) {
+                        const assignData = assignments.find(a => a.cmid === mod.id)
+                        if (assignData) {
+                          setSelectedAssignment(assignData)
+                        } else if (mod.url) {
+                          window.open(mod.url, '_blank')
+                        }
+                      } else {
+                        const externalLink = (mod.modname === 'url' && mod.contents?.[0]?.fileurl)
+                          ? mod.contents[0].fileurl
+                          : mod.url
+                        if (externalLink) {
+                          window.open(externalLink, '_blank')
+                        }
+                      }
+                    }
+
+                    return (
+                      <div
+                        key={mod.id}
+                        data-testid={`module-item-${mod.id}`}
+                        onClick={handleClick}
+                        className="w-full text-left flex items-center justify-between gap-4 p-4 md:px-6 md:py-4.5 hover:bg-muted/40 transition-colors duration-200 group cursor-pointer"
+                      >
+                        {/* Left icon badge + Details */}
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          <div className={`p-3 rounded-lg border ${meta.iconBg} shrink-0 transition-transform duration-300 motion-reduce:transition-none group-hover:scale-105`}>
+                            {meta.icon}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-base md:text-lg clash-title font-medium text-foreground truncate transition-transform duration-300 motion-reduce:transition-none group-hover:translate-x-1.5">
+                              {mod.name}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border uppercase tracking-wider ${meta.badgeBg}`}>
+                                {meta.badgeText}
+                              </span>
+                              {mod.sectionName && (
+                                <span className="text-[11px] font-mono text-secondary border border-border/80 bg-muted/40 px-2 py-0.5 rounded truncate max-w-[220px]">
+                                  {mod.sectionName}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Action Button */}
+                        <div className="shrink-0 flex items-center">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleClick()
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-xs font-medium text-secondary hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                          >
+                            <span>{meta.actionText}</span>
+                            {meta.actionIcon}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })
+                ) : (
+                  /* Friendly Empty State */
+                  <div className="p-12 md:p-16 text-center flex flex-col items-center justify-center gap-3" role="status">
+                    <div className="h-12 w-12 rounded-full bg-muted/80 flex items-center justify-center text-secondary mb-1">
+                      <Search className="h-5 w-5 stroke-1.5" />
+                    </div>
+                    <h3 className="text-base clash-title font-semibold text-foreground">
+                      No matching materials found
+                    </h3>
+                    <p className="text-xs text-secondary max-w-sm">
+                      {searchQuery
+                        ? `No items match “${searchQuery}” in the current category.`
+                        : 'There are no items matching this category filter.'}
+                    </p>
+                    <button
+                      onClick={handleResetFilters}
+                      className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-foreground text-background text-xs font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                      <span>Clear search & filters</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Full-Screen File Viewer Drawer */}
@@ -305,3 +560,4 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
     </main>
   )
 }
+
