@@ -1,12 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 
 export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, fullScreen?: boolean }) {
+  const panelRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<HTMLElement | null>(null)
+
   useEffect(() => {
     if (isOpen) {
       window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: true, fullScreen } }))
+      previousFocusRef.current = document.activeElement as HTMLElement
+      panelRef.current?.focus()
     } else {
       window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
     }
@@ -17,22 +22,63 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
       window.removeEventListener('keydown', handleEsc)
       if (isOpen) {
         window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
+        previousFocusRef.current?.focus()
       }
     }
   }, [isOpen, onClose, fullScreen])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key !== 'Tab') return
+    const panel = panelRef.current
+    if (!panel) return
+
+    const focusable = panel.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+    )
+    if (focusable.length === 0) {
+      e.preventDefault()
+      return
+    }
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault()
+      last.focus()
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault()
+      first.focus()
+    }
+  }
 
   if (!isOpen) return null
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4 sm:p-6 md:p-12'}`}>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-foreground/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
-      
+      <div 
+        className="fixed inset-0 bg-background/60 dark:bg-background/70 backdrop-blur-md transition-opacity duration-300" 
+        onClick={onClose} 
+        aria-hidden="true" 
+      />
+
       {/* Panel */}
-      <div className={`relative bg-card border-2 flex flex-col shadow-[8px_8px_0px_var(--color-foreground)] animate-in zoom-in-95 duration-200 ${fullScreen ? 'w-full h-full border-foreground max-w-none' : 'w-full max-w-4xl max-h-full border-foreground'}`}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className={`relative bg-card border-2 flex flex-col shadow-[8px_8px_0px_var(--color-foreground)] animate-in fade-in zoom-in-95 duration-200 outline-none ${fullScreen ? 'w-full h-full border-foreground max-w-none' : 'w-full max-w-4xl max-h-full border-foreground'}`}
+      >
         <div className="flex items-center justify-between p-6 border-b-2 border-foreground bg-background">
           <h2 className="clash-title text-2xl md:text-3xl uppercase tracking-wide truncate">{title}</h2>
-          <button onClick={onClose} className="p-2 border-2 border-transparent hover:border-foreground hover:bg-card text-foreground transition-all duration-200">
+          <button 
+            onClick={onClose} 
+            className="p-2 border-2 border-transparent hover:border-foreground hover:bg-card text-foreground transition-all duration-200 cursor-pointer" 
+            aria-label="Close drawer"
+          >
             <X size={24} className="stroke-[2px]" />
           </button>
         </div>
