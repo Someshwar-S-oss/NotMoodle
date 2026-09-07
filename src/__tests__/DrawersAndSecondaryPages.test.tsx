@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Drawer } from '@/components/Drawer'
+import { FileViewer } from '@/components/FileViewer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import SettingsPage from '@/app/settings/page'
 import NotificationsPage from '@/app/notifications/page'
@@ -33,6 +34,14 @@ jest.mock('../utils/supabase/client', () => ({
         }),
       }),
     }),
+    storage: {
+      from: () => ({
+        getPublicUrl: jest.fn().mockReturnValue({
+          data: { publicUrl: 'https://example.com/storage/v1/object/public/course_files/test.pdf' },
+        }),
+        upload: jest.fn().mockResolvedValue({ data: {}, error: null }),
+      }),
+    },
   }),
 }))
 
@@ -89,6 +98,101 @@ describe('Drawer component', () => {
 
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(handleClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('applies rounded-2xl and shadow-2xl classes to container in normal mode', () => {
+    render(
+      <Drawer isOpen={true} onClose={jest.fn()} title="Styled Drawer">
+        <div>Content</div>
+      </Drawer>
+    )
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveClass('rounded-2xl')
+    expect(dialog).toHaveClass('shadow-2xl')
+    expect(dialog).toHaveClass('border-border/60')
+  })
+
+  it('applies rounded-none and max-w-none in fullScreen mode', () => {
+    render(
+      <Drawer isOpen={true} onClose={jest.fn()} title="Fullscreen Drawer" fullScreen={true}>
+        <div>Fullscreen Content</div>
+      </Drawer>
+    )
+
+    const dialog = screen.getByRole('dialog')
+    expect(dialog).toHaveClass('rounded-none')
+    expect(dialog).toHaveClass('max-w-none')
+  })
+})
+
+describe('FileViewer component', () => {
+  const mockModPdf = {
+    id: 101,
+    name: 'Syllabus.pdf',
+    contents: [
+      {
+        filename: 'Syllabus.pdf',
+        fileurl: 'https://moodle.example.com/files/syllabus.pdf',
+      },
+    ],
+  }
+
+  beforeEach(() => {
+    global.fetch = jest.fn((url: any) => {
+      return Promise.resolve({
+        ok: true,
+        blob: () => Promise.resolve(new Blob(['test content'], { type: 'application/pdf' })),
+      } as Response)
+    }) as any
+  })
+
+  it('renders preview iframe and download button in rounded frame for pdf', async () => {
+    render(<FileViewer mod={mockModPdf} courseId={12} token="mock-token" />)
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Syllabus.pdf')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/native browser preview/i)).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /download direct/i })).toBeInTheDocument()
+  })
+
+  it('renders office document preview toolbar for docx files', async () => {
+    const mockModDocx = {
+      id: 102,
+      name: 'Lecture1.docx',
+      contents: [
+        {
+          filename: 'Lecture1.docx',
+          fileurl: 'https://moodle.example.com/files/lecture1.docx',
+        },
+      ],
+    }
+
+    render(<FileViewer mod={mockModDocx} courseId={12} token="mock-token" />)
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Lecture1.docx')).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/office document preview/i)).toBeInTheDocument()
+  })
+
+  it('renders friendly error card when loading fails', async () => {
+    const mockModInvalid = {
+      id: 999,
+      name: 'Corrupted.pdf',
+      contents: [],
+    }
+
+    render(<FileViewer mod={mockModInvalid} courseId={12} token="mock-token" />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/no file url found in module/i)).toBeInTheDocument()
+    })
+
+    expect(screen.getByText(/could not load preview/i)).toBeInTheDocument()
   })
 })
 

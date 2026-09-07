@@ -70,16 +70,20 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
         aria-label={title}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className={`relative bg-card border-2 flex flex-col shadow-[8px_8px_0px_var(--color-foreground)] animate-in fade-in zoom-in-95 duration-200 outline-none ${fullScreen ? 'w-full h-full border-foreground max-w-none' : 'w-full max-w-4xl max-h-full border-foreground'}`}
+        className={`relative bg-card flex flex-col animate-in fade-in zoom-in-95 duration-200 outline-none overflow-hidden ${
+          fullScreen 
+            ? 'w-full h-full max-w-none rounded-none' 
+            : 'w-full max-w-4xl max-h-full rounded-2xl border border-border/60 shadow-2xl'
+        }`}
       >
-        <div className="flex items-center justify-between p-6 border-b-2 border-foreground bg-background">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-border/40 bg-card/90 backdrop-blur-sm">
           <h2 className="clash-title text-2xl md:text-3xl uppercase tracking-wide truncate">{title}</h2>
           <button 
             onClick={onClose} 
-            className="p-2 border-2 border-transparent hover:border-foreground hover:bg-card text-foreground transition-all duration-200 cursor-pointer" 
+            className="rounded-full p-2 text-secondary hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer" 
             aria-label="Close drawer"
           >
-            <X size={24} className="stroke-[2px]" />
+            <X size={20} className="stroke-[2px]" />
           </button>
         </div>
         <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-card custom-scrollbar">

@@ -91,22 +91,27 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-tertiary border-2 border-foreground bg-card shadow-[4px_4px_0px_var(--color-foreground)]" aria-live="polite" aria-busy="true">
-        <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-[2px] text-foreground" />
-        <p className="font-bold text-foreground uppercase tracking-widest text-sm">Loading file...</p>
-        <p className="text-[10px] mt-2 font-bold uppercase tracking-widest text-tertiary">Fetching the latest version.</p>
+      <div className="flex flex-col items-center justify-center py-28 rounded-xl border border-border/30 bg-card/60 p-8 text-secondary shadow-xs" aria-live="polite" aria-busy="true">
+        <Loader2 className="h-9 w-9 animate-spin mb-4 text-foreground/80" />
+        <p className="font-semibold text-foreground text-sm tracking-wide">Loading file preview...</p>
+        <p className="text-xs mt-1 text-secondary">Fetching the latest version from storage.</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 bg-foreground text-background border-2 border-foreground shadow-[8px_8px_0px_var(--color-foreground)] p-6">
-        <AlertCircle className="h-12 w-12 mb-6 stroke-[2px]" />
-        <p className="clash-title text-2xl uppercase text-center">{error}</p>
-        <p className="text-[10px] font-bold uppercase tracking-widest mt-2 mb-8 text-background/50">Could not load preview.</p>
+      <div className="flex flex-col items-center justify-center py-16 rounded-xl border border-border/30 bg-card/60 p-8 text-center shadow-xs">
+        <AlertCircle className="h-10 w-10 mb-4 text-destructive/80 stroke-[2px]" />
+        <p className="clash-title text-xl uppercase tracking-wide text-foreground mb-1">{error}</p>
+        <p className="text-xs text-secondary mt-1 mb-6">Could not load preview.</p>
         {fallbackUrl && (
-          <a href={fallbackUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-6 py-3 bg-card text-foreground hover:bg-background border-2 border-foreground transition-colors font-bold text-xs uppercase tracking-widest shadow-[4px_4px_0px_rgba(242,242,242,0.2)]">
+          <a 
+            href={fallbackUrl} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 hover:bg-muted/50 transition-colors text-foreground text-xs font-medium cursor-pointer"
+          >
             <ExternalLink className="h-4 w-4 stroke-[2px]" />
             Download Original File
           </a>
@@ -116,22 +121,22 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
   }
 
   return (
-    <div className="space-y-6 h-full">
-      <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b-2 border-foreground pb-3">
-        <span className="text-tertiary">
+    <div className="space-y-4 h-full">
+      <div className="flex justify-between items-center text-xs font-mono uppercase tracking-wider border-b border-border/30 pb-3 text-secondary">
+        <span>
           {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
         </span>
         <a 
           href={fallbackUrl || previewUrl!} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-foreground hover:text-secondary transition-colors"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/40 hover:bg-muted/50 transition-colors text-foreground text-xs font-medium"
         >
-          <ExternalLink className="h-4 w-4 stroke-[2px]" />
+          <ExternalLink className="h-3.5 w-3.5 stroke-[2px]" />
           Download Direct
         </a>
       </div>
-      <div className="w-full h-[calc(100vh-180px)] bg-card border-2 border-foreground shadow-[8px_8px_0px_var(--color-foreground)] relative overflow-hidden">
+      <div className="w-full h-[calc(100vh-180px)] rounded-xl border border-border/40 overflow-hidden shadow-md bg-card relative">
         <iframe 
           src={previewUrl!} 
           className="w-full h-full border-0 bg-card relative z-10" 
