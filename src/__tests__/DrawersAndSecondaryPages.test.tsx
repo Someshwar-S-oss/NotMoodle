@@ -262,7 +262,107 @@ describe('AssignmentDetails component', () => {
     })
     expect(screen.getByText('final-submission.pdf')).toBeInTheDocument()
   })
+
+  it('renders interactive dropzone and updates to file preview card when file is selected or dropped', async () => {
+    const { getSubmissionStatus } = require('../lib/moodle-client')
+    getSubmissionStatus.mockResolvedValueOnce({
+      submitted: false,
+      graded: false,
+      status: 'new',
+      files: [],
+    })
+
+    render(<AssignmentDetails assignment={mockAssignment} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/pending submission/i)).toBeInTheDocument()
+    })
+
+    // Initial dropzone copy is present
+    expect(screen.getByText(/drag and drop your assignment file here/i)).toBeInTheDocument()
+    expect(screen.getByText(/supports pdf, docx, zip/i)).toBeInTheDocument()
+
+    // File input is accessible
+    const input = screen.getByLabelText(/upload assignment file/i) as HTMLInputElement
+    const file = new File(['assignment content'], 'assignment1.pdf', { type: 'application/pdf' })
+
+    // Simulate file selection
+    fireEvent.change(input, { target: { files: [file] } })
+
+    // File preview card should now be rendered
+    expect(screen.getByText('assignment1.pdf')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /remove selected file/i })).toBeInTheDocument()
+  })
+
+  it('clears the selected file when remove button is clicked', async () => {
+    const { getSubmissionStatus } = require('../lib/moodle-client')
+    getSubmissionStatus.mockResolvedValueOnce({
+      submitted: false,
+      graded: false,
+      status: 'new',
+      files: [],
+    })
+
+    render(<AssignmentDetails assignment={mockAssignment} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/pending submission/i)).toBeInTheDocument()
+    })
+
+    const input = screen.getByLabelText(/upload assignment file/i) as HTMLInputElement
+    const file = new File(['assignment content'], 'homework.docx', { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+
+    fireEvent.change(input, { target: { files: [file] } })
+
+    expect(screen.getByText('homework.docx')).toBeInTheDocument()
+
+    // Click remove button
+    const removeBtn = screen.getByRole('button', { name: /remove selected file/i })
+    fireEvent.click(removeBtn)
+
+    // Drops back to dropzone
+    expect(screen.queryByText('homework.docx')).not.toBeInTheDocument()
+    expect(screen.getByText(/drag and drop your assignment file here/i)).toBeInTheDocument()
+  })
+
+  it('handles dragover, dragleave, and drop events on dropzone', async () => {
+    const { getSubmissionStatus } = require('../lib/moodle-client')
+    getSubmissionStatus.mockResolvedValueOnce({
+      submitted: false,
+      graded: false,
+      status: 'new',
+      files: [],
+    })
+
+    render(<AssignmentDetails assignment={mockAssignment} />)
+
+    await waitFor(() => {
+      expect(screen.getByText(/pending submission/i)).toBeInTheDocument()
+    })
+
+    const dropzone = screen.getByRole('button', { name: /drag and drop your assignment file here/i })
+
+    // Fire drag over
+    fireEvent.dragOver(dropzone)
+    expect(dropzone).toHaveClass('border-foreground')
+
+    // Fire drag leave
+    fireEvent.dragLeave(dropzone)
+    expect(dropzone).not.toHaveClass('border-foreground')
+
+    // Fire drop
+    const file = new File(['dropped file content'], 'project.zip', { type: 'application/zip' })
+    fireEvent.drop(dropzone, {
+      dataTransfer: {
+        files: [file],
+      },
+    })
+
+    expect(screen.getByText('project.zip')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /remove selected file/i })).toBeInTheDocument()
+  })
 })
+
 
 describe('SettingsPage component', () => {
   beforeEach(() => {

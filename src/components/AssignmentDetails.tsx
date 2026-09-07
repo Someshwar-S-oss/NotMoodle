@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { UploadCloud, CheckCircle, Loader2, FileText, Clock, Star, Download, ExternalLink, AlertTriangle, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { UploadCloud, CheckCircle, Loader2, FileText, Clock, Star, Download, ExternalLink, AlertTriangle, AlertCircle, X } from 'lucide-react'
 import { uploadFileToDraft, saveSubmission, getSubmissionStatus, type MoodleSubmissionStatus } from '@/lib/moodle-client'
 
 async function getMoodleToken(): Promise<string> {
@@ -19,6 +19,8 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
   const [status, setStatus] = useState<MoodleSubmissionStatus | null>(null)
   const [statusLoading, setStatusLoading] = useState(true)
   const [moodleToken, setMoodleToken] = useState<string>('')
+  const [isDragging, setIsDragging] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadStatus()
@@ -60,6 +62,28 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       setError(err.message || 'Submission failed. Please try again.')
     }
     setUploading(false)
+  }
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setFile(e.dataTransfer.files[0])
+      setError('')
+    }
   }
 
   const formatDate = (ts: number) =>
@@ -145,7 +169,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           href={moodleAssignUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background border border-foreground hover:bg-foreground/85 transition-all text-xs font-bold uppercase tracking-wider shadow-xs group"
+          className="rounded-lg px-4 py-2 bg-foreground text-background hover:bg-foreground/90 font-medium text-xs shadow-xs inline-flex items-center gap-2 transition-all group"
         >
           <span>Open in Moodle</span>
           <ExternalLink className="h-3.5 w-3.5 stroke-[2px] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -165,11 +189,11 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           </h3>
         </div>
 
-        {/* Due date and Grade Meta */}
+        {/* Due date and Grade Meta Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           {assignment.duedate > 0 && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-card/60 border border-border/20 shadow-xs">
-              <div className="p-2 rounded-md bg-muted/60 text-foreground shrink-0">
+            <div className="rounded-xl border border-border/30 bg-card/50 p-4 shadow-xs flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-muted/60 text-foreground shrink-0">
                 <Clock className="h-4 w-4 stroke-[2px]" />
               </div>
               <div className="min-w-0">
@@ -187,8 +211,8 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           )}
 
           {assignment.grade > 0 && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-card/60 border border-border/20 shadow-xs">
-              <div className="p-2 rounded-md bg-muted/60 text-foreground shrink-0">
+            <div className="rounded-xl border border-border/30 bg-card/50 p-4 shadow-xs flex items-start gap-3">
+              <div className="p-2 rounded-lg bg-muted/60 text-foreground shrink-0">
                 <Star className="h-4 w-4 stroke-[2px]" />
               </div>
               <div className="min-w-0">
@@ -209,7 +233,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
 
       {/* Instructions & Elevated Attachment Cards */}
       {(assignment.intro || (assignment.introattachments && assignment.introattachments.length > 0)) && (
-        <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs space-y-5">
+        <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs space-y-5">
           <h4 className="font-bold pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
             Instructions & Attachments
           </h4>
@@ -243,9 +267,9 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
                       href={fileUrlStr}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-4 rounded-lg bg-background hover:bg-muted/40 border border-border/30 hover:border-foreground/30 shadow-xs transition-all duration-200 group cursor-pointer"
+                      className="flex items-center gap-3 p-3.5 rounded-xl bg-background/50 hover:bg-muted/40 border border-border/30 hover:border-border transition-all shadow-xs group cursor-pointer"
                     >
-                      <div className="p-2 rounded-md bg-muted text-foreground shrink-0 group-hover:bg-foreground group-hover:text-background transition-colors">
+                      <div className="p-2 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-foreground group-hover:text-background transition-colors">
                         <FileText className="h-4 w-4 stroke-[2px]" />
                       </div>
                       <div className="min-w-0 flex-1">
@@ -256,7 +280,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
                           {formatSize(attachment.filesize)}
                         </span>
                       </div>
-                      <div className="p-2 rounded-md text-tertiary group-hover:text-foreground transition-colors shrink-0">
+                      <div className="p-2 rounded-lg text-tertiary group-hover:text-foreground transition-colors shrink-0">
                         <Download className="h-4 w-4 stroke-[2px]" />
                       </div>
                     </a>
@@ -269,7 +293,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       )}
 
       {/* Current Submission status */}
-      <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs">
+      <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs">
         <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
           Current Submission
         </h4>
@@ -302,7 +326,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
               <div className="mt-4 space-y-2 border-t border-border/20 pt-4">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">Submitted Files</span>
                 {status.files.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm font-medium bg-background border border-border/20 rounded-lg p-3 shadow-xs">
+                  <div key={i} className="flex items-center gap-3 text-sm font-medium bg-background border border-border/30 rounded-xl p-3 shadow-xs">
                     <FileText className="h-4 w-4 shrink-0 stroke-[2px] text-tertiary" />
                     <span className="truncate text-foreground">{f.filename}</span>
                     <span className="ml-auto shrink-0 text-tertiary font-mono text-[11px]">{formatSize(f.filesize)}</span>
@@ -315,13 +339,13 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       </div>
 
       {/* Submit or Resubmit new file */}
-      <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs">
+      <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs">
         <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
           {status?.submitted ? 'Resubmit Assignment' : 'Submit Assignment'}
         </h4>
 
         {success ? (
-          <div className="flex items-center gap-3 text-foreground bg-[var(--status-success-bg)] border border-[var(--status-success)]/40 p-4 rounded-lg shadow-xs">
+          <div className="flex items-center gap-3 text-foreground bg-[var(--status-success-bg)] border border-[var(--status-success)]/40 p-4 rounded-xl shadow-xs">
             <CheckCircle className="h-5 w-5 shrink-0 stroke-[2px] text-[var(--status-success)]" />
             <span className="font-bold tracking-wide text-xs text-[var(--status-success)]">Submitted successfully to Moodle!</span>
           </div>
@@ -329,17 +353,79 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           <div className="space-y-4">
             <input
               type="file"
-              onChange={e => setFile(e.target.files?.[0] || null)}
-              className="block w-full text-xs font-medium text-secondary file:mr-4 file:py-2.5 file:px-4 file:rounded-md file:border file:border-border/40 file:text-xs file:uppercase file:tracking-wider file:font-bold file:bg-background file:text-foreground hover:file:bg-foreground hover:file:text-background cursor-pointer transition-colors"
+              ref={fileInputRef}
+              onChange={e => {
+                setFile(e.target.files?.[0] || null)
+                setError('')
+              }}
+              className="hidden"
+              aria-label="Upload assignment file"
             />
-            {file && (
-              <p className="text-xs font-mono text-secondary">{file.name} ({formatSize(file.size)})</p>
+
+            {!file ? (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => fileInputRef.current?.click()}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    fileInputRef.current?.click()
+                  }
+                }}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`border-2 border-dashed rounded-2xl p-8 transition-all flex flex-col items-center justify-center text-center cursor-pointer ${
+                  isDragging
+                    ? 'border-foreground bg-muted/60 scale-[1.01]'
+                    : 'border-border/40 hover:border-border hover:bg-muted/30 bg-background/50'
+                }`}
+              >
+                <div className="p-3.5 rounded-2xl bg-muted text-foreground mb-3 transition-transform duration-200 hover:scale-105">
+                  <UploadCloud className="h-6 w-6 stroke-[2px]" />
+                </div>
+                <p className="text-sm font-medium text-foreground">
+                  Drag and drop your assignment file here, or <span className="underline underline-offset-4 decoration-border hover:decoration-foreground font-semibold">click to browse</span>
+                </p>
+                <p className="text-xs text-tertiary mt-1.5 font-sans">
+                  Supports PDF, DOCX, ZIP up to university file limit
+                </p>
+              </div>
+            ) : (
+              <div className="p-4 rounded-xl border border-border/40 bg-card flex items-center justify-between shadow-xs">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="p-2.5 rounded-lg bg-muted text-foreground shrink-0">
+                    <FileText className="h-5 w-5 stroke-[2px]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                    <span className="inline-block px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-muted/80 text-tertiary mt-0.5">
+                      {formatSize(file.size)}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ''
+                  }}
+                  aria-label="Remove selected file"
+                  className="p-1.5 rounded-lg text-tertiary hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4 stroke-[2px]" />
+                </button>
+              </div>
             )}
-            {error && <p className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/30 p-3 rounded-lg">{error}</p>}
+
+            {error && <p className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/30 p-3 rounded-xl">{error}</p>}
+            
             <button
+              type="button"
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="flex w-full justify-center items-center gap-2 py-3 px-6 bg-foreground border border-foreground text-background hover:bg-foreground/85 active:scale-[0.99] disabled:bg-muted disabled:border-transparent disabled:text-foreground/30 disabled:cursor-not-allowed font-bold uppercase tracking-wider text-xs transition-all duration-200 mt-4 rounded-lg cursor-pointer shadow-xs"
+              className="w-full rounded-xl py-3 px-6 bg-foreground text-background font-bold text-xs uppercase tracking-wider hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               {uploading
                 ? <><Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Submitting...</>
