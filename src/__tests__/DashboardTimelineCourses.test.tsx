@@ -202,10 +202,14 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
       render(<Home />);
 
       await waitFor(() => {
-        expect(screen.getByText('Algorithm Analysis Homework')).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { name: 'Algorithm Analysis Homework', level: 3 }),
+        ).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Overdue Project Report')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Overdue Project Report', level: 3 }),
+      ).toBeInTheDocument();
       expect(screen.getAllByText('Overdue').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/In \d+ days/)).toBeInTheDocument();
 
@@ -217,11 +221,17 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
       render(<Home />);
 
       await waitFor(() => {
-        expect(screen.getByText('Algorithm Analysis Homework')).toBeInTheDocument();
+        expect(
+          screen.getByRole('heading', { name: 'Algorithm Analysis Homework', level: 3 }),
+        ).toBeInTheDocument();
       });
 
-      const eventTitle = screen.getByText('Algorithm Analysis Homework');
-      fireEvent.click(eventTitle);
+      const eventHeading = screen.getByRole('heading', {
+        name: 'Algorithm Analysis Homework',
+        level: 3,
+      });
+      const timelineRow = eventHeading.closest('[role="button"]') || eventHeading;
+      fireEvent.click(timelineRow);
 
       await waitFor(() => {
         expect(screen.getByTestId('assignment-drawer')).toBeInTheDocument();
@@ -232,13 +242,23 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
       });
     });
 
-    it('renders Enrolled Modules cards with course code badges and pending deadline count', async () => {
-      render(<Home />);
+    it('renders Enrolled Modules cards with Folder component, course code badges, and pending deadline count', async () => {
+      const { container } = render(<Home />);
 
       await waitFor(() => {
-        expect(screen.getByText('CS 101')).toBeInTheDocument();
-        expect(screen.getByText('MATH 202')).toBeInTheDocument();
+        expect(screen.getAllByText('CS 101').length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText('MATH 202').length).toBeGreaterThanOrEqual(1);
       });
+
+      // Verify Folder presentation elements are rendered for the enrolled courses
+      const folders = container.querySelectorAll('.folder-container');
+      expect(folders.length).toBe(2);
+
+      // Verify course code badges
+      const codeBadges = screen.getAllByTestId('course-code-badge');
+      expect(codeBadges.length).toBe(2);
+      expect(codeBadges[0]).toHaveTextContent('CS 101');
+      expect(codeBadges[1]).toHaveTextContent('MATH 202');
 
       expect(screen.getByText('2 deadlines pending')).toBeInTheDocument();
       expect(screen.getByText('All clear')).toBeInTheDocument();

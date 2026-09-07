@@ -6,17 +6,15 @@ import { MoodleConnect } from "@/components/MoodleConnect";
 import { Drawer } from "@/components/Drawer";
 import { AssignmentDetails } from "@/components/AssignmentDetails";
 import { createClient } from "@/utils/supabase/client";
+import Folder from "@/components/Folder";
 import {
   ArrowRight,
-  Hexagon,
-  Circle,
-  Square,
-  Triangle,
-  AlertCircle,
   Clock,
   Calendar,
   X,
   CheckCircle2,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import {
   getSiteInfo,
@@ -550,11 +548,45 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {courses.map((course, i) => {
-                const Icon =
-                  i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
                 const accent = getCourseAccent(course.id, i);
                 const courseCode = extractCourseCode(course.shortname, course.fullname);
                 const pendingCount = coursePendingCounts[course.id] || 0;
+
+                // Upcoming items for this course (up to 3 items)
+                const courseEvents = events.filter((e) => e.course?.id === course.id);
+                const courseAssignments = allAssignments.filter((a) => a.course === course.id);
+                const combinedItems = [
+                  ...courseEvents.map((e) => ({ id: `e-${e.id}`, name: e.name })),
+                  ...courseAssignments.map((a) => ({ id: `a-${a.id}`, name: a.name })),
+                ];
+                // Deduplicate by name
+                const uniqueItems = Array.from(
+                  new Map(combinedItems.map((item) => [item.name, item])).values(),
+                ).slice(0, 3);
+
+                const coursePapers = (
+                  uniqueItems.length > 0
+                    ? uniqueItems
+                    : [{ id: 'default-1', name: 'Syllabus & Course Notes' }]
+                ).map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className="w-full h-full p-2 flex flex-col justify-start text-[9px] leading-tight text-neutral-800 font-medium overflow-hidden select-none relative"
+                    title={item.name}
+                  >
+                    <div className="flex items-center gap-1 opacity-70 mb-1.5 border-b border-neutral-300/60 pb-0.5">
+                      <FileText className="w-2.5 h-2.5 shrink-0 text-neutral-600" />
+                      <span className="font-mono text-[8px] font-bold uppercase tracking-wider truncate">
+                        {courseCode} · Doc #{idx + 1}
+                      </span>
+                    </div>
+                    <div className="space-y-1 mt-0.5">
+                      <div className="h-1.5 bg-neutral-700/60 rounded-xs w-4/5" />
+                      <div className="h-1.5 bg-neutral-400/50 rounded-xs w-2/3" />
+                      <div className="h-1.5 bg-neutral-300/60 rounded-xs w-1/2" />
+                    </div>
+                  </div>
+                ));
 
                 return (
                   <Link
@@ -570,15 +602,21 @@ export default function Home() {
                     />
 
                     <div>
-                      {/* Card Header with Icon and Course Code Badge */}
+                      {/* Card Header with Folder and Course Code Badge */}
                       <div className="flex items-center justify-between gap-3 mb-6">
-                        <div className="w-12 h-12 rounded-lg border border-border/30 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-background shadow-2xs">
-                          <Icon
-                            className="w-5 h-5 text-foreground"
-                            strokeWidth={1.5}
+                        <div className="w-14 h-14 rounded-lg border border-border/30 flex items-center justify-center bg-background shadow-2xs overflow-visible">
+                          <Folder
+                            size={0.65}
+                            color={accent.hex}
+                            items={coursePapers}
+                            interactive={false}
+                            className="transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
-                        <span className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30">
+                        <span
+                          data-testid="course-code-badge"
+                          className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30"
+                        >
                           {courseCode}
                         </span>
                       </div>
