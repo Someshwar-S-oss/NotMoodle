@@ -24,7 +24,7 @@ export default async function LandingPage() {
               NOT MOODLE
             </span>
           </h1>
-          <p className="mt-6 md:mt-8 text-foreground/70 max-w-lg text-center font-medium text-sm md:text-base px-4">
+          <p className="mt-6 md:mt-8 text-secondary max-w-lg text-center font-medium text-sm md:text-base px-4">
             A sophisticated synthesis of academic workflows, emphasizing typographic clarity and minimal resistance.
           </p>
           <div className="mt-8 md:mt-12 flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4">
@@ -47,19 +47,19 @@ export default async function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
             <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
               <h3 className="clash-title text-2xl uppercase">Minimalist Design</h3>
-              <p className="text-foreground/70 font-medium">
+              <p className="text-secondary font-medium">
                 Eliminate the visual noise of traditional Learning Management Systems. Focus purely on the data that drives execution.
               </p>
             </div>
             <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
               <h3 className="clash-title text-2xl uppercase">Instant Sync</h3>
-              <p className="text-foreground/70 font-medium">
+              <p className="text-secondary font-medium">
                 Seamlessly bridges with your existing university infrastructure. Never miss a deadline with automated timeline synchronization.
               </p>
             </div>
             <div className="flex flex-col gap-4 border-t border-border/20 pt-6">
               <h3 className="clash-title text-2xl uppercase">Focus Driven</h3>
-              <p className="text-foreground/70 font-medium">
+              <p className="text-secondary font-medium">
                 Built around Anki-style overdue, today, and upcoming assignment buckets, prioritizing what matters most.
               </p>
             </div>

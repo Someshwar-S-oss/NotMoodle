@@ -15,7 +15,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
       <form className="flex w-full max-w-md flex-col justify-center gap-6 p-6 sm:p-12 border border-border/20 bg-card shadow-[8px_8px_0px_var(--color-foreground)]">
         <div className="flex flex-col items-center gap-2 mb-4">
           <h1 className="clash-title text-4xl text-center uppercase">New Password</h1>
-          <p className="text-center text-sm font-medium text-foreground/60 uppercase tracking-widest">
+          <p className="text-center text-sm font-medium text-tertiary uppercase tracking-widest">
             Enter your new password below
           </p>
         </div>

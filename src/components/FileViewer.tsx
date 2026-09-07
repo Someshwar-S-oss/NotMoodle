@@ -53,7 +53,7 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
         if (!response.ok) throw new Error("Failed to download file from Moodle")
         const blob = await response.blob()
 
-        // 3. Upload to Supabase (this also serves as the trigger for our AI RAG worker later)
+        // 3. Upload to Supabase for caching and fast preview reuse
         const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, blob, {
           cacheControl: '3600',
           upsert: false // Don't overwrite if it was just uploaded by someone else
@@ -91,10 +91,10 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 text-foreground/50 border-2 border-foreground bg-card shadow-[4px_4px_0px_var(--color-foreground)]">
+      <div className="flex flex-col items-center justify-center py-32 text-tertiary border-2 border-foreground bg-card shadow-[4px_4px_0px_var(--color-foreground)]" aria-live="polite" aria-busy="true">
         <Loader2 className="h-10 w-10 animate-spin mb-6 stroke-[2px] text-foreground" />
-        <p className="font-bold text-foreground uppercase tracking-widest text-sm">Syncing file securely...</p>
-        <p className="text-[10px] mt-2 font-bold uppercase tracking-widest text-foreground/50">Checking local cache and Moodle.</p>
+        <p className="font-bold text-foreground uppercase tracking-widest text-sm">Loading file...</p>
+        <p className="text-[10px] mt-2 font-bold uppercase tracking-widest text-tertiary">Fetching the latest version.</p>
       </div>
     )
   }
@@ -118,14 +118,14 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
   return (
     <div className="space-y-6 h-full">
       <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest border-b-2 border-foreground pb-3">
-        <span className="text-foreground/60">
+        <span className="text-tertiary">
           {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
         </span>
         <a 
           href={fallbackUrl || previewUrl!} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="flex items-center gap-2 text-foreground hover:text-foreground/70 transition-colors"
+          className="flex items-center gap-2 text-foreground hover:text-secondary transition-colors"
         >
           <ExternalLink className="h-4 w-4 stroke-[2px]" />
           Download Direct

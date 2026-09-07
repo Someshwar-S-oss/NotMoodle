@@ -63,7 +63,7 @@ export function CommandMenu() {
     if (type === 'forum') return <MessageSquare className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
     if (type === 'resource') return <FileText className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
     if (type === 'assign') return <ClipboardList className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
-    return <LinkIcon className="mr-3 h-4 w-4 text-foreground/50 shrink-0" strokeWidth={1.5} />
+    return <LinkIcon className="mr-3 h-4 w-4 text-tertiary shrink-0" strokeWidth={1.5} />
   }
 
   if (!open) return null
@@ -86,20 +86,20 @@ export function CommandMenu() {
               placeholder={indexing ? 'Building search index...' : 'Search modules, files, assignments...'}
               className="flex-1 bg-transparent border-0 outline-none text-foreground px-4 py-4 placeholder-foreground/40 text-lg font-medium font-sans"
             />
-            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] uppercase tracking-widest font-bold text-foreground/50 bg-background px-2 py-1">
+            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] uppercase tracking-widest font-bold text-tertiary bg-background px-2 py-1">
               ESC
             </kbd>
           </div>
 
           <Command.List className="max-h-[55vh] overflow-y-auto p-0">
             {indexing ? (
-              <div className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest flex flex-col items-center">
+              <div className="p-12 text-center text-tertiary text-xs uppercase font-bold tracking-widest flex flex-col items-center">
                 <Loader2 className="h-8 w-8 animate-spin mb-4 text-foreground" />
                 Indexing your workspace...
               </div>
             ) : (
               <>
-                <Command.Empty className="p-12 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest">
+                <Command.Empty className="p-12 text-center text-tertiary text-xs uppercase font-bold tracking-widest">
                   No results for &ldquo;{query}&rdquo;
                 </Command.Empty>
 
@@ -119,7 +119,7 @@ export function CommandMenu() {
                     {getIcon(item.type)}
                     <div className="flex flex-col min-w-0">
                       <span className="font-bold uppercase tracking-wide truncate group-aria-selected:text-background">{item.title}</span>
-                      <span className="text-xs font-medium text-foreground/50 group-aria-selected:text-background/70 truncate mt-1">
+                      <span className="text-xs font-medium text-tertiary group-aria-selected:text-background/70 truncate mt-1">
                         {item.course} · {item.type}
                       </span>
                     </div>
@@ -129,7 +129,7 @@ export function CommandMenu() {
             )}
           </Command.List>
 
-          <div className="bg-card px-6 py-3 border-t border-border/20 flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-foreground/60">
+          <div className="bg-card px-6 py-3 border-t border-border/20 flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-tertiary">
             <span className="flex items-center gap-2">
               <kbd className="bg-background px-2 py-1">↑</kbd>
               <kbd className="bg-background px-2 py-1">↓</kbd> NAVIGATE

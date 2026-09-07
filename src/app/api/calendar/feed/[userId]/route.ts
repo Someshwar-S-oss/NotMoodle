@@ -15,7 +15,11 @@ export async function GET(
 
   const { userId } = await params
   
-  const { data: conn } = await supabase.from('moodle_connections').select('cached_assignments').eq('user_id', userId).single()
+  const { data: conn } = await supabase
+    .from('moodle_connections')
+    .select('cached_assignments, last_sync')
+    .eq('user_id', userId)
+    .single()
   
   if (!conn) {
     return new NextResponse('User not found or not connected to Moodle', { status: 404 })
@@ -23,31 +27,30 @@ export async function GET(
 
   const assignments = conn.cached_assignments || []
 
-  let icsContent = [
+  const icsLines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//NotMoodle//Deadlines Feed//EN',
     'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH'
+    'METHOD:PUBLISH',
   ]
 
   for (const assignment of assignments) {
     if (assignment.duedate > 0) {
       const startDate = new Date(assignment.duedate * 1000)
-      
-      // ICS requires YYYYMMDDTHHMMSSZ format
       const startFormat = startDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-      
-      // Set end time to 1 hour after due date so it shows up as a block
       const endDate = new Date((assignment.duedate + 3600) * 1000)
       const endFormat = endDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-      
-      icsContent.push(
+      const lastSync = conn.last_sync
+        ? new Date(conn.last_sync).toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
+        : startFormat
+
+      icsLines.push(
         'BEGIN:VEVENT',
         `UID:assign_${assignment.id}@notmoodle.com`,
         `SUMMARY:[Due] ${assignment.name}`,
         `DESCRIPTION:Course: ${assignment.coursename}`,
-        `DTSTAMP:${startFormat}`,
+        `DTSTAMP:${lastSync}`,
         `DTSTART:${startFormat}`,
         `DTEND:${endFormat}`,
         'END:VEVENT'
@@ -55,12 +58,14 @@ export async function GET(
     }
   }
 
-  icsContent.push('END:VCALENDAR')
+  icsLines.push('END:VCALENDAR')
 
-  return new NextResponse(icsContent.join('\r\n'), {
+  return new NextResponse(icsLines.join('\r\n'), {
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': `attachment; filename="notmoodle-deadlines.ics"`,
+      // Don't let CDNs or proxies cache this — always serve the freshest DB copy
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
     },
   })
 }

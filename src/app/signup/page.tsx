@@ -17,24 +17,24 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
         
         <div className="flex flex-col gap-2">
           <label className="text-xs uppercase tracking-widest font-bold" htmlFor="name">Full Name</label>
-          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" name="name" type="text" placeholder="John Doe" required />
+          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" name="name" id="name" type="text" placeholder="John Doe" required autoComplete="name" />
         </div>
 
         <div className="flex flex-col gap-2">
           <label className="text-xs uppercase tracking-widest font-bold" htmlFor="email">Email</label>
-          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" name="email" type="email" placeholder="you@example.com" required />
+          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" name="email" id="email" type="email" placeholder="you@example.com" required autoComplete="email" />
         </div>
         
         <div className="flex flex-col gap-2">
           <label className="text-xs uppercase tracking-widest font-bold" htmlFor="password">Password</label>
-          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" type="password" name="password" placeholder="••••••••" required />
+          <input className="rounded-none border border-border/20 bg-background px-4 py-3 focus:outline-none focus:border-border transition-colors font-medium" type="password" name="password" id="password" placeholder="••••••••" required minLength={6} autoComplete="new-password" />
         </div>
         
         <button formAction={signup} className="bg-foreground text-background hover:scale-105 transition-transform duration-300 rounded-full px-4 py-3 mt-4 font-medium uppercase tracking-widest text-sm">Sign Up</button>
         
         <div className="relative flex items-center py-2">
           <div className="flex-grow border-t border-border/20"></div>
-          <span className="flex-shrink-0 mx-4 text-xs uppercase tracking-widest text-foreground/50 font-bold">Or</span>
+          <span className="flex-shrink-0 mx-4 text-xs uppercase tracking-widest text-tertiary font-bold">Or</span>
           <div className="flex-grow border-t border-border/20"></div>
         </div>
 
@@ -48,7 +48,7 @@ export default async function SignupPage({ searchParams }: { searchParams: Promi
           Continue with Google
         </button>
         
-        <p className="text-center text-sm mt-4 text-foreground/60 font-medium">
+        <p className="text-center text-sm mt-4 text-tertiary font-medium">
           Already have an account? <Link href="/login" className="text-foreground hover:underline">Log in</Link>
         </p>
       </form>

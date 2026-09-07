@@ -1,0 +1,1553 @@
+﻿diff --git a/src/__tests__/DrawersAndSecondaryPages.test.tsx b/src/__tests__/DrawersAndSecondaryPages.test.tsx
+new file mode 100644
+index 0000000..5be42c8
+--- /dev/null
++++ b/src/__tests__/DrawersAndSecondaryPages.test.tsx
+@@ -0,0 +1,359 @@
++import React from 'react'
++import { render, screen, fireEvent, waitFor } from '@testing-library/react'
++import { Drawer } from '@/components/Drawer'
++import { AssignmentDetails } from '@/components/AssignmentDetails'
++import SettingsPage from '@/app/settings/page'
++import NotificationsPage from '@/app/notifications/page'
++
++// Mock next-themes
++const mockSetTheme = jest.fn()
++let mockCurrentTheme = 'light'
++
++jest.mock('next-themes', () => ({
++  useTheme: () => ({
++    theme: mockCurrentTheme,
++    setTheme: mockSetTheme,
++  }),
++}))
++
++// Mock Supabase
++jest.mock('../utils/supabase/client', () => ({
++  createClient: () => ({
++    auth: {
++      getUser: jest.fn().mockResolvedValue({
++        data: { user: { id: 'user-123' } },
++      }),
++    },
++    from: () => ({
++      select: () => ({
++        eq: () => ({
++          maybeSingle: jest.fn().mockResolvedValue({
++            data: { encrypted_token: 'valid-token', last_sync: '2026-09-01T10:00:00Z' },
++          }),
++        }),
++      }),
++    }),
++  }),
++}))
++
++// Mock moodle-client
++jest.mock('../lib/moodle-client', () => ({
++  uploadFileToDraft: jest.fn(),
++  saveSubmission: jest.fn(),
++  getSubmissionStatus: jest.fn(),
++}))
++
++describe('Drawer component', () => {
++  it('renders title and children when isOpen is true', () => {
++    render(
++      <Drawer isOpen={true} onClose={jest.fn()} title="Test Drawer">
++        <div>Drawer Child Content</div>
++      </Drawer>
++    )
++
++    expect(screen.getByText('Test Drawer')).toBeInTheDocument()
++    expect(screen.getByText('Drawer Child Content')).toBeInTheDocument()
++  })
++
++  it('does not render when isOpen is false', () => {
++    render(
++      <Drawer isOpen={false} onClose={jest.fn()} title="Closed Drawer">
++        <div>Hidden Content</div>
++      </Drawer>
++    )
++
++    expect(screen.queryByText('Closed Drawer')).not.toBeInTheDocument()
++    expect(screen.queryByText('Hidden Content')).not.toBeInTheDocument()
++  })
++
++  it('invokes onClose callback when close button is clicked', () => {
++    const handleClose = jest.fn()
++    render(
++      <Drawer isOpen={true} onClose={handleClose} title="Closeable Drawer">
++        <div>Content</div>
++      </Drawer>
++    )
++
++    const closeBtn = screen.getByRole('button', { name: /close drawer/i })
++    fireEvent.click(closeBtn)
++    expect(handleClose).toHaveBeenCalledTimes(1)
++  })
++
++  it('invokes onClose callback on Escape key press', () => {
++    const handleClose = jest.fn()
++    render(
++      <Drawer isOpen={true} onClose={handleClose} title="Escape Drawer">
++        <div>Content</div>
++      </Drawer>
++    )
++
++    fireEvent.keyDown(window, { key: 'Escape' })
++    expect(handleClose).toHaveBeenCalledTimes(1)
++  })
++})
++
++describe('AssignmentDetails component', () => {
++  const mockAssignment = {
++    id: 42,
++    cmid: 1042,
++    coursename: 'Systems Engineering',
++    name: 'Term Project Part 1',
++    duedate: 1800000000, // Future timestamp
++    grade: 100,
++    intro: '<p>Complete all sections and submit report.</p>',
++    introattachments: [
++      { filename: 'rubric.pdf', fileurl: 'https://moodle.example.com/rubric.pdf', filesize: 204800 },
++    ],
++  }
++
++  beforeEach(() => {
++    global.fetch = jest.fn((url: any) => {
++      if (typeof url === 'string' && url.includes('/api/moodle/token')) {
++        return Promise.resolve({
++          ok: true,
++          json: () => Promise.resolve({ token: 'mock-moodle-token' }),
++        } as Response)
++      }
++      return Promise.reject(new Error('not found'))
++    }) as any
++  })
++
++  it('displays pending submission status when not submitted and shows due date and files', async () => {
++    const { getSubmissionStatus } = require('../lib/moodle-client')
++    getSubmissionStatus.mockResolvedValueOnce({
++      submitted: false,
++      graded: false,
++      status: 'new',
++      files: [],
++    })
++
++    render(<AssignmentDetails assignment={mockAssignment} />)
++
++    expect(screen.getByText('Term Project Part 1')).toBeInTheDocument()
++    expect(screen.getByText('Systems Engineering')).toBeInTheDocument()
++    expect(screen.getByText(/rubric\.pdf/i)).toBeInTheDocument()
++    expect(screen.getByRole('link', { name: /open in moodle/i })).toHaveAttribute(
++      'href',
++      'https://hselearning.sriher.com/mod/assign/view.php?id=1042'
++    )
++
++    await waitFor(() => {
++      expect(screen.getByText(/pending submission/i)).toBeInTheDocument()
++    })
++  })
++
++  it('displays submitted status pill when assignment has been submitted', async () => {
++    const { getSubmissionStatus } = require('../lib/moodle-client')
++    getSubmissionStatus.mockResolvedValueOnce({
++      submitted: true,
++      graded: true,
++      status: 'submitted',
++      files: [{ filename: 'final-submission.pdf', filesize: 512000 }],
++    })
++
++    render(<AssignmentDetails assignment={mockAssignment} />)
++
++    await waitFor(() => {
++      expect(screen.getByText(/submitted for grading/i)).toBeInTheDocument()
++    })
++    expect(screen.getByText('final-submission.pdf')).toBeInTheDocument()
++  })
++})
++
++describe('SettingsPage component', () => {
++  beforeEach(() => {
++    mockSetTheme.mockClear()
++    mockCurrentTheme = 'light'
++    global.fetch = jest.fn((url: any) => {
++      if (typeof url === 'string' && url.includes('/api/moodle/sync')) {
++        return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true }) } as Response)
++      }
++      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response)
++    }) as any
++  })
++
++  it('renders theme segmented options and triggers setTheme on click', async () => {
++    render(<SettingsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByRole('radio', { name: /light/i })).toBeInTheDocument()
++    })
++
++    const darkButton = screen.getByRole('radio', { name: /dark/i })
++    const systemButton = screen.getByRole('radio', { name: /system/i })
++
++    fireEvent.click(darkButton)
++    expect(mockSetTheme).toHaveBeenCalledWith('dark')
++
++    fireEvent.click(systemButton)
++    expect(mockSetTheme).toHaveBeenCalledWith('system')
++  })
++
++  it('renders Google Calendar sync card with copy button and 3-step setup guide', async () => {
++    // Mock navigator.clipboard
++    Object.assign(navigator, {
++      clipboard: {
++        writeText: jest.fn().mockResolvedValue(undefined),
++      },
++    })
++
++    render(<SettingsPage />)
++
++    expect(screen.getByText('Google Calendar Sync')).toBeInTheDocument()
++    expect(screen.getByText('Quick 3-Step Setup')).toBeInTheDocument()
++    expect(screen.getByText('Copy Feed URL')).toBeInTheDocument()
++
++    // Wait for userId to load so calendarUrl is generated
++    const input = await screen.findByLabelText('Google Calendar Feed URL')
++    await waitFor(() => {
++      expect(input).toHaveValue('http://localhost/api/calendar/feed/user-123')
++    })
++
++    const copyBtn = screen.getByRole('button', { name: /copy calendar feed url/i })
++    fireEvent.click(copyBtn)
++
++    await waitFor(() => {
++      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('http://localhost/api/calendar/feed/user-123')
++    })
++  })
++
++  it('renders Moodle integration status card and handles sync trigger', async () => {
++    render(<SettingsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText(/connected/i)).toBeInTheDocument()
++    })
++
++    const syncBtn = screen.getByRole('button', { name: /sync now/i })
++    fireEvent.click(syncBtn)
++
++    await waitFor(() => {
++      expect(global.fetch).toHaveBeenCalledWith(
++        '/api/moodle/sync',
++        expect.objectContaining({ method: 'POST' })
++      )
++    })
++  })
++})
++
++describe('NotificationsPage component', () => {
++  const mockNotifications = [
++    {
++      id: 'notif-1',
++      title: 'Assignment 1 Due Tomorrow',
++      message: 'Don forget to submit your report before 11:59 PM.',
++      type: 'deadline',
++      is_read: false,
++      created_at: new Date(Date.now() - 1000 * 60 * 10).toISOString(), // 10m ago
++    },
++    {
++      id: 'notif-2',
++      title: 'Lab 2 Grade Released',
++      message: 'Your grade for Lab 2 is now available.',
++      type: 'grade',
++      is_read: true,
++      created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2h ago
++    },
++    {
++      id: 'notif-3',
++      title: 'Course Announcement',
++      message: 'New office hours scheduled this Wednesday.',
++      type: 'message',
++      is_read: false,
++      created_at: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(), // Yesterday
++    },
++  ]
++
++  beforeEach(() => {
++    global.fetch = jest.fn((url: any, options: any) => {
++      if (typeof url === 'string' && url.includes('/api/notifications')) {
++        if (options?.method === 'PATCH') {
++          return Promise.resolve({ ok: true, json: () => Promise.resolve({ success: true }) } as Response)
++        }
++        return Promise.resolve({
++          ok: true,
++          json: () => Promise.resolve({ notifications: mockNotifications }),
++        } as Response)
++      }
++      return Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response)
++    }) as any
++  })
++
++  it('renders category filter tabs and displays notifications count', async () => {
++    render(<NotificationsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText('Assignment 1 Due Tomorrow')).toBeInTheDocument()
++    })
++
++    expect(screen.getByRole('tab', { name: /all/i })).toBeInTheDocument()
++    expect(screen.getByRole('tab', { name: /unread/i })).toBeInTheDocument()
++    expect(screen.getByRole('tab', { name: /deadlines/i })).toBeInTheDocument()
++    expect(screen.getByRole('tab', { name: /grades/i })).toBeInTheDocument()
++  })
++
++  it('filters notifications when clicking category tabs', async () => {
++    render(<NotificationsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText('Assignment 1 Due Tomorrow')).toBeInTheDocument()
++    })
++
++    // Click Unread tab
++    const unreadTab = screen.getByRole('tab', { name: /unread/i })
++    fireEvent.click(unreadTab)
++
++    expect(screen.getByText('Assignment 1 Due Tomorrow')).toBeInTheDocument()
++    expect(screen.getByText('Course Announcement')).toBeInTheDocument()
++    expect(screen.queryByText('Lab 2 Grade Released')).not.toBeInTheDocument()
++
++    // Click Grades tab
++    const gradesTab = screen.getByRole('tab', { name: /grades/i })
++    fireEvent.click(gradesTab)
++
++    expect(screen.getByText('Lab 2 Grade Released')).toBeInTheDocument()
++    expect(screen.queryByText('Assignment 1 Due Tomorrow')).not.toBeInTheDocument()
++  })
++
++  it('marks a notification as read on acknowledge button click', async () => {
++    render(<NotificationsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText('Assignment 1 Due Tomorrow')).toBeInTheDocument()
++    })
++
++    const ackButtons = screen.getAllByRole('button', { name: /mark .* as read/i })
++    expect(ackButtons.length).toBeGreaterThan(0)
++    fireEvent.click(ackButtons[0])
++
++    await waitFor(() => {
++      expect(global.fetch).toHaveBeenCalledWith(
++        '/api/notifications',
++        expect.objectContaining({
++          method: 'PATCH',
++        })
++      )
++    })
++  })
++
++  it('renders friendly cloudy glow empty state when category has no items', async () => {
++    render(<NotificationsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText('Assignment 1 Due Tomorrow')).toBeInTheDocument()
++    })
++
++    ;(global.fetch as jest.Mock).mockImplementationOnce(() =>
++      Promise.resolve({
++        ok: true,
++        json: () => Promise.resolve({ notifications: [] }),
++      })
++    )
++
++    render(<NotificationsPage />)
++
++    await waitFor(() => {
++      expect(screen.getByText(/all clear — you're fully up to date!/i)).toBeInTheDocument()
++    })
++  })
++})
+diff --git a/src/app/notifications/page.tsx b/src/app/notifications/page.tsx
+index ce40cee..32afcbe 100644
+--- a/src/app/notifications/page.tsx
++++ b/src/app/notifications/page.tsx
+@@ -1,103 +1,280 @@
+ 'use client'
+ 
+-import { useEffect, useState } from 'react'
+-import { Bell, Check, BookOpen, MessageCircle, Clock } from 'lucide-react'
++import { useEffect, useState, useMemo } from 'react'
++import { Bell, Check, BookOpen, MessageCircle, Clock, Award, CheckCircle2, Sparkles } from 'lucide-react'
++
++type FilterCategory = 'all' | 'unread' | 'deadlines' | 'grades'
+ 
+ export default function NotificationsPage() {
+   const [notifications, setNotifications] = useState<any[]>([])
+   const [loading, setLoading] = useState(true)
++  const [activeTab, setActiveTab] = useState<FilterCategory>('all')
+ 
+   useEffect(() => {
+     fetchNotifications()
+   }, [])
+ 
+   const fetchNotifications = async () => {
+-    const res = await fetch('/api/notifications')
+-    if (res.ok) {
+-      const data = await res.json()
+-      setNotifications(data.notifications || [])
++    try {
++      const res = await fetch('/api/notifications')
++      if (res.ok) {
++        const data = await res.json()
++        setNotifications(data.notifications || [])
++      }
++    } catch {
++      // Fallback to empty
+     }
+     setLoading(false)
+   }
+ 
+   const markAsRead = async (id: string) => {
+     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+-    await fetch('/api/notifications', {
+-      method: 'PATCH',
+-      headers: { 'Content-Type': 'application/json' },
+-      body: JSON.stringify({ ids: [id], read: true })
+-    })
++    try {
++      await fetch('/api/notifications', {
++        method: 'PATCH',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ ids: [id], read: true })
++      })
++    } catch {
++      // Non-fatal
++    }
++  }
++
++  const markAllAsRead = async () => {
++    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id)
++    if (unreadIds.length === 0) return
++
++    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
++    try {
++      await fetch('/api/notifications', {
++        method: 'PATCH',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ ids: unreadIds, read: true })
++      })
++    } catch {
++      // Non-fatal
++    }
++  }
++
++  // Calculate category counts
++  const counts = useMemo(() => {
++    return {
++      all: notifications.length,
++      unread: notifications.filter(n => !n.is_read).length,
++      deadlines: notifications.filter(n => n.type === 'deadline' || n.type === 'assign').length,
++      grades: notifications.filter(n => n.type === 'grade' || n.type === 'feedback').length,
++    }
++  }, [notifications])
++
++  // Filtered notifications based on active tab
++  const filteredNotifications = useMemo(() => {
++    switch (activeTab) {
++      case 'unread':
++        return notifications.filter(n => !n.is_read)
++      case 'deadlines':
++        return notifications.filter(n => n.type === 'deadline' || n.type === 'assign')
++      case 'grades':
++        return notifications.filter(n => n.type === 'grade' || n.type === 'feedback')
++      case 'all':
++      default:
++        return notifications
++    }
++  }, [notifications, activeTab])
++
++  // Relative timestamp calculation ("5m ago", "2h ago", "Yesterday", etc.)
++  const formatRelativeTime = (isoString: string) => {
++    if (!isoString) return ''
++    const date = new Date(isoString)
++    const now = Date.now()
++    const diffMs = now - date.getTime()
++    const diffSecs = Math.floor(diffMs / 1000)
++    const diffMins = Math.floor(diffSecs / 60)
++    const diffHours = Math.floor(diffMins / 60)
++    const diffDays = Math.floor(diffHours / 24)
++
++    if (diffSecs < 60) return 'Just now'
++    if (diffMins < 60) return `${diffMins}m ago`
++    if (diffHours < 24) return `${diffHours}h ago`
++    if (diffDays === 1) return 'Yesterday'
++    if (diffDays < 7) return `${diffDays}d ago`
++    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })
+   }
+ 
+   const getIcon = (type: string) => {
+     switch (type) {
+-      case 'grade': return <BookOpen className="text-foreground" strokeWidth={1.5} />
+-      case 'message': return <MessageCircle className="text-foreground" strokeWidth={1.5} />
+-      case 'deadline': return <Clock className="text-foreground" strokeWidth={1.5} />
+-      default: return <Bell className="text-foreground" strokeWidth={1.5} />
++      case 'grade':
++      case 'feedback':
++        return <Award className="text-foreground w-5 h-5" strokeWidth={1.75} />
++      case 'message':
++        return <MessageCircle className="text-foreground w-5 h-5" strokeWidth={1.75} />
++      case 'deadline':
++      case 'assign':
++        return <Clock className="text-foreground w-5 h-5" strokeWidth={1.75} />
++      default:
++        return <Bell className="text-foreground w-5 h-5" strokeWidth={1.75} />
+     }
+   }
+ 
++  const tabs = [
++    { id: 'all' as const, label: 'All', count: counts.all },
++    { id: 'unread' as const, label: 'Unread', count: counts.unread },
++    { id: 'deadlines' as const, label: 'Deadlines', count: counts.deadlines },
++    { id: 'grades' as const, label: 'Grades', count: counts.grades },
++  ]
++
+   return (
+-    <main className="min-h-screen bg-background text-foreground px-6 md:px-12 py-24 flex flex-col items-center">
++    <main className="min-h-screen bg-background text-foreground px-6 md:px-12 py-16 flex flex-col items-center">
+       <div className="w-full max-w-[1000px]">
+-        <header className="mb-16">
+-          <h1 className="clash-title uppercase text-[6vw] leading-[0.8] tracking-tight">
+-            Notifications
+-          </h1>
+-          <div className="flex items-center gap-6 mt-12">
+-            <p className="text-xs uppercase tracking-widest font-bold">Inbox Overview</p>
+-            <div className="flex-1 hairline-divider h-px w-full"></div>
++        {/* Header */}
++        <header className="mb-10">
++          <div className="flex flex-wrap items-end justify-between gap-4 mb-3">
++            <div>
++              <h1 className="clash-title uppercase text-4xl md:text-5xl leading-tight tracking-tight">
++                Notifications
++              </h1>
++              <p className="text-secondary text-sm font-medium mt-1">Course deadlines, submitted feedback, and academic alerts.</p>
++            </div>
++            {counts.unread > 0 && (
++              <button
++                onClick={markAllAsRead}
++                className="text-xs font-bold uppercase tracking-wider text-tertiary hover:text-foreground transition-colors cursor-pointer py-1"
++              >
++                Mark all as read
++              </button>
++            )}
+           </div>
++          <div className="hairline-divider h-px w-full bg-border/20 mt-4"></div>
+         </header>
+ 
++        {/* Category Filter Tabs */}
++        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2 scrollbar-none" role="tablist" aria-label="Notification categories">
++          {tabs.map(tab => {
++            const isActive = activeTab === tab.id
++            return (
++              <button
++                key={tab.id}
++                role="tab"
++                aria-selected={isActive}
++                onClick={() => setActiveTab(tab.id)}
++                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0 cursor-pointer ${
++                  isActive
++                    ? 'bg-foreground text-background shadow-xs ring-1 ring-foreground'
++                    : 'bg-card text-foreground/75 hover:text-foreground hover:bg-muted/60 border border-border/25'
++                }`}
++              >
++                <span>{tab.label}</span>
++                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${
++                  isActive
++                    ? 'bg-background text-foreground'
++                    : 'bg-muted text-secondary'
++                }`}>
++                  {tab.count}
++                </span>
++              </button>
++            )
++          })}
++        </div>
++
++        {/* List Content */}
+         {loading ? (
+           <div className="space-y-4">
+-            <div className="h-24 bg-card border border-border/20 animate-pulse"></div>
+-            <div className="h-24 bg-card border border-border/20 animate-pulse"></div>
++            <div className="h-28 bg-card border border-border/20 rounded-xl animate-pulse"></div>
++            <div className="h-28 bg-card border border-border/20 rounded-xl animate-pulse"></div>
++            <div className="h-28 bg-card border border-border/20 rounded-xl animate-pulse"></div>
+           </div>
+-        ) : notifications.length === 0 ? (
+-          <div className="text-center py-24 bg-card border border-border/20 flex flex-col items-center">
+-            <Bell className="h-12 w-12 mb-6 text-foreground/30" strokeWidth={1} />
+-            <p className="clash-title text-2xl uppercase">All caught up</p>
+-            <p className="text-foreground/70 font-medium mt-2">Zero pending items in the queue.</p>
++        ) : filteredNotifications.length === 0 ? (
++          /* Friendly Empty State with Ambient Cloudy Glow Background */
++          <div className="relative overflow-hidden text-center py-20 px-6 rounded-2xl border border-border/30 bg-card/60 flex flex-col items-center justify-center shadow-xs">
++            {/* Ambient subtle glow within the card */}
++            <div className="absolute inset-0 pointer-events-none opacity-60 dark:opacity-30">
++              <div className="absolute -top-1/2 -left-1/4 w-[400px] h-[400px] rounded-full bg-amber-200/40 blur-3xl dark:bg-sky-900/30" />
++              <div className="absolute -bottom-1/2 -right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-200/35 blur-3xl dark:bg-indigo-950/40" />
++            </div>
++
++            <div className="relative z-10 flex flex-col items-center">
++              <div className="w-14 h-14 rounded-full bg-muted/80 flex items-center justify-center mb-5 text-foreground shadow-xs border border-border/30">
++                <CheckCircle2 className="h-7 w-7 stroke-[1.75px] text-[var(--status-success)]" />
++              </div>
++              <h3 className="clash-title text-2xl uppercase tracking-wide text-foreground mb-2">
++                All clear — you&apos;re fully up to date!
++              </h3>
++              <p className="text-secondary text-sm font-medium max-w-sm">
++                {activeTab === 'all'
++                  ? 'No notifications found. Check back later for assignment due reminders or grade releases.'
++                  : `No ${activeTab} notifications right now.`}
++              </p>
++              {activeTab !== 'all' && (
++                <button
++                  onClick={() => setActiveTab('all')}
++                  className="mt-6 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground bg-background hover:bg-muted/60 border border-border/40 rounded-lg transition-colors cursor-pointer shadow-xs"
++                >
++                  View all notifications
++                </button>
++              )}
++            </div>
+           </div>
+         ) : (
+-          <div className="flex flex-col gap-4">
+-            {notifications.map(n => (
+-              <div 
+-                key={n.id} 
+-                className={`flex flex-col sm:flex-row sm:items-start p-6 border transition-colors duration-300 ${
+-                  n.is_read 
+-                    ? 'bg-transparent border-border/20 opacity-60 hover:opacity-100' 
+-                    : 'bg-card border-foreground shadow-[4px_4px_0px_var(--color-foreground),0.1)]'
++          <div className="flex flex-col gap-3.5">
++            {filteredNotifications.map(n => (
++              <div
++                key={n.id}
++                className={`relative flex flex-col sm:flex-row sm:items-start p-5 md:p-6 rounded-xl border transition-all duration-200 ${
++                  n.is_read
++                    ? 'bg-card/40 border-border/20 opacity-75 hover:opacity-100 hover:bg-card/70'
++                    : 'bg-card border-foreground/30 shadow-xs ring-1 ring-border/20'
+                 }`}
+               >
+-                <div className="mr-6 mb-4 sm:mb-0 w-12 h-12 bg-background border border-border/20 flex items-center justify-center shrink-0">
++                {/* Unread Indicator Dot */}
++                {!n.is_read && (
++                  <span
++                    aria-label="Unread notification"
++                    className="absolute top-4 right-4 sm:top-6 sm:left-3 sm:right-auto w-2.5 h-2.5 rounded-full bg-foreground shrink-0 shadow-xs"
++                  />
++                )}
++
++                {/* Type-Specific Icon Badge */}
++                <div className="mr-5 mb-4 sm:mb-0 sm:ml-4 w-12 h-12 rounded-xl bg-muted/70 border border-border/30 flex items-center justify-center shrink-0">
+                   {getIcon(n.type)}
+                 </div>
+-                <div className="flex-1">
+-                  <div className="flex items-center gap-3 mb-2">
+-                    <h3 className={`clash-title text-xl uppercase tracking-wide ${!n.is_read ? 'text-foreground' : 'text-foreground/80'}`}>
++
++                {/* Content */}
++                <div className="flex-1 min-w-0 pr-2">
++                  <div className="flex flex-wrap items-center gap-2.5 mb-1.5">
++                    <h3 className={`clash-title text-lg md:text-xl uppercase tracking-wide ${!n.is_read ? 'text-foreground font-semibold' : 'text-foreground/80'}`}>
+                       {n.title}
+                     </h3>
+                     {!n.is_read && (
+-                      <span className="bg-foreground text-background text-[10px] uppercase font-bold tracking-widest px-2 py-0.5">
++                      <span className="bg-foreground text-background text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full">
+                         New
+                       </span>
+                     )}
+                   </div>
+-                  <p className="text-foreground/80 font-medium text-sm max-w-2xl">{n.message}</p>
+-                  <p className="text-xs uppercase tracking-widest font-bold text-foreground/50 mt-4">
+-                    {new Date(n.created_at).toLocaleString()}
++
++                  <p className="text-foreground/80 font-medium text-sm leading-relaxed max-w-2xl">
++                    {n.message}
+                   </p>
++
++                  <div className="flex items-center gap-3 mt-3">
++                    <span className="text-xs font-mono text-tertiary">
++                      {formatRelativeTime(n.created_at)}
++                    </span>
++                    {n.created_at && (
++                      <span className="text-[10px] text-tertiary/70 hidden md:inline">
++                        • {new Date(n.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
++                      </span>
++                    )}
++                  </div>
+                 </div>
++
++                {/* Action button */}
+                 {!n.is_read && (
+-                  <button 
+-                    onClick={() => markAsRead(n.id)} 
+-                    className="mt-4 sm:mt-0 sm:ml-6 px-4 py-2 bg-transparent border border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors uppercase tracking-widest text-xs font-bold shrink-0 flex items-center gap-2"
++                  <button
++                    onClick={() => markAsRead(n.id)}
++                    aria-label={`Mark "${n.title}" as read`}
++                    className="mt-4 sm:mt-0 sm:ml-4 px-3.5 py-2 bg-background hover:bg-foreground hover:text-background border border-border/40 hover:border-foreground text-foreground rounded-lg transition-all uppercase tracking-wider text-xs font-bold shrink-0 flex items-center gap-2 cursor-pointer shadow-xs self-start"
+                   >
+-                    Acknowledge <Check size={16} />
++                    <span>Acknowledge</span>
++                    <Check size={14} className="stroke-[2.5px]" />
+                   </button>
+                 )}
+               </div>
+@@ -108,3 +285,4 @@ export default function NotificationsPage() {
+     </main>
+   )
+ }
++
+diff --git a/src/app/settings/page.tsx b/src/app/settings/page.tsx
+index b0c118f..ea51e7e 100644
+--- a/src/app/settings/page.tsx
++++ b/src/app/settings/page.tsx
+@@ -3,33 +3,61 @@
+ import { useState, useEffect } from 'react'
+ import { createClient } from '@/utils/supabase/client'
+ import { MoodleConnect } from '@/components/MoodleConnect'
+-import { Copy, Check } from 'lucide-react'
++import { Copy, Check, Sun, Moon, Monitor, Calendar, RefreshCw, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react'
+ import { useTheme } from 'next-themes'
+ 
+ export default function SettingsPage() {
+   const [userId, setUserId] = useState<string | null>(null)
+-  const [geminiKey, setGeminiKey] = useState('')
+-  const [geminiSaved, setGeminiSaved] = useState(false)
+   const [calendarCopied, setCalendarCopied] = useState(false)
++  const [moodleConnected, setMoodleConnected] = useState<boolean | null>(null)
++  const [lastSync, setLastSync] = useState<string | null>(null)
++  const [syncing, setSyncing] = useState(false)
+   const { theme, setTheme } = useTheme()
+   const [mounted, setMounted] = useState(false)
+ 
+   useEffect(() => {
+     setMounted(true)
+     const supabase = createClient()
+-    supabase.auth.getUser().then(({ data: { user } }) => {
+-      if (user) setUserId(user.id)
+-    })
+-    setGeminiKey(localStorage.getItem('notmoodle_gemini_key') || '')
+-  }, [])
++    const checkUserAndConnection = async () => {
++      try {
++        const { data: { user } } = await supabase.auth.getUser()
++        if (user) {
++          setUserId(user.id)
++          try {
++            const { data } = await supabase
++              .from('moodle_connections')
++              .select('last_sync, encrypted_token')
++              .eq('user_id', user.id)
++              .maybeSingle()
+ 
+-  const saveGeminiKey = () => {
+-    localStorage.setItem('notmoodle_gemini_key', geminiKey)
+-    setGeminiSaved(true)
+-    setTimeout(() => setGeminiSaved(false), 2000)
+-  }
++            if (data?.encrypted_token) {
++              setMoodleConnected(true)
++              setLastSync(data.last_sync || null)
++              return
++            }
++          } catch {
++            // Fall through to API check
++          }
++
++          // Also check token endpoint fallback
++          try {
++            const res = await fetch('/api/moodle/token')
++            setMoodleConnected(res.ok)
++          } catch {
++            setMoodleConnected(false)
++          }
++        }
++      } catch {
++        // User not logged in
++      }
++    }
++
++    checkUserAndConnection()
++  }, [])
+ 
+-  const calendarUrl = userId ? `${window.location.origin}/api/calendar/feed/${userId}` : ''
++  const calendarUrl = userId && typeof window !== 'undefined'
++    ? `${window.location.origin}/api/calendar/feed/${userId}`
++    : ''
+ 
+   const copyCalendarUrl = () => {
+     if (calendarUrl) {
+@@ -39,109 +67,225 @@ export default function SettingsPage() {
+     }
+   }
+ 
++  const handleManualResync = async () => {
++    setSyncing(true)
++    try {
++      const res = await fetch('/api/moodle/sync', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ assignments: [] }),
++      })
++      if (res.ok) {
++        setLastSync(new Date().toISOString())
++      }
++    } catch {
++      // Ignored
++    }
++    setSyncing(false)
++  }
++
++  const themeOptions = [
++    { value: 'light', label: 'Light', icon: Sun },
++    { value: 'dark', label: 'Dark', icon: Moon },
++    { value: 'system', label: 'System', icon: Monitor },
++  ] as const
++
+   return (
+     <div className="min-h-[calc(100vh-80px)] w-full bg-background text-foreground py-12 px-6 md:px-12 flex justify-center">
+-      <div className="w-full max-w-3xl flex flex-col gap-12">
++      <div className="w-full max-w-3xl flex flex-col gap-10">
+         <div>
+-          <h1 className="clash-title text-5xl uppercase mb-2">Settings</h1>
+-          <div className="hairline-divider w-full h-px mt-6 bg-border/10"></div>
++          <h1 className="clash-title text-4xl md:text-5xl uppercase tracking-tight mb-2">Settings</h1>
++          <p className="text-secondary font-medium text-sm">Manage appearance, external calendar subscriptions, and university portal integrations.</p>
++          <div className="hairline-divider w-full h-px mt-6 bg-border/15"></div>
+         </div>
+ 
+-        {/* Calendar Sync Section */}
+-        <section className="flex flex-col gap-6">
++        {/* Appearance Section: Visual Segmented Controller */}
++        <section className="flex flex-col gap-5">
+           <div>
+-            <h2 className="clash-title text-2xl uppercase mb-2">Google Calendar Sync</h2>
+-            <p className="text-foreground/70 font-medium">Subscribe to this URL in Google Calendar or Apple Calendar to sync your Moodle deadlines automatically.</p>
++            <h2 className="clash-title text-2xl uppercase tracking-wide mb-1">Appearance</h2>
++            <p className="text-secondary text-sm font-medium">Select your interface theme preference or synchronize with your operating system.</p>
+           </div>
+-          <div className="flex items-center gap-2">
+-            <input 
+-              readOnly 
+-              value={calendarUrl || 'Loading...'} 
+-              className="flex-1 rounded-none border border-border/20 bg-card px-4 py-3 focus:outline-none font-mono text-sm text-foreground/60"
+-            />
+-            <button 
+-              onClick={copyCalendarUrl}
+-              disabled={!calendarUrl}
+-              className="bg-foreground text-background hover:bg-foreground/80 transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm flex items-center justify-center gap-2 h-full"
+-            >
+-              {calendarCopied ? <><Check className="w-4 h-4" /> Copied</> : <><Copy className="w-4 h-4" /> Copy</>}
+-            </button>
+-          </div>
+-        </section>
+-
+-        <div className="hairline-divider w-full h-px bg-border/10"></div>
+ 
+-        {/* Appearance Section */}
+-        <section className="flex flex-col gap-6">
+-          <div>
+-            <h2 className="clash-title text-2xl uppercase mb-2">Appearance</h2>
+-            <p className="text-foreground/70 font-medium">Customize the platform aesthetic to your preference.</p>
+-          </div>
+-          <div className="flex flex-wrap gap-4">
+-            {mounted && (
+-              <>
+-                <button 
+-                  onClick={() => setTheme('light')}
+-                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'light' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+-                >
+-                  Light Mode
+-                </button>
+-                <button 
+-                  onClick={() => setTheme('dark')}
+-                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'dark' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+-                >
+-                  Dark Mode
+-                </button>
+-                <button 
+-                  onClick={() => setTheme('system')}
+-                  className={`px-6 py-3 font-medium uppercase tracking-widest text-sm border ${theme === 'system' ? 'bg-foreground text-background border-foreground' : 'bg-transparent text-foreground border-border/20 hover:border-foreground'} transition-colors duration-300`}
+-                >
+-                  System
+-                </button>
+-              </>
++          <div className="p-6 rounded-2xl bg-card border border-border/20 shadow-xs space-y-4">
++            <span className="text-xs font-bold uppercase tracking-widest text-tertiary block">Theme Preference</span>
++            {mounted ? (
++              <div 
++                role="radiogroup" 
++                aria-label="Theme selection" 
++                className="grid grid-cols-3 gap-3 p-1.5 bg-muted/50 rounded-xl border border-border/20"
++              >
++                {themeOptions.map(({ value, label, icon: Icon }) => {
++                  const isActive = theme === value
++                  return (
++                    <button
++                      key={value}
++                      type="button"
++                      role="radio"
++                      aria-checked={isActive}
++                      onClick={() => setTheme(value)}
++                      className={`flex items-center justify-center gap-2.5 py-3 px-4 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 cursor-pointer ${
++                        isActive
++                          ? 'bg-foreground text-background shadow-xs ring-1 ring-foreground'
++                          : 'text-foreground/80 hover:text-foreground hover:bg-background/60'
++                      }`}
++                    >
++                      <Icon className="w-4 h-4 stroke-[2px]" />
++                      <span>{label}</span>
++                    </button>
++                  )
++                })}
++              </div>
++            ) : (
++              <div className="h-12 bg-muted/40 animate-pulse rounded-xl" />
+             )}
+           </div>
+         </section>
+ 
+-        <div className="hairline-divider w-full h-px bg-border/10"></div>
++        <div className="hairline-divider w-full h-px bg-border/15"></div>
+ 
+-        {/* BYOK Section */}
+-        <section className="flex flex-col gap-6">
++        {/* Google Calendar Sync Section */}
++        <section className="flex flex-col gap-5">
+           <div>
+-            <h2 className="clash-title text-2xl uppercase mb-2">AI Configuration (BYOK)</h2>
+-            <p className="text-foreground/70 font-medium">Enter your Google Gemini API key to power the AI chat. Stored securely in your browser's local storage.</p>
++            <h2 className="clash-title text-2xl uppercase tracking-wide mb-1">Google Calendar Sync</h2>
++            <p className="text-secondary text-sm font-medium">Subscribe to this secure feed in Google Calendar or Apple Calendar to keep coursework synchronized in real time.</p>
+           </div>
+-          <div className="flex flex-col gap-2 max-w-md">
+-            <label className="text-xs uppercase tracking-widest font-bold" htmlFor="gemini-key">Gemini API Key</label>
+-            <div className="flex items-center gap-2">
++
++          <div className="p-6 md:p-8 rounded-2xl bg-card border border-border/20 shadow-xs space-y-6">
++            <div className="flex items-center gap-3">
++              <div className="p-2.5 rounded-xl bg-muted/70 text-foreground">
++                <Calendar className="w-5 h-5 stroke-[2px]" />
++              </div>
++              <div>
++                <h3 className="font-bold text-sm tracking-wide text-foreground">Personal iCal Feed</h3>
++                <p className="text-xs text-secondary">Auto-updates whenever new assignments or quizzes are scheduled.</p>
++              </div>
++            </div>
++
++            {/* URL input + Copy Button */}
++            <div className="flex flex-col sm:flex-row items-stretch gap-2.5">
+               <input 
+-                id="gemini-key"
+-                type="password"
+-                value={geminiKey}
+-                onChange={(e) => setGeminiKey(e.target.value)}
+-                placeholder="AIzaSy..."
+-                className="flex-1 rounded-none border border-border/20 bg-card px-4 py-3 focus:outline-none focus:border-border transition-colors font-mono text-sm"
++                readOnly 
++                value={calendarUrl || 'Loading calendar feed...'} 
++                aria-label="Google Calendar Feed URL"
++                className="flex-1 rounded-lg border border-border/30 bg-background px-4 py-3 font-mono text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-foreground select-all"
+               />
+               <button 
+-                onClick={saveGeminiKey}
+-                className="bg-transparent border border-border text-foreground hover:bg-foreground hover:text-background transition-colors duration-300 px-6 py-3 font-medium uppercase tracking-widest text-sm whitespace-nowrap"
++                onClick={copyCalendarUrl}
++                disabled={!calendarUrl}
++                aria-label="Copy calendar feed URL"
++                className="bg-foreground text-background hover:bg-foreground/85 active:scale-[0.99] disabled:opacity-50 transition-all px-6 py-3 rounded-lg font-bold uppercase tracking-wider text-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-xs"
+               >
+-                {geminiSaved ? 'Saved' : 'Save Key'}
++                {calendarCopied ? (
++                  <>
++                    <Check className="w-4 h-4 stroke-[2.5px] text-green-400" />
++                    <span>Copied!</span>
++                  </>
++                ) : (
++                  <>
++                    <Copy className="w-4 h-4 stroke-[2px]" />
++                    <span>Copy URL</span>
++                  </>
++                )}
+               </button>
+             </div>
++
++            {/* 3-Step Setup Guide */}
++            <div className="pt-4 border-t border-border/20 space-y-3">
++              <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">
++                Quick 3-Step Setup
++              </span>
++              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
++                <div className="p-4 rounded-xl bg-background border border-border/20 space-y-1.5">
++                  <div className="flex items-center gap-2">
++                    <span className="w-5 h-5 rounded-full bg-foreground text-background font-mono text-xs font-bold flex items-center justify-center">1</span>
++                    <h4 className="font-bold text-xs text-foreground">Copy Feed URL</h4>
++                  </div>
++                  <p className="text-[11px] text-secondary leading-relaxed">Click the copy button above to put your private subscribe link on your clipboard.</p>
++                </div>
++
++                <div className="p-4 rounded-xl bg-background border border-border/20 space-y-1.5">
++                  <div className="flex items-center gap-2">
++                    <span className="w-5 h-5 rounded-full bg-foreground text-background font-mono text-xs font-bold flex items-center justify-center">2</span>
++                    <h4 className="font-bold text-xs text-foreground">Add from URL</h4>
++                  </div>
++                  <p className="text-[11px] text-secondary leading-relaxed">In Google Calendar, go to &quot;Other calendars +&quot; and choose &quot;From URL&quot;.</p>
++                </div>
++
++                <div className="p-4 rounded-xl bg-background border border-border/20 space-y-1.5">
++                  <div className="flex items-center gap-2">
++                    <span className="w-5 h-5 rounded-full bg-foreground text-background font-mono text-xs font-bold flex items-center justify-center">3</span>
++                    <h4 className="font-bold text-xs text-foreground">Paste &amp; Sync</h4>
++                  </div>
++                  <p className="text-[11px] text-secondary leading-relaxed">Paste the URL and click &quot;Add calendar&quot;. Deadlines appear automatically.</p>
++                </div>
++              </div>
++            </div>
+           </div>
+         </section>
+ 
+-        <div className="hairline-divider w-full h-px bg-border/10"></div>
++        <div className="hairline-divider w-full h-px bg-border/15"></div>
+ 
+         {/* Moodle Connection Section */}
+-        <section className="flex flex-col gap-6">
++        <section className="flex flex-col gap-5">
+           <div>
+-            <h2 className="clash-title text-2xl uppercase mb-2">Moodle Integration</h2>
+-            <p className="text-foreground/70 font-medium">Connect your university Moodle account to enable timeline syncing and assignment extraction.</p>
++            <h2 className="clash-title text-2xl uppercase tracking-wide mb-1">Moodle Integration</h2>
++            <p className="text-secondary text-sm font-medium">Link your Sriher Moodle account to enable real-time timeline extraction, grade tracking, and assignment submission.</p>
+           </div>
+-          <div className="w-full max-w-md">
+-            <MoodleConnect onConnected={() => window.location.reload()} />
++
++          <div className="p-6 md:p-8 rounded-2xl bg-card border border-border/20 shadow-xs space-y-6">
++            <div className="flex flex-wrap items-center justify-between gap-4">
++              <div className="flex items-center gap-3">
++                <div className="p-2.5 rounded-xl bg-muted/70 text-foreground">
++                  <Sparkles className="w-5 h-5 stroke-[2px]" />
++                </div>
++                <div>
++                  <h3 className="font-bold text-sm text-foreground">Connection Status</h3>
++                  <p className="text-xs text-secondary">hselearning.sriher.com</p>
++                </div>
++              </div>
++
++              {/* Status badge */}
++              {moodleConnected === null ? (
++                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-muted text-tertiary border border-border/20 animate-pulse">
++                  Checking...
++                </span>
++              ) : moodleConnected ? (
++                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30">
++                  <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5px]" />
++                  Connected
++                </span>
++              ) : (
++                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-[var(--urgency-overdue-bg)] text-[var(--urgency-overdue)] border border-[var(--urgency-overdue-border)]">
++                  <AlertCircle className="w-3.5 h-3.5 stroke-[2.5px]" />
++                  Disconnected
++                </span>
++              )}
++            </div>
++
++            {/* Last synced metadata & manual sync button */}
++            {moodleConnected && (
++              <div className="flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl bg-background border border-border/20">
++                <div className="text-xs">
++                  <span className="text-tertiary font-bold uppercase tracking-widest block text-[10px]">Last Sync</span>
++                  <span className="font-mono text-secondary font-medium">
++                    {lastSync ? new Date(lastSync).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Active session connected'}
++                  </span>
++                </div>
++                <button
++                  onClick={handleManualResync}
++                  disabled={syncing}
++                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg border border-border/40 hover:border-foreground text-foreground text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-card hover:bg-muted/40 shadow-xs"
++                >
++                  <RefreshCw className={`w-3.5 h-3.5 stroke-[2px] ${syncing ? 'animate-spin' : ''}`} />
++                  <span>{syncing ? 'Syncing...' : 'Sync Now'}</span>
++                </button>
++              </div>
++            )}
++
++            {/* Connect / Reconnect Component */}
++            <div className="w-full">
++              <MoodleConnect onConnected={() => window.location.reload()} />
++            </div>
+           </div>
+         </section>
+ 
+@@ -149,3 +293,4 @@ export default function SettingsPage() {
+     </div>
+   )
+ }
++
+diff --git a/src/components/AssignmentDetails.tsx b/src/components/AssignmentDetails.tsx
+index bb86aa5..983d7cf 100644
+--- a/src/components/AssignmentDetails.tsx
++++ b/src/components/AssignmentDetails.tsx
+@@ -1,7 +1,7 @@
+ 'use client'
+ 
+ import { useState, useEffect } from 'react'
+-import { UploadCloud, CheckCircle, Loader2, FileText, Clock, Star } from 'lucide-react'
++import { UploadCloud, CheckCircle, Loader2, FileText, Clock, Star, Download, ExternalLink, AlertTriangle, AlertCircle } from 'lucide-react'
+ import { uploadFileToDraft, saveSubmission, getSubmissionStatus, type MoodleSubmissionStatus } from '@/lib/moodle-client'
+ 
+ async function getMoodleToken(): Promise<string> {
+@@ -71,100 +71,241 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
+     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+   }
+ 
++  // Calculate remaining time or overdue status
++  const getTimeRemaining = (duedate: number) => {
++    if (!duedate || duedate <= 0) return null
++    const now = Date.now()
++    const diffMs = duedate * 1000 - now
++    if (diffMs < 0) {
++      const overdueHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60))
++      if (overdueHours < 24) {
++        return `Overdue by ${Math.max(1, overdueHours)}h`
++      }
++      const overdueDays = Math.floor(overdueHours / 24)
++      return `Overdue by ${overdueDays}d`
++    }
++    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
++    if (diffHours < 24) {
++      const diffMins = Math.floor(diffMs / (1000 * 60))
++      if (diffHours < 1) return `${Math.max(1, diffMins)}m left`
++      return `${diffHours}h ${diffMins % 60}m left`
++    }
++    const diffDays = Math.floor(diffHours / 24)
++    return `${diffDays}d left`
++  }
++
++  const isSubmitted = status?.submitted ?? false
++  const timeRemaining = assignment.duedate ? getTimeRemaining(assignment.duedate) : null
++  const isOverdue = assignment.duedate && assignment.duedate * 1000 < Date.now()
++
++  // Construct Moodle direct assignment URL
++  const moodleAssignUrl = assignment.cmid
++    ? `https://hselearning.sriher.com/mod/assign/view.php?id=${assignment.cmid}`
++    : assignment.url
++      ? assignment.url
++      : `https://hselearning.sriher.com/mod/assign/view.php?id=${assignment.id}`
++
+   return (
+     <div className="space-y-8 text-foreground font-sans">
+-      {/* Header */}
+-      <div>
+-        <p className="text-xs font-bold uppercase tracking-widest text-foreground/60 mb-2">{assignment.coursename}</p>
+-        <h3 className="clash-title text-3xl md:text-5xl uppercase tracking-wide leading-none">{assignment.name}</h3>
+-        <div className="flex flex-wrap gap-4 mt-6">
++      {/* Prominent Submission Status Indicator */}
++      <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-border/20">
++        <div>
++          {statusLoading ? (
++            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-card text-tertiary border border-border/30 animate-pulse">
++              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking submission status...
++            </div>
++          ) : isSubmitted ? (
++            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30 shadow-xs">
++              <CheckCircle className="h-4 w-4 shrink-0 stroke-[2.5px]" />
++              <span>Submitted for grading</span>
++            </div>
++          ) : (
++            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border shadow-xs ${
++              isOverdue
++                ? 'bg-[var(--urgency-overdue-bg)] text-[var(--urgency-overdue)] border-[var(--urgency-overdue-border)]'
++                : 'bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border-[var(--urgency-today-border)]'
++            }`}>
++              {isOverdue ? (
++                <AlertCircle className="h-4 w-4 shrink-0 stroke-[2.5px]" />
++              ) : (
++                <AlertTriangle className="h-4 w-4 shrink-0 stroke-[2.5px]" />
++              )}
++              <span>Pending submission</span>
++              {timeRemaining && (
++                <span className="opacity-90 font-mono text-[11px] font-semibold">
++                  • {timeRemaining}
++                </span>
++              )}
++            </div>
++          )}
++        </div>
++
++        {/* Primary Action Button: Open in Moodle */}
++        <a
++          href={moodleAssignUrl}
++          target="_blank"
++          rel="noopener noreferrer"
++          className="inline-flex items-center gap-2 px-4 py-2 bg-foreground text-background border border-foreground hover:bg-foreground/85 transition-all text-xs font-bold uppercase tracking-wider shadow-xs group"
++        >
++          <span>Open in Moodle</span>
++          <ExternalLink className="h-3.5 w-3.5 stroke-[2px] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
++        </a>
++      </div>
++
++      {/* Assignment Title & Clean Monospace Due Date Hierarchy */}
++      <div className="space-y-4">
++        <div>
++          {assignment.coursename && (
++            <p className="text-xs font-bold uppercase tracking-widest text-tertiary mb-2">
++              {assignment.coursename}
++            </p>
++          )}
++          <h3 className="clash-title text-2xl md:text-4xl uppercase tracking-wide leading-tight text-foreground">
++            {assignment.name}
++          </h3>
++        </div>
++
++        {/* Due date and Grade Meta */}
++        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+           {assignment.duedate > 0 && (
+-            <span className="flex items-center gap-2 bg-background px-4 py-2 border-2 border-foreground text-xs font-bold uppercase tracking-widest shadow-[2px_2px_0px_var(--color-foreground)]">
+-              <Clock className="h-4 w-4 stroke-[2px]" />
+-              Due: {formatDate(assignment.duedate)}
+-            </span>
++            <div className="flex items-start gap-3 p-4 rounded-lg bg-card/60 border border-border/20 shadow-xs">
++              <div className="p-2 rounded-md bg-muted/60 text-foreground shrink-0">
++                <Clock className="h-4 w-4 stroke-[2px]" />
++              </div>
++              <div className="min-w-0">
++                <span className="block text-[11px] font-bold uppercase tracking-widest text-tertiary">Due Date</span>
++                <span className="font-mono text-sm font-semibold text-foreground">
++                  {formatDate(assignment.duedate)}
++                </span>
++                {timeRemaining && (
++                  <span className={`block text-xs font-medium mt-0.5 ${isOverdue ? 'text-[var(--urgency-overdue)]' : 'text-secondary'}`}>
++                    {timeRemaining}
++                  </span>
++                )}
++              </div>
++            </div>
+           )}
++
+           {assignment.grade > 0 && (
+-            <span className="flex items-center gap-2 bg-background px-4 py-2 border-2 border-foreground text-xs font-bold uppercase tracking-widest shadow-[2px_2px_0px_var(--color-foreground)]">
+-              <Star className="h-4 w-4 stroke-[2px]" />
+-              Max grade: {assignment.grade}
+-            </span>
++            <div className="flex items-start gap-3 p-4 rounded-lg bg-card/60 border border-border/20 shadow-xs">
++              <div className="p-2 rounded-md bg-muted/60 text-foreground shrink-0">
++                <Star className="h-4 w-4 stroke-[2px]" />
++              </div>
++              <div className="min-w-0">
++                <span className="block text-[11px] font-bold uppercase tracking-widest text-tertiary">Grading</span>
++                <span className="font-mono text-sm font-semibold text-foreground">
++                  Max grade: {assignment.grade}
++                </span>
++                {assignment.cutoffdate > 0 && (
++                  <span className="block text-xs font-medium text-tertiary mt-0.5">
++                    Cutoff: {formatDate(assignment.cutoffdate)}
++                  </span>
++                )}
++              </div>
++            </div>
+           )}
+         </div>
+       </div>
+ 
+-      {/* Instructions */}
++      {/* Instructions & Elevated Attachment Cards */}
+       {(assignment.intro || (assignment.introattachments && assignment.introattachments.length > 0)) && (
+-        <div className="bg-card p-6 border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)]">
+-          <h4 className="font-bold mb-4 pb-2 border-b-2 border-foreground text-xs uppercase tracking-widest">Instructions & Attachments</h4>
++        <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs space-y-5">
++          <h4 className="font-bold pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
++            Instructions & Attachments
++          </h4>
++
+           {assignment.intro && (
+             <div
+-              className="text-base prose prose-sm max-w-none prose-p:leading-relaxed prose-headings:clash-title prose-headings:uppercase prose-a:text-foreground prose-a:font-bold mb-6"
++              className="text-sm md:text-base prose prose-sm max-w-none text-foreground/90 prose-p:leading-relaxed prose-headings:clash-title prose-headings:uppercase prose-a:text-foreground prose-a:underline"
+               dangerouslySetInnerHTML={{ __html: assignment.intro }}
+             />
+           )}
++
+           {assignment.introattachments && assignment.introattachments.length > 0 && (
+-            <div className="space-y-3">
+-              {assignment.introattachments.map((attachment: any, i: number) => {
+-                const url = new URL(attachment.fileurl)
+-                if (moodleToken) url.searchParams.set('token', moodleToken)
+-                
+-                return (
+-                  <a 
+-                    key={i} 
+-                    href={url.toString()} 
+-                    target="_blank" 
+-                    rel="noopener noreferrer"
+-                    className="flex items-center gap-3 text-sm font-medium bg-background hover:bg-foreground hover:text-background border-2 border-foreground shadow-[2px_2px_0px_var(--color-foreground)] px-4 py-3 transition-colors group"
+-                  >
+-                    <FileText className="h-4 w-4 shrink-0 stroke-[2px] group-hover:text-background" />
+-                    <span className="truncate">{attachment.filename}</span>
+-                    <span className="ml-auto shrink-0 opacity-60 font-bold text-[10px] uppercase tracking-widest">
+-                      {formatSize(attachment.filesize)}
+-                    </span>
+-                  </a>
+-                )
+-              })}
++            <div className="space-y-3 pt-2">
++              <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">
++                Assignment Files ({assignment.introattachments.length})
++              </span>
++              <div className="grid grid-cols-1 gap-3">
++                {assignment.introattachments.map((attachment: any, i: number) => {
++                  let fileUrlStr = attachment.fileurl
++                  try {
++                    const parsed = new URL(attachment.fileurl)
++                    if (moodleToken) parsed.searchParams.set('token', moodleToken)
++                    fileUrlStr = parsed.toString()
++                  } catch {
++                    // Fallback to raw fileurl if relative
++                  }
++
++                  return (
++                    <a
++                      key={i}
++                      href={fileUrlStr}
++                      target="_blank"
++                      rel="noopener noreferrer"
++                      className="flex items-center gap-3 p-4 rounded-lg bg-background hover:bg-muted/40 border border-border/30 hover:border-foreground/30 shadow-xs transition-all duration-200 group cursor-pointer"
++                    >
++                      <div className="p-2 rounded-md bg-muted text-foreground shrink-0 group-hover:bg-foreground group-hover:text-background transition-colors">
++                        <FileText className="h-4 w-4 stroke-[2px]" />
++                      </div>
++                      <div className="min-w-0 flex-1">
++                        <span className="block text-sm font-medium text-foreground truncate group-hover:text-foreground">
++                          {attachment.filename}
++                        </span>
++                        <span className="block text-[11px] font-mono text-tertiary">
++                          {formatSize(attachment.filesize)}
++                        </span>
++                      </div>
++                      <div className="p-2 rounded-md text-tertiary group-hover:text-foreground transition-colors shrink-0">
++                        <Download className="h-4 w-4 stroke-[2px]" />
++                      </div>
++                    </a>
++                  )
++                })}
++              </div>
+             </div>
+           )}
+         </div>
+       )}
+ 
+-      {/* Submission status */}
+-      <div className="bg-card p-6 border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)]">
+-        <h4 className="font-bold mb-4 pb-2 border-b-2 border-foreground text-xs uppercase tracking-widest">Current Submission</h4>
++      {/* Current Submission status */}
++      <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs">
++        <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
++          Current Submission
++        </h4>
+         {statusLoading ? (
+-          <div className="flex items-center gap-2 text-foreground/50 font-bold text-xs uppercase tracking-widest">
+-            <Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Loading...
++          <div className="flex items-center gap-2 text-tertiary font-bold text-xs uppercase tracking-widest py-4">
++            <Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Loading submission info...
+           </div>
+         ) : !status || status.status === 'new' ? (
+-          <p className="text-foreground/60 font-bold text-xs uppercase tracking-widest">No submission yet.</p>
++          <p className="text-secondary font-medium text-sm py-2">No submission recorded on Moodle yet.</p>
+         ) : (
+           <div className="space-y-4">
+             <div className="flex items-center gap-3">
+-              <span className={`text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 border-2 border-foreground ${
++              <span className={`text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full ${
+                 status.submitted
+-                  ? 'bg-foreground text-background shadow-[2px_2px_0px_var(--color-foreground)]'
+-                  : 'bg-background text-foreground'
++                  ? 'bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30'
++                  : 'bg-muted text-foreground border border-border/40'
+               }`}>
+                 {status.submitted ? 'Submitted' : 'Draft'}
+               </span>
+               {status.graded && (
+-                <span className="text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 bg-card text-foreground border-2 border-foreground shadow-[2px_2px_0px_var(--color-foreground)]">
++                <span className="text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full bg-card text-foreground border border-border/40 shadow-xs">
+                   Graded
+                 </span>
+               )}
+             </div>
+             {status.timemodified && (
+-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">Last modified: {formatDate(status.timemodified)}</p>
++              <p className="text-xs font-mono text-tertiary">Last modified: {formatDate(status.timemodified)}</p>
+             )}
+             {status.files.length > 0 && (
+-              <div className="mt-4 space-y-2 border-t-2 border-foreground pt-4">
++              <div className="mt-4 space-y-2 border-t border-border/20 pt-4">
++                <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">Submitted Files</span>
+                 {status.files.map((f, i) => (
+-                  <div key={i} className="flex items-center gap-3 text-sm font-medium bg-background border-2 border-foreground shadow-[2px_2px_0px_var(--color-foreground)] px-4 py-3">
+-                    <FileText className="h-4 w-4 shrink-0 stroke-[2px]" />
+-                    <span className="truncate">{f.filename}</span>
+-                    <span className="ml-auto shrink-0 text-foreground/60 font-bold text-[10px] uppercase tracking-widest">{formatSize(f.filesize)}</span>
++                  <div key={i} className="flex items-center gap-3 text-sm font-medium bg-background border border-border/20 rounded-lg p-3 shadow-xs">
++                    <FileText className="h-4 w-4 shrink-0 stroke-[2px] text-tertiary" />
++                    <span className="truncate text-foreground">{f.filename}</span>
++                    <span className="ml-auto shrink-0 text-tertiary font-mono text-[11px]">{formatSize(f.filesize)}</span>
+                   </div>
+                 ))}
+               </div>
+@@ -173,39 +314,39 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
+         )}
+       </div>
+ 
+-      {/* Submit new file */}
+-      <div className="bg-card p-6 border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)]">
+-        <h4 className="font-bold mb-6 pb-2 border-b-2 border-foreground text-xs uppercase tracking-widest">
+-          {status?.submitted ? 'Resubmit' : 'Submit Assignment'}
++      {/* Submit or Resubmit new file */}
++      <div className="bg-card p-6 border border-border/20 rounded-xl shadow-xs">
++        <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
++          {status?.submitted ? 'Resubmit Assignment' : 'Submit Assignment'}
+         </h4>
+ 
+         {success ? (
+-          <div className="flex items-center gap-3 text-foreground bg-card border-2 border-foreground border-l-8 border-l-foreground p-4 shadow-[4px_4px_0px_var(--color-foreground)]">
+-            <CheckCircle className="h-5 w-5 shrink-0 stroke-[2px]" />
+-            <span className="font-bold uppercase tracking-widest text-[10px]">Submission recorded in Moodle!</span>
++          <div className="flex items-center gap-3 text-foreground bg-[var(--status-success-bg)] border border-[var(--status-success)]/40 p-4 rounded-lg shadow-xs">
++            <CheckCircle className="h-5 w-5 shrink-0 stroke-[2px] text-[var(--status-success)]" />
++            <span className="font-bold tracking-wide text-xs text-[var(--status-success)]">Submitted successfully to Moodle!</span>
+           </div>
+         ) : (
+           <div className="space-y-4">
+             <input
+               type="file"
+               onChange={e => setFile(e.target.files?.[0] || null)}
+-              className="block w-full text-xs font-medium text-foreground/70 file:mr-4 file:py-3 file:px-6 file:border-2 file:border-foreground file:text-[10px] file:uppercase file:tracking-widest file:font-bold file:bg-background file:text-foreground hover:file:bg-foreground hover:file:text-background cursor-pointer transition-colors"
++              className="block w-full text-xs font-medium text-secondary file:mr-4 file:py-2.5 file:px-4 file:rounded-md file:border file:border-border/40 file:text-xs file:uppercase file:tracking-wider file:font-bold file:bg-background file:text-foreground hover:file:bg-foreground hover:file:text-background cursor-pointer transition-colors"
+             />
+             {file && (
+-              <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/70">{file.name} ({formatSize(file.size)})</p>
++              <p className="text-xs font-mono text-secondary">{file.name} ({formatSize(file.size)})</p>
+             )}
+-            {error && <p className="text-background text-[10px] font-bold uppercase tracking-widest bg-red-600 p-3 border-2 border-foreground shadow-[2px_2px_0px_var(--color-foreground)]">{error}</p>}
++            {error && <p className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/30 p-3 rounded-lg">{error}</p>}
+             <button
+               onClick={handleUpload}
+               disabled={!file || uploading}
+-              className="flex w-full justify-center items-center gap-3 py-4 px-6 bg-foreground border-2 border-foreground shadow-[4px_4px_0px_var(--color-foreground)] text-background hover:bg-card hover:text-foreground active:translate-y-1 active:shadow-none disabled:bg-background disabled:border-transparent disabled:shadow-none disabled:text-foreground/30 disabled:cursor-not-allowed font-bold uppercase tracking-widest text-xs transition-all duration-200 mt-6"
++              className="flex w-full justify-center items-center gap-2 py-3 px-6 bg-foreground border border-foreground text-background hover:bg-foreground/85 active:scale-[0.99] disabled:bg-muted disabled:border-transparent disabled:text-foreground/30 disabled:cursor-not-allowed font-bold uppercase tracking-wider text-xs transition-all duration-200 mt-4 rounded-lg cursor-pointer shadow-xs"
+             >
+               {uploading
+-                ? <><Loader2 className="h-5 w-5 animate-spin stroke-[2px]" /> Submitting...</>
+-                : <><UploadCloud className="h-5 w-5 stroke-[2px]" /> Submit File</>}
++                ? <><Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Submitting...</>
++                : <><UploadCloud className="h-4 w-4 stroke-[2px]" /> Submit File</>}
+             </button>
+-            <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/50 text-center mt-6 pt-4 border-t-2 border-foreground border-dashed">
+-              Files uploaded directly to Moodle server.
++            <p className="text-[11px] text-tertiary text-center mt-4 pt-3 border-t border-dashed border-border/30">
++              Direct submission to university Moodle servers.
+             </p>
+           </div>
+         )}
+diff --git a/src/components/Drawer.tsx b/src/components/Drawer.tsx
+index fd19e7e..08db8d6 100644
+--- a/src/components/Drawer.tsx
++++ b/src/components/Drawer.tsx
+@@ -1,12 +1,17 @@
+ 'use client'
+ 
+-import { useEffect } from 'react'
++import { useEffect, useRef } from 'react'
+ import { X } from 'lucide-react'
+ 
+ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpen: boolean, onClose: () => void, title: string, children: React.ReactNode, fullScreen?: boolean }) {
++  const panelRef = useRef<HTMLDivElement>(null)
++  const previousFocusRef = useRef<HTMLElement | null>(null)
++
+   useEffect(() => {
+     if (isOpen) {
+       window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: true, fullScreen } }))
++      previousFocusRef.current = document.activeElement as HTMLElement
++      panelRef.current?.focus()
+     } else {
+       window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
+     }
+@@ -17,22 +22,63 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
+       window.removeEventListener('keydown', handleEsc)
+       if (isOpen) {
+         window.dispatchEvent(new CustomEvent('drawer-state', { detail: { isOpen: false, fullScreen } }))
++        previousFocusRef.current?.focus()
+       }
+     }
+   }, [isOpen, onClose, fullScreen])
+ 
++  const handleKeyDown = (e: React.KeyboardEvent) => {
++    if (e.key !== 'Tab') return
++    const panel = panelRef.current
++    if (!panel) return
++
++    const focusable = panel.querySelectorAll<HTMLElement>(
++      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
++    )
++    if (focusable.length === 0) {
++      e.preventDefault()
++      return
++    }
++    const first = focusable[0]
++    const last = focusable[focusable.length - 1]
++
++    if (e.shiftKey && document.activeElement === first) {
++      e.preventDefault()
++      last.focus()
++    } else if (!e.shiftKey && document.activeElement === last) {
++      e.preventDefault()
++      first.focus()
++    }
++  }
++
+   if (!isOpen) return null
+ 
+   return (
+     <div className={`fixed inset-0 z-50 flex items-center justify-center ${fullScreen ? 'p-0' : 'p-4 sm:p-6 md:p-12'}`}>
+       {/* Backdrop */}
+-      <div className="fixed inset-0 bg-foreground/80 backdrop-blur-sm transition-opacity" onClick={onClose} />
+-      
++      <div 
++        className="fixed inset-0 bg-background/60 dark:bg-background/70 backdrop-blur-md transition-opacity duration-300" 
++        onClick={onClose} 
++        aria-hidden="true" 
++      />
++
+       {/* Panel */}
+-      <div className={`relative bg-card border-2 flex flex-col shadow-[8px_8px_0px_var(--color-foreground)] animate-in zoom-in-95 duration-200 ${fullScreen ? 'w-full h-full border-foreground max-w-none' : 'w-full max-w-4xl max-h-full border-foreground'}`}>
++      <div
++        ref={panelRef}
++        role="dialog"
++        aria-modal="true"
++        aria-label={title}
++        tabIndex={-1}
++        onKeyDown={handleKeyDown}
++        className={`relative bg-card border-2 flex flex-col shadow-[8px_8px_0px_var(--color-foreground)] animate-in fade-in zoom-in-95 duration-200 outline-none ${fullScreen ? 'w-full h-full border-foreground max-w-none' : 'w-full max-w-4xl max-h-full border-foreground'}`}
++      >
+         <div className="flex items-center justify-between p-6 border-b-2 border-foreground bg-background">
+           <h2 className="clash-title text-2xl md:text-3xl uppercase tracking-wide truncate">{title}</h2>
+-          <button onClick={onClose} className="p-2 border-2 border-transparent hover:border-foreground hover:bg-card text-foreground transition-all duration-200">
++          <button 
++            onClick={onClose} 
++            className="p-2 border-2 border-transparent hover:border-foreground hover:bg-card text-foreground transition-all duration-200 cursor-pointer" 
++            aria-label="Close drawer"
++          >
+             <X size={24} className="stroke-[2px]" />
+           </button>
+         </div>
+@@ -42,4 +88,4 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
+       </div>
+     </div>
+   )
+-}
++}
+\ No newline at end of file

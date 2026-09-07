@@ -43,13 +43,13 @@ export default function AdminPage() {
     }
   }
 
-  if (loading) return <div className="flex min-h-[calc(100vh-80px)] items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-foreground/50" /></div>
+  if (loading) return <div className="flex min-h-[calc(100vh-80px)] items-center justify-center"><Loader2 className="animate-spin h-10 w-10 text-tertiary" /></div>
 
   if (!isSuperuser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] p-6">
         <h1 className="clash-title text-4xl uppercase mb-4">Unauthorized</h1>
-        <p className="font-medium text-foreground/70">You do not have superuser privileges to view this page.</p>
+        <p className="font-medium text-secondary">You do not have superuser privileges to view this page.</p>
       </div>
     )
   }
@@ -64,9 +64,9 @@ export default function AdminPage() {
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg">{profile.full_name || 'No Name Provided'}</span>
-                <span className="text-sm font-medium text-foreground/50 border border-border/20 px-2 py-0.5">{profile.email}</span>
+                <span className="text-sm font-medium text-tertiary border border-border/20 px-2 py-0.5">{profile.email}</span>
               </div>
-              <span className="text-xs font-medium text-foreground/50 uppercase tracking-widest mt-2">
+              <span className="text-xs font-medium text-tertiary uppercase tracking-widest mt-2">
                 Joined: {new Date(profile.created_at).toLocaleDateString()}
               </span>
             </div>

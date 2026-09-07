@@ -1,107 +1,42 @@
-### Task 2: Supabase Client Utilities
+### Task 2: Global Header & Navigation Shell Polish
 
 **Files:**
-- Create: `src/utils/supabase/client.ts`
-- Create: `src/utils/supabase/server.ts`
-- Create: `src/utils/supabase/middleware.ts`
-- Create: `src/middleware.ts`
-- Create: `.env.local`
+- Create: `src/components/ThemeToggle.tsx`
+- Modify: `src/app/layout.tsx`
+- Modify: `src/components/NavigationDock.tsx`
+- Test: `src/__tests__/sanity.test.ts`
 
 **Interfaces:**
-- Consumes: Environment variables `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-- Produces: `createClient` functions for browser and server contexts.
+- Consumes: `useTheme()` from `next-themes`, `usePathname()` from `next/navigation`.
+- Produces: Polished top header with quick theme toggle (`ThemeToggle.tsx`), and enhanced bottom floating dock (`NavigationDock.tsx`) with active route indicators and subtle spring physics.
 
-- [ ] **Step 1: Set up Supabase utilities**
-Run `npm install @supabase/ssr`
+**Global Constraints:**
+- Preserve all existing Next.js App Router conventions and API route integrations.
+- Maintain existing Supabase authentication and Moodle token synchronization logic.
+- Ensure all color tokens support both Light mode and Dark mode with WCAG AA contrast compliance.
+- Support `prefers-reduced-motion` for all new transitions and animations.
+- Every task must be verified with `npm test` and `npm run build` or targeted component tests.
 
-Create `src/utils/supabase/server.ts`:
-```typescript
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+- [ ] **Step 1: Create `src/components/ThemeToggle.tsx`**
+Provide a sleek theme toggle button allowing users to switch between Light and Dark mode with smooth iconography (`Sun`, `Moon`), mounted state protection against hydration mismatch, accessible `aria-label`, and clean hover states.
 
-export function createClient() {
-  const cookieStore = cookies()
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
-          } catch (error) {
-            // The `set` method was called from a Server Component.
-          }
-        },
-      },
-    }
-  )
-}
-```
+- [ ] **Step 2: Update `src/app/layout.tsx` header**
+In `src/app/layout.tsx`:
+- Embed `<ThemeToggle />` next to `<NotificationBell />` in the top header.
+- Apply subtle glassmorphism (`backdrop-blur-md bg-background/80 border-b border-border/10`).
+- Refine brand logo and logout button styles with clean rounded pills and hover transitions.
 
-Create `src/utils/supabase/client.ts`:
-```typescript
-import { createBrowserClient } from '@supabase/ssr'
+- [ ] **Step 3: Update `src/components/NavigationDock.tsx`**
+Highlight current active route (`/dashboard`, `/notifications`, `/settings`) using `usePathname()`:
+- Add an active indicator pill / dot beneath or alongside active items.
+- Maintain scroll auto-hide and drawer full-screen coordination.
 
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-}
-```
+- [ ] **Step 4: Verify build and test**
+Run: `npm test` and `npm run build`
+Expected: PASS
 
-- [ ] **Step 2: Add basic middleware**
-Create `src/middleware.ts`:
-```typescript
-import { NextResponse, type NextRequest } from 'next/server'
-import { createServerClient } from '@supabase/ssr'
-
-export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return request.cookies.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
-}
-
-export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
-}
-```
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 5: Commit changes**
 ```bash
-git add src/utils/supabase/ src/middleware.ts package.json package-lock.json
-git commit -m "feat: add supabase ssr clients and middleware"
+git add src/components/ThemeToggle.tsx src/app/layout.tsx src/components/NavigationDock.tsx
+git commit -m "feat: enhance header with ThemeToggle and polish navigation dock"
 ```

@@ -1,17 +1,38 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Bell } from 'lucide-react'
 import Link from 'next/link'
 
 export function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetchNotifications()
     // Optional: set up real-time subscription here
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [open])
 
   const fetchNotifications = async () => {
     try {
@@ -50,8 +71,8 @@ export function NotificationBell() {
   const recent = notifications.slice(0, 5)
 
   return (
-    <div className="relative">
-      <button onClick={() => setOpen(!open)} className="relative p-2 text-foreground hover:bg-[#e5e5e5] transition-colors border border-transparent hover:border-border/20">
+    <div className="relative" ref={containerRef}>
+      <button onClick={() => setOpen(!open)} aria-expanded={open} aria-haspopup="true" className="relative p-2 text-foreground hover:bg-[#e5e5e5] transition-colors border border-transparent hover:border-border/20">
         <Bell size={24} strokeWidth={1.5} />
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 h-5 w-5 bg-foreground border-2 border-background text-[10px] font-bold flex items-center justify-center text-background">
@@ -75,12 +96,12 @@ export function NotificationBell() {
           </div>
           <div className="max-h-96 overflow-y-auto bg-card">
             {recent.length === 0 ? (
-              <div className="p-8 text-center text-foreground/50 text-xs uppercase font-bold tracking-widest">No recent alerts</div>
+              <div className="p-8 text-center text-tertiary text-xs uppercase font-bold tracking-widest">No notifications yet</div>
             ) : (
               recent.map(n => (
                 <div key={n.id} onClick={() => markAsRead(n.id)} className={`p-4 border-b border-border/10 cursor-pointer transition-colors ${!n.is_read ? 'bg-[#f8f8f8] border-l-4 border-l-foreground' : 'hover:bg-background border-l-4 border-l-transparent'}`}>
                   <p className="text-sm font-bold text-foreground uppercase tracking-wide mb-1">{n.title}</p>
-                  <p className="text-xs text-foreground/70 line-clamp-2 font-medium">{n.message}</p>
+                  <p className="text-xs text-tertiary line-clamp-2 font-medium">{n.message}</p>
                 </div>
               ))
             )}

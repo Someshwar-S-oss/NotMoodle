@@ -1,0 +1,702 @@
+﻿diff --git a/src/__tests__/DashboardTimelineCourses.test.tsx b/src/__tests__/DashboardTimelineCourses.test.tsx
+new file mode 100644
+index 0000000..e64edcd
+--- /dev/null
++++ b/src/__tests__/DashboardTimelineCourses.test.tsx
+@@ -0,0 +1,273 @@
++import { render, screen, fireEvent, waitFor } from '@testing-library/react';
++import Home from '@/app/dashboard/page';
++import { getRelativeTimeBadge, extractCourseCode, getCourseAccent } from '@/lib/dashboard-utils';
++
++jest.mock('../utils/supabase/client', () => ({
++  createClient: () => ({
++    auth: {
++      getUser: jest.fn().mockResolvedValue({
++        data: { user: { id: 'test-user', user_metadata: { full_name: 'Jane Doe' } } },
++      }),
++    },
++    from: () => ({
++      select: () => ({
++        eq: () => ({
++          maybeSingle: jest.fn().mockResolvedValue({
++            data: { is_approved: true, full_name: 'Jane Doe', created_at: '2026-01-01' },
++          }),
++        }),
++      }),
++    }),
++  }),
++}));
++
++let mockTimelineEvents: any[] = [];
++let mockAssignments: any[] = [];
++let mockCourses: any[] = [];
++
++jest.mock('../lib/moodle-client', () => ({
++  getSiteInfo: jest.fn().mockResolvedValue({ userid: 101 }),
++  getCurrentCourses: jest.fn().mockImplementation(() => Promise.resolve(mockCourses)),
++  getTimelineEvents: jest.fn().mockImplementation(() => Promise.resolve(mockTimelineEvents)),
++  getAssignments: jest.fn().mockImplementation(() => Promise.resolve(mockAssignments)),
++  getSubmissionStatus: jest.fn().mockResolvedValue({ submitted: false }),
++}));
++
++// Mock Drawer and AssignmentDetails to simplify drawer trigger assertions
++jest.mock('../components/Drawer', () => ({
++  Drawer: ({ isOpen, title, children }: any) =>
++    isOpen ? (
++      <div data-testid="assignment-drawer" role="dialog">
++        <h2>{title}</h2>
++        {children}
++      </div>
++    ) : null,
++}));
++
++jest.mock('../components/AssignmentDetails', () => ({
++  AssignmentDetails: ({ assignment }: any) => (
++    <div data-testid="assignment-details-content">
++      <span>Assignment: {assignment.name}</span>
++      <span>Course: {assignment.coursename}</span>
++    </div>
++  ),
++}));
++
++describe('Dashboard Timeline & Course Cards Redesign', () => {
++  describe('Helper: getRelativeTimeBadge', () => {
++    it('returns Overdue for past timestamps', () => {
++      const nowSec = Math.floor(Date.now() / 1000);
++      const overdueTime = nowSec - 7200; // 2 hours ago
++      const badge = getRelativeTimeBadge(overdueTime);
++      expect(badge.variant).toBe('overdue');
++      expect(badge.label).toBe('Overdue');
++    });
++
++    it('returns minutes or hours countdown for deadlines later today', () => {
++      const now = new Date();
++      const laterToday = new Date(now.getTime() + 30 * 60 * 1000);
++      if (laterToday.getDate() === now.getDate()) {
++        const badge = getRelativeTimeBadge(Math.floor(laterToday.getTime() / 1000));
++        expect(badge.variant).toBe('today');
++        expect(badge.label).toMatch(/Due in \d+m/);
++      }
++
++      const threeHoursLater = new Date(now.getTime() + 3 * 60 * 60 * 1000);
++      if (threeHoursLater.getDate() === now.getDate()) {
++        const badge = getRelativeTimeBadge(Math.floor(threeHoursLater.getTime() / 1000));
++        expect(badge.variant).toBe('today');
++        expect(badge.label).toMatch(/Due in 3h/);
++      }
++    });
++
++    it('returns Tomorrow for deadlines on tomorrow calendar day', () => {
++      const now = new Date();
++      const tomorrow = new Date(now);
++      tomorrow.setDate(now.getDate() + 1);
++      tomorrow.setHours(14, 0, 0, 0);
++
++      const badge = getRelativeTimeBadge(Math.floor(tomorrow.getTime() / 1000));
++      expect(badge.variant).toBe('today');
++      expect(badge.label).toBe('Tomorrow');
++    });
++
++    it('returns In X days for deadlines within 2 to 7 days', () => {
++      const now = new Date();
++      const inFourDays = new Date(now);
++      inFourDays.setDate(now.getDate() + 4);
++
++      const badge = getRelativeTimeBadge(Math.floor(inFourDays.getTime() / 1000));
++      expect(badge.variant).toBe('upcoming');
++      expect(badge.label).toMatch(/In \d+ days/);
++    });
++
++    it('returns In X weeks for deadlines > 7 days away', () => {
++      const now = new Date();
++      const inTwoWeeks = new Date(now);
++      inTwoWeeks.setDate(now.getDate() + 14);
++
++      const badge = getRelativeTimeBadge(Math.floor(inTwoWeeks.getTime() / 1000));
++      expect(badge.variant).toBe('upcoming');
++      expect(badge.label).toBe('In 2 weeks');
++    });
++  });
++
++  describe('Helper: extractCourseCode & getCourseAccent', () => {
++    it('extracts code from shortname or fullname', () => {
++      expect(extractCourseCode('CS 101', 'Intro to Computer Science')).toBe('CS 101');
++      expect(extractCourseCode('CS204', 'Data Structures')).toBe('CS204');
++      expect(extractCourseCode('', 'MATH 202 Linear Algebra')).toBe('MATH 202');
++      expect(extractCourseCode(undefined, 'Algorithms')).toBe('ALGORITHMS');
++    });
++
++    it('determines deterministic course accent colors', () => {
++      const accent1 = getCourseAccent(101, 0);
++      const accent2 = getCourseAccent(101, 0);
++      expect(accent1.hex).toBe(accent2.hex);
++      expect(accent1.hex).toBeDefined();
++    });
++  });
++
++  describe('Dashboard Component Timeline & Course Integration', () => {
++    const now = Date.now();
++    const overdueTime = Math.floor((now - 86400 * 1000) / 1000);
++    const inThreeDaysTime = Math.floor((now + 3 * 86400 * 1000) / 1000);
++
++    const mockCache = {
++      courses: [
++        { id: 10, fullname: 'CS 101 Computer Science', shortname: 'CS 101' },
++        { id: 20, fullname: 'MATH 202 Linear Algebra', shortname: 'MATH 202' },
++      ],
++      assignments: [
++        {
++          id: 501,
++          name: 'Algorithm Analysis Homework',
++          intro: 'Complete problems 1 through 5.',
++          course: 10,
++          coursename: 'CS 101 Computer Science',
++          duedate: inThreeDaysTime,
++        },
++      ],
++      events: [
++        {
++          id: 1,
++          name: 'Algorithm Analysis Homework',
++          description: 'Complete problems 1 through 5.',
++          eventtype: 'assign',
++          course: { id: 10, fullname: 'CS 101 Computer Science' },
++          timestart: inThreeDaysTime,
++          instance: 501,
++        },
++        {
++          id: 2,
++          name: 'Overdue Project Report',
++          description: 'Submit project writeup',
++          eventtype: 'assign',
++          course: { id: 10, fullname: 'CS 101 Computer Science' },
++          timestart: overdueTime,
++          instance: 999,
++        },
++      ],
++    };
++
++    beforeEach(() => {
++      jest.clearAllMocks();
++      mockCourses = [...mockCache.courses];
++      mockTimelineEvents = [...mockCache.events];
++      mockAssignments = [...mockCache.assignments];
++
++      global.fetch = jest.fn((url: string) => {
++        if (url === '/api/moodle/token') {
++          return Promise.resolve({
++            ok: true,
++            status: 200,
++            json: async () => ({ token: 'mock-token' }),
++          });
++        }
++        return Promise.resolve({
++          ok: true,
++          status: 200,
++          json: async () => ({}),
++        });
++      }) as any;
++
++      localStorage.setItem('moodle_dashboard_cache', JSON.stringify(mockCache));
++    });
++
++    afterEach(() => {
++      localStorage.clear();
++    });
++
++    it('renders timeline items with relative countdown badge and formatted date', async () => {
++      render(<Home />);
++
++      await waitFor(() => {
++        expect(screen.getByText('Algorithm Analysis Homework')).toBeInTheDocument();
++      });
++
++      expect(screen.getByText('Overdue Project Report')).toBeInTheDocument();
++      expect(screen.getAllByText('Overdue').length).toBeGreaterThanOrEqual(1);
++      expect(screen.getByText(/In \d+ days/)).toBeInTheDocument();
++
++      const viewDetailsButtons = screen.getAllByText('View Details');
++      expect(viewDetailsButtons.length).toBe(2);
++    });
++
++    it('opens assignment details drawer when clicking a timeline row with matching assignment', async () => {
++      render(<Home />);
++
++      await waitFor(() => {
++        expect(screen.getByText('Algorithm Analysis Homework')).toBeInTheDocument();
++      });
++
++      const eventTitle = screen.getByText('Algorithm Analysis Homework');
++      fireEvent.click(eventTitle);
++
++      await waitFor(() => {
++        expect(screen.getByTestId('assignment-drawer')).toBeInTheDocument();
++        expect(screen.getByTestId('assignment-details-content')).toBeInTheDocument();
++        expect(
++          screen.getByText('Assignment: Algorithm Analysis Homework'),
++        ).toBeInTheDocument();
++      });
++    });
++
++    it('renders Enrolled Modules cards with course code badges and pending deadline count', async () => {
++      render(<Home />);
++
++      await waitFor(() => {
++        expect(screen.getByText('CS 101')).toBeInTheDocument();
++        expect(screen.getByText('MATH 202')).toBeInTheDocument();
++      });
++
++      expect(screen.getByText('2 deadlines pending')).toBeInTheDocument();
++      expect(screen.getByText('All clear')).toBeInTheDocument();
++    });
++
++    it('displays editorial empty state when zero events match', async () => {
++      const emptyCache = {
++        courses: [
++          { id: 10, fullname: 'CS 101 Computer Science', shortname: 'CS 101' },
++        ],
++        events: [],
++        assignments: [],
++      };
++      mockTimelineEvents = [];
++      mockAssignments = [];
++      mockCourses = emptyCache.courses;
++      localStorage.setItem('moodle_dashboard_cache', JSON.stringify(emptyCache));
++
++      render(<Home />);
++
++      await waitFor(() => {
++        expect(
++          screen.getByText("No deadlines here — you're all set!"),
++        ).toBeInTheDocument();
++      });
++
++      expect(
++        screen.getByText(/You've tackled everything on your schedule/i),
++      ).toBeInTheDocument();
++    });
++  });
++});
+diff --git a/src/__tests__/DashboardUrgencyCards.test.tsx b/src/__tests__/DashboardUrgencyCards.test.tsx
+index 843065a..34e1ee8 100644
+--- a/src/__tests__/DashboardUrgencyCards.test.tsx
++++ b/src/__tests__/DashboardUrgencyCards.test.tsx
+@@ -110,9 +110,9 @@ describe('Dashboard Urgency Metric Cards & Interactive Filtering', () => {
+     expect(screen.getByText('TACKLE TODAY')).toBeInTheDocument();
+     expect(screen.getByText('ON SCHEDULE')).toBeInTheDocument();
+ 
+-    expect(screen.getByText('Overdue')).toBeInTheDocument();
+-    expect(screen.getByText('Due Today')).toBeInTheDocument();
+-    expect(screen.getByText('Upcoming')).toBeInTheDocument();
++    expect(screen.getByRole('heading', { level: 3, name: 'Overdue' })).toBeInTheDocument();
++    expect(screen.getByRole('heading', { level: 3, name: 'Due Today' })).toBeInTheDocument();
++    expect(screen.getByRole('heading', { level: 3, name: 'Upcoming' })).toBeInTheDocument();
+   });
+ 
+   it('displays dynamic greeting subtitle based on overdue items', async () => {
+diff --git a/src/app/dashboard/page.tsx b/src/app/dashboard/page.tsx
+index 030cf20..8c6b9a3 100644
+--- a/src/app/dashboard/page.tsx
++++ b/src/app/dashboard/page.tsx
+@@ -16,6 +16,7 @@ import {
+   Clock,
+   Calendar,
+   X,
++  CheckCircle2,
+ } from "lucide-react";
+ import {
+   getSiteInfo,
+@@ -27,6 +28,11 @@ import {
+   type MoodleAssignment,
+   type MoodleTimelineEvent,
+ } from "@/lib/moodle-client";
++import {
++  getRelativeTimeBadge,
++  extractCourseCode,
++  getCourseAccent,
++} from "@/lib/dashboard-utils";
+ 
+ export default function Home() {
+   const [loading, setLoading] = useState(true);
+@@ -231,6 +237,18 @@ export default function Home() {
+     return events;
+   }, [activeFilter, overdue, today, upcoming, events]);
+ 
++  // Compute pending assignment/deadline count for each course
++  const coursePendingCounts = useMemo(() => {
++    const counts: Record<number, number> = {};
++    events.forEach((event) => {
++      const cid = event.course?.id;
++      if (cid) {
++        counts[cid] = (counts[cid] || 0) + 1;
++      }
++    });
++    return counts;
++  }, [events]);
++
+   return (
+     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
+       {loading ? (
+@@ -352,7 +370,7 @@ export default function Home() {
+           </section>
+ 
+           {/* Timeline */}
+-          <section className="mb-16">
++          <section className="mb-16" aria-label="Deadline timeline">
+             <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+               <div className="flex flex-wrap items-center gap-4">
+                 <h2 className="clash-title text-3xl uppercase">Timeline</h2>
+@@ -390,10 +408,29 @@ export default function Home() {
+ 
+             <div className="flex flex-col border-t border-border/20">
+               {displayedEvents.length === 0 ? (
+-                <div className="py-16 text-center font-medium text-secondary">
+-                  {activeFilter !== "all"
+-                    ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
+-                    : "No upcoming deadlines. You're all clear!"}
++                <div className="py-16 px-6 my-4 text-center rounded-2xl border border-dashed border-border/40 bg-card/40 flex flex-col items-center justify-center">
++                  <div className="w-12 h-12 rounded-full bg-[var(--status-success-bg)] text-[var(--status-success)] flex items-center justify-center mb-4">
++                    <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
++                  </div>
++                  <h3 className="clash-title text-xl md:text-2xl font-medium text-foreground mb-2">
++                    {activeFilter !== "all"
++                      ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
++                      : "No deadlines here — you're all set!"}
++                  </h3>
++                  <p className="text-sm text-secondary max-w-md mb-6">
++                    {activeFilter !== "all"
++                      ? "Check your other urgency views or clear the filter to see all upcoming coursework."
++                      : "You've tackled everything on your schedule. Take a breather or explore your enrolled modules."}
++                  </p>
++                  {activeFilter !== "all" && (
++                    <button
++                      type="button"
++                      onClick={() => setActiveFilter("all")}
++                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
++                    >
++                      Show all deadlines
++                    </button>
++                  )}
+                 </div>
+               ) : (
+                 displayedEvents.map((event) => {
+@@ -406,50 +443,79 @@ export default function Home() {
+                     hour: "2-digit",
+                     minute: "2-digit",
+                   });
++                  
+                   const isAssignment = event.eventtype === "assign";
++                  const matchingAssignment = allAssignments.find(
++                    (a) => a.id === event.instance || (event.id > 0 && a.id === event.id),
++                  );
++
++                  const badge = getRelativeTimeBadge(event.timestart);
++                  const badgeVariantStyles =
++                    badge.variant === "overdue"
++                      ? "bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)]"
++                      : badge.variant === "today"
++                        ? "bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] text-[var(--urgency-today)]"
++                        : "bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)]";
++
++                  const handleItemClick = () => {
++                    if (matchingAssignment) {
++                      setSelectedAssignment(matchingAssignment);
++                      return;
++                    }
++                    if (event.course?.id) {
++                      window.location.href = `/course/${event.course.id}`;
++                    }
++                  };
+ 
+                   return (
+-                    <button
++                    <div
+                       key={event.id}
+-                      onClick={() => {
+-                        if (isAssignment) {
+-                          const assignmentData = allAssignments.find(
+-                            (a) => a.id === event.instance,
+-                          );
+-                          if (assignmentData) {
+-                            setSelectedAssignment(assignmentData);
+-                            return;
+-                          }
++                      onClick={handleItemClick}
++                      role="button"
++                      tabIndex={0}
++                      onKeyDown={(e) => {
++                        if (e.key === "Enter" || e.key === " ") {
++                          e.preventDefault();
++                          handleItemClick();
+                         }
+-                        window.location.href = `/course/${event.course?.id || ""}`;
+                       }}
+-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-background transition-colors duration-500 text-left px-4 md:px-6 w-full cursor-pointer"
++                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-card/40 transition-colors duration-300 text-left px-4 md:px-6 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-lg"
+                     >
+                       {/* Date Column */}
+-                      <div className="md:col-span-3 flex flex-col justify-start">
+-                        <div className="text-5xl clash-title font-medium leading-none text-foreground">
+-                          {day}
+-                        </div>
+-                        <div className="text-sm font-bold tracking-widest uppercase mt-2 text-tertiary">
+-                          {month} {date.getFullYear()}
++                      <div className="md:col-span-3 flex flex-col justify-start items-start">
++                        <div className="flex items-baseline gap-2">
++                          <span className="text-5xl clash-title font-medium leading-none text-foreground">
++                            {day}
++                          </span>
++                          <span className="text-sm font-bold tracking-widest uppercase text-tertiary">
++                            {month} {date.getFullYear()}
++                          </span>
+                         </div>
+-                        <div className="text-xs font-mono mt-4 text-tertiary uppercase">
++                        <div className="text-xs font-mono mt-2 text-tertiary uppercase">
+                           {time}
+                         </div>
++                        {/* Countdown Badge */}
++                        <div className="mt-3">
++                          <span
++                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border shadow-2xs ${badgeVariantStyles}`}
++                          >
++                            {badge.label}
++                          </span>
++                        </div>
+                       </div>
+ 
+                       {/* Content Column */}
+-                      <div className="md:col-span-8 flex flex-col justify-center">
+-                        <div className="text-xs font-bold tracking-widest uppercase mb-3 text-tertiary flex items-center gap-3">
+-                          <span className="w-1.5 h-1.5 bg-foreground rounded-full"></span>
+-                          {event.course?.fullname || "System Event"}
++                      <div className="md:col-span-7 flex flex-col justify-center">
++                        <div className="text-xs font-bold tracking-widest uppercase mb-2 text-tertiary flex items-center gap-2">
++                          <span className="w-2 h-2 bg-foreground/60 rounded-full shrink-0"></span>
++                          <span className="truncate">{event.course?.fullname || "System Event"}</span>
+                         </div>
+-                        <h3 className="text-2xl md:text-3xl font-medium clash-title text-foreground group-hover:translate-x-4 transition-transform duration-500">
++                        <h3 className="text-xl md:text-2xl font-medium clash-title text-foreground group-hover:translate-x-1.5 transition-transform duration-300">
+                           {event.name}
+                         </h3>
+                         {event.description && (
+                           <div
+-                            className="mt-4 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
++                            className="mt-2 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
+                             dangerouslySetInnerHTML={{
+                               __html: event.description,
+                             }}
+@@ -458,19 +524,24 @@ export default function Home() {
+                       </div>
+ 
+                       {/* Action Column */}
+-                      <div className="md:col-span-1 flex items-center justify-end md:justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+-                        <ArrowRight className="w-8 h-8 -translate-x-8 group-hover:translate-x-0 transition-transform duration-500 text-foreground" />
++                      <div className="md:col-span-2 flex items-center justify-end">
++                        <span
++                          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card transition-all duration-300 shadow-2xs"
++                        >
++                          <span>View Details</span>
++                          <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
++                        </span>
+                       </div>
+-                    </button>
++                    </div>
+                   );
+                 })
+               )}
+             </div>
+           </section>
+ 
+-          {/* Bespoke Service Cards */}
+-          <section className="mb-16">
+-            <div className="flex items-center gap-6 mb-12">
++          {/* Enrolled Course Modules */}
++          <section className="mb-16" aria-label="Enrolled courses">
++            <div className="flex items-center gap-6 mb-8">
+               <h2 className="clash-title text-3xl uppercase">
+                 Enrolled Modules
+               </h2>
+@@ -481,25 +552,61 @@ export default function Home() {
+               {courses.map((course, i) => {
+                 const Icon =
+                   i % 3 === 0 ? Hexagon : i % 3 === 1 ? Circle : Triangle;
++                const accent = getCourseAccent(course.id, i);
++                const courseCode = extractCourseCode(course.shortname, course.fullname);
++                const pendingCount = coursePendingCounts[course.id] || 0;
++
+                 return (
+                   <Link
+                     href={`/course/${course.id}`}
+                     key={course.id}
+-                    className="group p-8 border border-border/10 bg-transparent hover:bg-card transition-colors duration-500 flex flex-col justify-between min-h-[320px]"
++                    className="group relative flex flex-col justify-between min-h-[300px] p-7 rounded-xl border border-border/20 bg-card/60 hover:bg-card hover:-translate-y-1 hover:shadow-md transition-all duration-300 overflow-hidden"
+                   >
+-                    <div className="w-16 h-16 border border-border/20 flex items-center justify-center transition-transform duration-500 group-hover:rotate-12 bg-background">
+-                      <Icon
+-                        className="w-6 h-6 text-foreground"
+-                        strokeWidth={1}
+-                      />
+-                    </div>
++                    {/* Top Accent Ribbon */}
++                    <div
++                      className="absolute top-0 left-0 right-0 h-1.5 transition-opacity"
++                      style={{ backgroundColor: accent.hex }}
++                      aria-hidden="true"
++                    />
++
+                     <div>
+-                      <h3 className="clash-title text-2xl mb-4 line-clamp-2">
++                      {/* Card Header with Icon and Course Code Badge */}
++                      <div className="flex items-center justify-between gap-3 mb-6">
++                        <div className="w-12 h-12 rounded-lg border border-border/30 flex items-center justify-center transition-transform duration-300 group-hover:scale-105 bg-background shadow-2xs">
++                          <Icon
++                            className="w-5 h-5 text-foreground"
++                            strokeWidth={1.5}
++                          />
++                        </div>
++                        <span className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30">
++                          {courseCode}
++                        </span>
++                      </div>
++
++                      {/* Course Title */}
++                      <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
+                         {course.fullname}
+                       </h3>
+-                      <div className="flex items-center gap-2 uppercase tracking-widest font-bold text-xs">
+-                        Enter Module <ArrowRight className="w-4 h-4" />
+-                      </div>
++                    </div>
++
++                    {/* Footer: Pending Deadlines Badge & Enter action */}
++                    <div className="pt-6 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
++                      {pendingCount > 0 ? (
++                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
++                          <Clock className="w-3 h-3 shrink-0" />
++                          {pendingCount} {pendingCount === 1 ? "deadline pending" : "deadlines pending"}
++                        </span>
++                      ) : (
++                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
++                          <CheckCircle2 className="w-3 h-3 shrink-0" />
++                          All clear
++                        </span>
++                      )}
++
++                      <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-secondary group-hover:text-foreground transition-colors">
++                        <span>Enter</span>
++                        <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
++                      </span>
+                     </div>
+                   </Link>
+                 );
+@@ -509,7 +616,7 @@ export default function Home() {
+                 [1, 2, 3].map((i) => (
+                   <div
+                     key={i}
+-                    className="p-8 border border-border/10 animate-pulse bg-card/50 min-h-[320px]"
++                    className="p-8 border border-border/10 rounded-xl animate-pulse bg-card/50 min-h-[300px]"
+                   ></div>
+                 ))}
+             </div>
+diff --git a/src/lib/dashboard-utils.ts b/src/lib/dashboard-utils.ts
+new file mode 100644
+index 0000000..78add26
+--- /dev/null
++++ b/src/lib/dashboard-utils.ts
+@@ -0,0 +1,96 @@
++export function getRelativeTimeBadge(timestart: number): {
++  label: string;
++  variant: "overdue" | "today" | "upcoming";
++} {
++  const now = Date.now();
++  const targetMs = timestart * 1000;
++  const diffMs = targetMs - now;
++
++  if (diffMs < 0) {
++    return { label: "Overdue", variant: "overdue" };
++  }
++
++  const nowDate = new Date(now);
++  const targetDate = new Date(targetMs);
++
++  const isSameCalendarDay =
++    nowDate.getFullYear() === targetDate.getFullYear() &&
++    nowDate.getMonth() === targetDate.getMonth() &&
++    nowDate.getDate() === targetDate.getDate();
++
++  const tomorrowDate = new Date(now);
++  tomorrowDate.setDate(nowDate.getDate() + 1);
++  const isTomorrowCalendarDay =
++    tomorrowDate.getFullYear() === targetDate.getFullYear() &&
++    tomorrowDate.getMonth() === targetDate.getMonth() &&
++    tomorrowDate.getDate() === targetDate.getDate();
++
++  const diffHours = diffMs / (1000 * 60 * 60);
++  const diffMinutes = Math.round(diffMs / (1000 * 60));
++
++  if (isSameCalendarDay) {
++    if (diffHours < 1) {
++      const mins = Math.max(1, diffMinutes);
++      return { label: `Due in ${mins}m`, variant: "today" };
++    }
++    if (diffHours < 6) {
++      const hours = Math.round(diffHours);
++      return { label: `Due in ${hours}h`, variant: "today" };
++    }
++    const formattedTime = targetDate.toLocaleTimeString("en-US", {
++      hour: "numeric",
++      minute: "2-digit",
++      hour12: true,
++    });
++    return { label: `Today ${formattedTime}`, variant: "today" };
++  }
++
++  if (isTomorrowCalendarDay) {
++    return { label: "Tomorrow", variant: "today" };
++  }
++
++  // Days difference
++  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
++  if (diffDays <= 7) {
++    return { label: `In ${diffDays} days`, variant: "upcoming" };
++  }
++
++  const diffWeeks = Math.max(1, Math.round(diffDays / 7));
++  return {
++    label: diffWeeks === 1 ? "In 1 week" : `In ${diffWeeks} weeks`,
++    variant: "upcoming",
++  };
++}
++
++export function extractCourseCode(shortname?: string, fullname?: string): string {
++  if (shortname && shortname.trim().length > 0) {
++    const trimmed = shortname.trim();
++    // If shortname is a clean code like CS101 or CS 101 or contains a match
++    const codeMatch = trimmed.match(/^[A-Z0-9_-]{2,10}$/i) || trimmed.match(/[A-Za-z]{2,6}\s*\d{2,4}[A-Za-z]?/);
++    if (codeMatch) return codeMatch[0].toUpperCase();
++    if (trimmed.length <= 10) return trimmed.toUpperCase();
++  }
++
++  if (fullname) {
++    const codeMatch = fullname.match(/[A-Za-z]{2,6}\s*\d{2,4}[A-Za-z]?/);
++    if (codeMatch) return codeMatch[0].toUpperCase();
++    // Or take first 2-3 words abbreviation or first word if alphanumeric
++    const firstWord = fullname.split(/\s+/)[0];
++    if (firstWord && firstWord.length <= 10) return firstWord.toUpperCase();
++  }
++
++  return "COURSE";
++}
++
++export const COURSE_ACCENT_COLORS = [
++  { name: "Slate Blue", hex: "#4f46e5", bgClass: "bg-[#4f46e5]" },
++  { name: "Sage", hex: "#059669", bgClass: "bg-[#059669]" },
++  { name: "Terracotta", hex: "#ea580c", bgClass: "bg-[#ea580c]" },
++  { name: "Plum", hex: "#9333ea", bgClass: "bg-[#9333ea]" },
++  { name: "Amber", hex: "#d97706", bgClass: "bg-[#d97706]" },
++];
++
++export function getCourseAccent(courseId: number, index: number) {
++  const hash = Math.abs(courseId || index);
++  return COURSE_ACCENT_COLORS[hash % COURSE_ACCENT_COLORS.length];
++}
