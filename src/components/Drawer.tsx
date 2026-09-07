@@ -70,7 +70,7 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
         aria-label={title}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className={`relative bg-card flex flex-col animate-in fade-in zoom-in-95 duration-200 outline-none overflow-hidden ${
+        className={`relative bg-card flex flex-col animate-in fade-in zoom-in-95 motion-reduce:animate-none duration-200 outline-none overflow-hidden ${
           fullScreen 
             ? 'w-full h-full max-w-none rounded-none' 
             : 'w-full max-w-4xl max-h-full rounded-2xl border border-border/60 shadow-2xl'
