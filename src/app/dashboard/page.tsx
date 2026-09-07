@@ -610,7 +610,7 @@ export default function Home() {
                             color={accent.hex}
                             items={coursePapers}
                             interactive={false}
-                            className="transition-transform duration-300 group-hover:scale-105"
+                            className="transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
                           />
                         </div>
                         <span
