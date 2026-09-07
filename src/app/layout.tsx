@@ -47,6 +47,10 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:left-0 focus:z-[100] focus:bg-foreground focus:text-background focus:py-3 focus:px-6 focus:text-sm focus:font-bold focus:uppercase focus:tracking-widest">
+            Skip to main content
+          </a>
+          <div className="cloudy-gradient" aria-hidden="true" />
           <div className="min-h-screen flex flex-col">
             <header className="sticky top-0 h-[80px] bg-background/90 backdrop-blur-[12px] border-b border-border/10 px-4 md:px-8 flex justify-between items-center relative z-50">
               <Link href={user ? "/dashboard" : "/"} className="clash-title text-xl md:text-3xl uppercase hover:opacity-80 transition-opacity truncate mr-4">The NotMoodle</Link>
@@ -75,7 +79,7 @@ export default async function RootLayout({
                 </div>
               </div>
             </header>
-            <div className="flex-1">
+            <div className="flex-1" id="main-content">
               {children}
             </div>
             {isApproved && <NavigationDock />}

@@ -3,21 +3,61 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #f2f2f2;
-  --foreground: #111111;
-  --muted: #d9d9d9;
-  --accent: #838282;
-  --border: #1e1e1e;
-  --card: #f2f2f2;
+  /* Warm Bone & Editorial Charcoal */
+  --background: #f7f6f2;
+  --foreground: #141414;
+  --muted: #ebe8e1;
+  --accent: #78716c;
+  --border: rgba(20, 20, 20, 0.12);
+  --card: #ffffff;
+  --card-foreground: #141414;
+  --secondary: #57534e;
+  --tertiary: #a8a29e;
+
+  /* Urgency & Academic Status Tokens */
+  --urgency-overdue: #dc2626;
+  --urgency-overdue-bg: rgba(220, 38, 38, 0.08);
+  --urgency-overdue-border: rgba(220, 38, 38, 0.25);
+  
+  --urgency-today: #d97706;
+  --urgency-today-bg: rgba(217, 119, 6, 0.08);
+  --urgency-today-border: rgba(217, 119, 6, 0.25);
+
+  --urgency-upcoming: #475569;
+  --urgency-upcoming-bg: rgba(71, 85, 105, 0.06);
+  --urgency-upcoming-border: rgba(71, 85, 105, 0.2);
+
+  --status-success: #16a34a;
+  --status-success-bg: rgba(22, 163, 74, 0.08);
 }
 
 .dark {
-  --background: #111111;
-  --foreground: #f2f2f2;
-  --muted: #333333;
-  --accent: #a0a0a0;
-  --border: #e1e1e1;
-  --card: #111111;
+  /* Deep Obsidian & Editorial Warm White */
+  --background: #0d0f12;
+  --foreground: #f4f4f5;
+  --muted: #222630;
+  --accent: #94a3b8;
+  --border: rgba(244, 244, 245, 0.12);
+  --card: #15181e;
+  --card-foreground: #f4f4f5;
+  --secondary: #a1a1aa;
+  --tertiary: #71717a;
+
+  /* Urgency & Academic Status Tokens */
+  --urgency-overdue: #ef4444;
+  --urgency-overdue-bg: rgba(239, 68, 68, 0.12);
+  --urgency-overdue-border: rgba(239, 68, 68, 0.35);
+
+  --urgency-today: #f59e0b;
+  --urgency-today-bg: rgba(245, 158, 11, 0.12);
+  --urgency-today-border: rgba(245, 158, 11, 0.35);
+
+  --urgency-upcoming: #94a3b8;
+  --urgency-upcoming-bg: rgba(148, 163, 184, 0.1);
+  --urgency-upcoming-border: rgba(148, 163, 184, 0.25);
+
+  --status-success: #22c55e;
+  --status-success-bg: rgba(34, 197, 94, 0.12);
 }
 
 @theme {
@@ -27,6 +67,9 @@
   --color-accent: var(--accent);
   --color-border: var(--border);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-secondary: var(--secondary);
+  --color-tertiary: var(--tertiary);
   --font-serif: 'Clash Display', sans-serif;
   --font-sans: 'Satoshi', sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
@@ -37,6 +80,76 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Atmospheric Cloudy Gradient Layer */
+.cloudy-gradient,
+.ambient-cloud-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.cloudy-gradient::before,
+.ambient-cloud-bg::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -10%;
+  width: 70vw;
+  height: 70vw;
+  max-width: 800px;
+  max-height: 800px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(254, 243, 199, 0.45) 0%, rgba(224, 242, 254, 0.25) 50%, transparent 70%);
+  filter: blur(80px);
+}
+
+.cloudy-gradient::after,
+.ambient-cloud-bg::after {
+  content: '';
+  position: absolute;
+  top: 15%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  max-width: 700px;
+  max-height: 700px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(220, 252, 231, 0.35) 0%, rgba(254, 215, 170, 0.2) 50%, transparent 70%);
+  filter: blur(90px);
+}
+
+.dark .cloudy-gradient::before,
+.dark .ambient-cloud-bg::before {
+  background: radial-gradient(circle, rgba(30, 27, 75, 0.5) 0%, rgba(14, 116, 144, 0.25) 50%, transparent 70%);
+  filter: blur(100px);
+}
+
+.dark .cloudy-gradient::after,
+.dark .ambient-cloud-bg::after {
+  background: radial-gradient(circle, rgba(67, 56, 202, 0.3) 0%, rgba(15, 23, 42, 0.5) 50%, transparent 70%);
+  filter: blur(110px);
+}
+
+/* Accessible focus indicator for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Micro-interactions */
