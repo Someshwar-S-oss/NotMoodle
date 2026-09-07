@@ -42,6 +42,16 @@
   border-color: var(--foreground);
 }
 
+.dock-item.active {
+  background-color: var(--muted);
+  border-color: var(--foreground);
+}
+
+.dock-item:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
+}
+
 .dock-icon {
   display: flex;
   align-items: center;

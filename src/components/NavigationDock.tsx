@@ -1,13 +1,13 @@
 'use client'
 
 import Dock from './Dock'
-import { Home, Settings, LogOut, Bell, MessageSquare } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-
+import { Home, Settings, Bell } from 'lucide-react'
+import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export function NavigationDock() {
   const router = useRouter()
+  const pathname = usePathname()
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
@@ -46,11 +46,60 @@ export function NavigationDock() {
     }
   }, [])
 
+  const currentPath = pathname || ''
+  const isDashboardActive = currentPath === '/dashboard' || currentPath.startsWith('/dashboard/') || currentPath.startsWith('/course')
+  const isNotificationsActive = currentPath === '/notifications' || currentPath.startsWith('/notifications/')
+  const isSettingsActive = currentPath === '/settings' || currentPath.startsWith('/settings/')
+
   const items = [
-    { icon: <Home size={18} />, label: 'Dashboard', onClick: () => router.push('/dashboard') },
-    { icon: <MessageSquare size={18} />, label: 'Chat', onClick: () => router.push('/chat') },
-    { icon: <Bell size={18} />, label: 'Notifications', onClick: () => router.push('/notifications') },
-    { icon: <Settings size={18} />, label: 'Settings', onClick: () => router.push('/settings') },
+    {
+      icon: (
+        <div className="relative flex flex-col items-center justify-center">
+          <Home size={18} className={isDashboardActive ? 'text-foreground' : 'text-foreground/75'} />
+          {isDashboardActive && (
+            <span
+              className="absolute -bottom-2.5 w-1.5 h-1.5 rounded-full bg-foreground transition-all duration-300"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+      ),
+      label: 'Dashboard',
+      onClick: () => router.push('/dashboard'),
+      isActive: isDashboardActive,
+    },
+    {
+      icon: (
+        <div className="relative flex flex-col items-center justify-center">
+          <Bell size={18} className={isNotificationsActive ? 'text-foreground' : 'text-foreground/75'} />
+          {isNotificationsActive && (
+            <span
+              className="absolute -bottom-2.5 w-1.5 h-1.5 rounded-full bg-foreground transition-all duration-300"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+      ),
+      label: 'Notifications',
+      onClick: () => router.push('/notifications'),
+      isActive: isNotificationsActive,
+    },
+    {
+      icon: (
+        <div className="relative flex flex-col items-center justify-center">
+          <Settings size={18} className={isSettingsActive ? 'text-foreground' : 'text-foreground/75'} />
+          {isSettingsActive && (
+            <span
+              className="absolute -bottom-2.5 w-1.5 h-1.5 rounded-full bg-foreground transition-all duration-300"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+      ),
+      label: 'Settings',
+      onClick: () => router.push('/settings'),
+      isActive: isSettingsActive,
+    },
   ]
 
   return (
