@@ -21,6 +21,7 @@ import { Drawer } from '@/components/Drawer'
 import { FileViewer } from '@/components/FileViewer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
 import { recordClientAudit } from '@/lib/audit-logger'
+import { extractCourseDisplayName } from '@/lib/dashboard-utils'
 
 type CategoryFilter = 'all' | 'assignments' | 'resources' | 'links'
 
@@ -123,7 +124,7 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
   // Derive course name from assignments or fallback to "Course Library"
   const courseName = useMemo(() => {
     if (assignments.length > 0 && assignments[0].coursename) {
-      return assignments[0].coursename
+      return extractCourseDisplayName(assignments[0].coursename)
     }
     return 'Course Library'
   }, [assignments])

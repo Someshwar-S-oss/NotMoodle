@@ -71,9 +71,13 @@
   --color-card-foreground: var(--card-foreground);
   --color-secondary: var(--secondary);
   --color-tertiary: var(--tertiary);
-  --font-serif: 'Clash Display', sans-serif;
+  --font-serif: 'Anonymous Pro', monospace;
   --font-sans: 'Satoshi', sans-serif;
   --font-mono: 'Anonymous Pro', monospace;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
 }
 
 body {

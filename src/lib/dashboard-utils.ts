@@ -62,7 +62,34 @@ export function getRelativeTimeBadge(timestart: number): {
   };
 }
 
+export function extractCourseDisplayName(rawName?: string): string {
+  if (!rawName || rawName.trim().length === 0) return "Course";
+  const trimmed = rawName.trim();
+
+  // Sriher Moodle naming convention: e02-cyb23lu01-course name
+  // If there are at least two hyphens, extract everything after the second hyphen.
+  const hyphenParts = trimmed.split('-');
+  if (hyphenParts.length >= 3) {
+    const afterSecondHyphen = hyphenParts.slice(2).join('-').trim();
+    if (afterSecondHyphen.length > 0) {
+      return afterSecondHyphen;
+    }
+  }
+
+  return trimmed;
+}
+
 export function extractCourseCode(shortname?: string, fullname?: string): string {
+  // Check if either string follows the Sriher convention (e.g. e02-cyb23lu01-course or e02-cyb23lu01)
+  for (const candidate of [shortname, fullname]) {
+    if (candidate && candidate.includes('-')) {
+      const parts = candidate.trim().split('-');
+      if (parts.length >= 2 && parts[1].trim().length > 0) {
+        return parts[1].trim().toUpperCase();
+      }
+    }
+  }
+
   if (shortname && shortname.trim().length > 0) {
     const trimmed = shortname.trim();
     // If shortname is a clean code like CS101 or CS 101 or contains a match

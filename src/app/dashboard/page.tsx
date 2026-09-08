@@ -29,6 +29,7 @@ import {
 import {
   getRelativeTimeBadge,
   extractCourseCode,
+  extractCourseDisplayName,
   getCourseAccent,
 } from "@/lib/dashboard-utils";
 
@@ -627,7 +628,7 @@ export default function Home() {
 
                       {/* Course Title */}
                       <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
-                        {course.fullname}
+                        {extractCourseDisplayName(course.fullname)}
                       </h3>
                     </div>
 

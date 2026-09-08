@@ -7,6 +7,8 @@ import { Search, FileText, MessageSquare, Book, Link as LinkIcon, ClipboardList,
 import { useRouter } from 'next/navigation'
 import { getSiteInfo, getCurrentCourses, buildSearchIndex, type MoodleSearchItem } from '@/lib/moodle-client'
 
+import { extractCourseDisplayName } from '@/lib/dashboard-utils'
+
 export function CommandMenu() {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -59,51 +61,62 @@ export function CommandMenu() {
     : items.slice(0, 10)
 
   const getIcon = (type: string) => {
-    if (type === 'course') return <Book className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
-    if (type === 'forum') return <MessageSquare className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
-    if (type === 'resource') return <FileText className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
-    if (type === 'assign') return <ClipboardList className="mr-3 h-4 w-4 text-foreground shrink-0" strokeWidth={1.5} />
-    return <LinkIcon className="mr-3 h-4 w-4 text-tertiary shrink-0" strokeWidth={1.5} />
+    if (type === 'course') return <Book className="h-4 w-4 text-primary shrink-0" strokeWidth={1.8} />
+    if (type === 'forum') return <MessageSquare className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" strokeWidth={1.8} />
+    if (type === 'resource') return <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" strokeWidth={1.8} />
+    if (type === 'assign') return <ClipboardList className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" strokeWidth={1.8} />
+    return <LinkIcon className="h-4 w-4 text-tertiary shrink-0" strokeWidth={1.8} />
   }
 
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
-      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setOpen(false)} />
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] px-4">
+      {/* Backdrop with frosted blur */}
+      <div
+        className="fixed inset-0 bg-black/60 backdrop-blur-md transition-opacity animate-in fade-in duration-200"
+        onClick={() => setOpen(false)}
+      />
 
-      <div className="relative w-full max-w-2xl bg-card border border-border/20 shadow-2xl rounded-none overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      {/* Elevated Modal Dialog */}
+      <div className="relative w-full max-w-2xl bg-card/95 backdrop-blur-xl border border-border/40 shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 ring-1 ring-black/5 dark:ring-white/5">
         <Command label="Global Command Menu" shouldFilter={false} className="flex flex-col">
-          <div className="flex items-center px-6 py-2 border-b border-border/20 bg-card">
-            {indexing
-              ? <Loader2 className="h-6 w-6 text-foreground animate-spin shrink-0" />
-              : <Search className="h-6 w-6 text-foreground shrink-0" strokeWidth={2} />
-            }
+          {/* Header & Search Input */}
+          <div className="flex items-center px-5 py-3.5 border-b border-border/20 bg-muted/20">
+            {indexing ? (
+              <Loader2 className="h-5 w-5 text-secondary animate-spin shrink-0 ml-1 mr-3" />
+            ) : (
+              <Search className="h-5 w-5 text-secondary shrink-0 ml-1 mr-3" strokeWidth={2} />
+            )}
             <Command.Input
               autoFocus
               value={query}
               onValueChange={setQuery}
               placeholder={indexing ? 'Building search index...' : 'Search modules, files, assignments...'}
-              className="flex-1 bg-transparent border-0 outline-none text-foreground px-4 py-4 placeholder-foreground/40 text-lg font-medium font-sans"
+              className="flex-1 bg-transparent border-0 outline-none text-foreground px-1 py-2 placeholder:text-tertiary text-base font-medium font-sans"
             />
-            <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] uppercase tracking-widest font-bold text-tertiary bg-background px-2 py-1">
-              ESC
-            </kbd>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <kbd className="hidden sm:inline-flex items-center px-2 py-0.5 text-[10px] font-mono font-bold tracking-wider text-secondary bg-muted/80 border border-border/40 rounded shadow-2xs">
+                ESC
+              </kbd>
+            </div>
           </div>
 
-          <Command.List className="max-h-[55vh] overflow-y-auto p-0">
+          {/* Results List */}
+          <Command.List className="max-h-[50vh] overflow-y-auto p-2 scrollbar-none space-y-1">
             {indexing ? (
-              <div className="p-12 text-center text-tertiary text-xs uppercase font-bold tracking-widest flex flex-col items-center">
-                <Loader2 className="h-8 w-8 animate-spin mb-4 text-foreground" />
+              <div className="py-14 text-center text-secondary text-xs uppercase font-mono tracking-widest flex flex-col items-center justify-center">
+                <Loader2 className="h-7 w-7 animate-spin mb-3 text-foreground" />
                 Indexing your workspace...
               </div>
+            ) : results.length === 0 ? (
+              <Command.Empty className="py-14 text-center text-tertiary text-xs uppercase font-mono tracking-widest">
+                No results for &ldquo;{query}&rdquo;
+              </Command.Empty>
             ) : (
-              <>
-                <Command.Empty className="p-12 text-center text-tertiary text-xs uppercase font-bold tracking-widest">
-                  No results for &ldquo;{query}&rdquo;
-                </Command.Empty>
-
-                {results.map(item => (
+              results.map(item => {
+                const cleanedCourse = extractCourseDisplayName(item.course)
+                return (
                   <Command.Item
                     key={item.id}
                     onSelect={() => {
@@ -114,30 +127,48 @@ export function CommandMenu() {
                         router.push(item.url)
                       }
                     }}
-                    className="flex items-center px-6 py-4 border-b border-border/10 text-sm cursor-pointer aria-selected:bg-foreground aria-selected:text-background group transition-colors"
+                    className="flex items-center gap-3.5 px-3.5 py-3 rounded-xl cursor-pointer text-sm transition-all duration-150 aria-selected:bg-muted/80 aria-selected:shadow-2xs text-foreground group"
                   >
-                    {getIcon(item.type)}
-                    <div className="flex flex-col min-w-0">
-                      <span className="font-bold uppercase tracking-wide truncate group-aria-selected:text-background">{item.title}</span>
-                      <span className="text-xs font-medium text-tertiary group-aria-selected:text-background/70 truncate mt-1">
-                        {item.course} · {item.type}
-                      </span>
+                    <div className="w-8 h-8 rounded-lg bg-muted/60 border border-border/30 flex items-center justify-center shrink-0 group-aria-selected:border-border/60 group-aria-selected:bg-background">
+                      {getIcon(item.type)}
                     </div>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="font-semibold tracking-normal text-sm text-foreground truncate">
+                        {item.title}
+                      </span>
+                      <div className="flex items-center gap-2 text-[11px] text-secondary font-mono mt-0.5 truncate">
+                        <span className="truncate text-tertiary">{cleanedCourse}</span>
+                        <span className="text-border/80">·</span>
+                        <span className="uppercase text-[10px] font-bold tracking-wider px-1.5 py-0.2 rounded bg-muted/70 text-secondary border border-border/20">
+                          {item.type}
+                        </span>
+                      </div>
+                    </div>
+                    <span className="text-xs font-mono text-tertiary opacity-0 group-aria-selected:opacity-100 transition-opacity shrink-0">
+                      ↵
+                    </span>
                   </Command.Item>
-                ))}
-              </>
+                )
+              })
             )}
           </Command.List>
 
-          <div className="bg-card px-6 py-3 border-t border-border/20 flex justify-between items-center text-[10px] uppercase font-bold tracking-widest text-tertiary">
-            <span className="flex items-center gap-2">
-              <kbd className="bg-background px-2 py-1">↑</kbd>
-              <kbd className="bg-background px-2 py-1">↓</kbd> NAVIGATE
-            </span>
-            {items.length > 0 && <span>{items.length} INDEXED</span>}
-            <span className="flex items-center gap-2">
-              <kbd className="bg-background px-2 py-1">ENTER</kbd> SELECT
-            </span>
+          {/* Footer Bar */}
+          <div className="bg-muted/30 px-5 py-2.5 border-t border-border/20 flex justify-between items-center text-[10px] font-mono uppercase tracking-wider text-tertiary">
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1">
+                <kbd className="bg-muted/80 border border-border/30 px-1.5 py-0.5 rounded shadow-2xs font-mono">↑</kbd>
+                <kbd className="bg-muted/80 border border-border/30 px-1.5 py-0.5 rounded shadow-2xs font-mono">↓</kbd>
+                <span className="ml-1">Navigate</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <kbd className="bg-muted/80 border border-border/30 px-1.5 py-0.5 rounded shadow-2xs font-mono">↵</kbd>
+                <span className="ml-1">Open</span>
+              </span>
+            </div>
+            {items.length > 0 && (
+              <span className="text-secondary font-mono">{items.length} items indexed</span>
+            )}
           </div>
         </Command>
       </div>

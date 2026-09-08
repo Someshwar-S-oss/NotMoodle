@@ -1,6 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Home from '@/app/dashboard/page';
-import { getRelativeTimeBadge, extractCourseCode, getCourseAccent } from '@/lib/dashboard-utils';
+import {
+  getRelativeTimeBadge,
+  extractCourseCode,
+  extractCourseDisplayName,
+  getCourseAccent,
+} from '@/lib/dashboard-utils';
 
 jest.mock('../utils/supabase/client', () => ({
   createClient: () => ({
@@ -112,12 +117,23 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
     });
   });
 
-  describe('Helper: extractCourseCode & getCourseAccent', () => {
+  describe('Helper: extractCourseCode & extractCourseDisplayName & getCourseAccent', () => {
     it('extracts code from shortname or fullname', () => {
       expect(extractCourseCode('CS 101', 'Intro to Computer Science')).toBe('CS 101');
       expect(extractCourseCode('CS204', 'Data Structures')).toBe('CS204');
       expect(extractCourseCode('', 'MATH 202 Linear Algebra')).toBe('MATH 202');
       expect(extractCourseCode(undefined, 'Algorithms')).toBe('ALGORITHMS');
+    });
+
+    it('extracts course code and display name from Sriher hyphen convention e02-cyb23lu01-course name', () => {
+      const rawFullName = 'e02-cyb23lu01-Cryptography and Network Security';
+      expect(extractCourseCode(undefined, rawFullName)).toBe('CYB23LU01');
+      expect(extractCourseDisplayName(rawFullName)).toBe('Cryptography and Network Security');
+
+      // Works when shortname has the prefix as well
+      expect(extractCourseCode('e02-cyb23lu01', 'Cryptography')).toBe('CYB23LU01');
+      // If no hyphens, returns trimmed raw name
+      expect(extractCourseDisplayName('Operating Systems')).toBe('Operating Systems');
     });
 
     it('determines deterministic course accent colors', () => {
