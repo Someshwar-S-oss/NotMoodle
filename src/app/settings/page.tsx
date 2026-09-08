@@ -3,13 +3,15 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { MoodleConnect } from '@/components/MoodleConnect'
-import { Copy, Check, Sun, Moon, Monitor, Calendar, RefreshCw, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react'
+import { Copy, Check, Sun, Moon, Monitor, Calendar, RefreshCw, CheckCircle2, AlertCircle, Sparkles, ExternalLink } from 'lucide-react'
 import { useTheme } from 'next-themes'
+import { syncUserAssignments } from '@/lib/sync-assignments'
 
 export default function SettingsPage() {
   const [userId, setUserId] = useState<string | null>(null)
   const [calendarCopied, setCalendarCopied] = useState(false)
   const [moodleConnected, setMoodleConnected] = useState<boolean | null>(null)
+  const [moodleToken, setMoodleToken] = useState<string | null>(null)
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -32,6 +34,7 @@ export default function SettingsPage() {
 
             if (data?.encrypted_token) {
               setMoodleConnected(true)
+              setMoodleToken(data.encrypted_token)
               setLastSync(data.last_sync || null)
               return
             }
@@ -42,7 +45,15 @@ export default function SettingsPage() {
           // Also check token endpoint fallback
           try {
             const res = await fetch('/api/moodle/token')
-            setMoodleConnected(res.ok)
+            if (res.ok) {
+              const tokenData = await res.json()
+              if (tokenData?.token) {
+                setMoodleToken(tokenData.token)
+              }
+              setMoodleConnected(true)
+            } else {
+              setMoodleConnected(false)
+            }
           } catch {
             setMoodleConnected(false)
           }
@@ -59,6 +70,10 @@ export default function SettingsPage() {
     ? `${window.location.origin}/api/calendar/feed/${userId}`
     : ''
 
+  const subscribeUrl = calendarUrl
+    ? calendarUrl.replace(/^https?:\/\//i, 'webcal://')
+    : ''
+
   const copyCalendarUrl = () => {
     if (calendarUrl) {
       navigator.clipboard.writeText(calendarUrl)
@@ -70,13 +85,23 @@ export default function SettingsPage() {
   const handleManualResync = async () => {
     setSyncing(true)
     try {
-      const res = await fetch('/api/moodle/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ assignments: [] }),
-      })
-      if (res.ok) {
-        setLastSync(new Date().toISOString())
+      let token = moodleToken
+      if (!token) {
+        const res = await fetch('/api/moodle/token')
+        if (res.ok) {
+          const data = await res.json()
+          token = data?.token || null
+          if (token) {
+            setMoodleToken(token)
+          }
+        }
+      }
+
+      if (token) {
+        const result = await syncUserAssignments(token)
+        if (result.success) {
+          setLastSync(new Date().toISOString())
+        }
       }
     } catch {
       // Ignored
@@ -187,6 +212,18 @@ export default function SettingsPage() {
                   </>
                 )}
               </button>
+              {subscribeUrl && (
+                <a
+                  href={subscribeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Subscribe in Calendar"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border/40 hover:border-foreground text-foreground text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-card hover:bg-muted/40 shadow-xs shrink-0"
+                >
+                  <ExternalLink className="w-4 h-4 stroke-[2px]" />
+                  <span>Subscribe in Calendar</span>
+                </a>
+              )}
             </div>
 
             {/* 3-Step Setup Guide */}

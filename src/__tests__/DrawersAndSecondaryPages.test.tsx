@@ -50,6 +50,9 @@ jest.mock('../lib/moodle-client', () => ({
   uploadFileToDraft: jest.fn(),
   saveSubmission: jest.fn(),
   getSubmissionStatus: jest.fn(),
+  getSiteInfo: jest.fn().mockResolvedValue({ userid: 101 }),
+  getCurrentCourses: jest.fn().mockResolvedValue([{ id: 1, fullname: 'Course 1' }]),
+  getAssignments: jest.fn().mockResolvedValue([]),
 }))
 
 describe('Drawer component', () => {

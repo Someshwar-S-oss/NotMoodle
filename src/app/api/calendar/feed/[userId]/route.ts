@@ -34,6 +34,8 @@ export async function GET(
     'PRODID:-//NotMoodle//Deadlines Feed//EN',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
+    'X-PUBLISHED-TTL:PT15M',
+    'REFRESH-INTERVAL;VALUE=DURATION:PT15M',
   ]
 
   for (const assignment of assignments) {
@@ -54,6 +56,9 @@ export async function GET(
         `DTSTAMP:${lastSync}`,
         `DTSTART:${startFormat}`,
         `DTEND:${endFormat}`,
+        `LAST-MODIFIED:${lastSync}`,
+        'SEQUENCE:1',
+        'STATUS:CONFIRMED',
         'END:VEVENT'
       )
     }
@@ -70,12 +75,11 @@ export async function GET(
   })
 
   return new NextResponse(icsLines.join('\r\n'), {
-
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
-      'Content-Disposition': `attachment; filename="notmoodle-deadlines.ics"`,
+      'Content-Disposition': 'attachment; filename="notmoodle-deadlines.ics"',
       // Don't let CDNs or proxies cache this — always serve the freshest DB copy
-      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
     },
   })
 }
