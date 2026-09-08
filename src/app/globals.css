@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Anonymous+Pro:ital,wght@0,400;0,700;1,400;1,700&display=swap');
 @import url('https://api.fontshare.com/v2/css?f[]=clash-display@700,600,500&f[]=satoshi@700,500,400&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
@@ -72,7 +73,7 @@
   --color-tertiary: var(--tertiary);
   --font-serif: 'Clash Display', sans-serif;
   --font-sans: 'Satoshi', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-mono: 'Anonymous Pro', monospace;
 }
 
 body {
@@ -227,4 +228,33 @@ body {
   width: 1px;
   background-color: var(--border);
   opacity: 0.1;
+}
+
+/* Anonymous Pro Font Helpers */
+.anonymous-pro-regular {
+  font-family: "Anonymous Pro", monospace;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.anonymous-pro-bold {
+  font-family: "Anonymous Pro", monospace;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.anonymous-pro-regular-italic {
+  font-family: "Anonymous Pro", monospace;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.anonymous-pro-bold-italic {
+  font-family: "Anonymous Pro", monospace;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.font-anonymous {
+  font-family: "Anonymous Pro", monospace;
 }
