@@ -11,16 +11,17 @@
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   width: fit-content;
-  gap: 1rem;
-  border-radius: 0;
-  background-color: var(--background);
-  backdrop-filter: blur(12px);
+  gap: 0.75rem;
+  border-radius: 9999px;
+  background-color: var(--card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
-  padding: 0 0.5rem 0.5rem;
+  padding: 0.5rem 0.875rem;
   z-index: 100;
-  box-shadow: 4px 4px 0px var(--border);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 .dock-item {
@@ -28,23 +29,23 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0;
-  background-color: var(--background);
-  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background-color: transparent;
+  border: 1px solid transparent;
   cursor: pointer;
   outline: none;
   color: var(--foreground);
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .dock-item:hover {
   background-color: var(--muted);
-  border-color: var(--foreground);
+  border-color: var(--border);
 }
 
 .dock-item.active {
   background-color: var(--muted);
-  border-color: var(--foreground);
+  border-color: var(--border);
 }
 
 .dock-item:focus-visible {
@@ -62,16 +63,32 @@
   position: absolute;
   top: -3.5rem;
   left: 50%;
+  transform: translateX(-50%);
   width: fit-content;
   white-space: pre;
-  border-radius: 0;
-  border: 1px solid var(--foreground);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
   background-color: var(--foreground);
-  padding: 0.375rem 0.875rem;
+  color: var(--background);
+  padding: 0.25rem 0.625rem;
+  font-family: var(--font-geist-mono), monospace;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--background);
-  transform: translateX(-50%);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-panel,
+  .dock-item,
+  .dock-label,
+  .dock-outer {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .dock-item {
+    transform: none !important;
+  }
 }
