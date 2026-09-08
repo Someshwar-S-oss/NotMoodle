@@ -215,8 +215,6 @@ export default function SettingsPage() {
               {subscribeUrl && (
                 <a
                   href={subscribeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   aria-label="Subscribe in Calendar"
                   className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg border border-border/40 hover:border-foreground text-foreground text-xs font-bold uppercase tracking-wider transition-all cursor-pointer bg-card hover:bg-muted/40 shadow-xs shrink-0"
                 >

@@ -171,9 +171,13 @@ export default function Home() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ assignments }),
-      }).catch((err) =>
-        console.error("Failed to sync assignments to backend cache", err),
-      );
+      })
+        .then(() => {
+          localStorage.setItem("moodle_last_sync_timestamp", Date.now().toString());
+        })
+        .catch((err) =>
+          console.error("Failed to sync assignments to backend cache", err),
+        );
 
       localStorage.setItem(
         "moodle_dashboard_cache",
