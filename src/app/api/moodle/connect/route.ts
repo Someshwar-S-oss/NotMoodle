@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { logServerAuditEvent } from '@/lib/audit-logger'
 
 // Token is obtained client-side (browser → Moodle) to avoid server IP blocks.
 // This route only stores the already-obtained token in Supabase.
@@ -27,6 +28,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Failed to save connection: ${dbError.message}` }, { status: 500 })
   }
 
+  await logServerAuditEvent({
+    userId: user.id,
+    userEmail: user.email,
+    action: 'moodle.connect',
+    entityType: 'moodle_token',
+    entityId: user.id,
+    req: request,
+  })
+
   return NextResponse.json({ success: true })
 }
+
 

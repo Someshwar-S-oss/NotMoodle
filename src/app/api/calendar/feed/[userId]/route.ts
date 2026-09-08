@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
+import { logServerAuditEvent } from '@/lib/audit-logger'
 
 export async function GET(
   request: Request,
@@ -60,7 +61,16 @@ export async function GET(
 
   icsLines.push('END:VCALENDAR')
 
+  await logServerAuditEvent({
+    userId,
+    action: 'calendar.export',
+    entityType: 'calendar_feed',
+    entityId: userId,
+    req: request,
+  })
+
   return new NextResponse(icsLines.join('\r\n'), {
+
     headers: {
       'Content-Type': 'text/calendar; charset=utf-8',
       'Content-Disposition': `attachment; filename="notmoodle-deadlines.ics"`,

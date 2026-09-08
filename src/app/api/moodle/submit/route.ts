@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { logServerAuditEvent } from '@/lib/audit-logger'
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -79,8 +80,18 @@ export async function POST(request: Request) {
   }
 
   if (success) {
+    await logServerAuditEvent({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'assignment.submit',
+      entityType: 'assignment',
+      entityId: assignmentId,
+      details: { filename, assignmentId },
+      req: request,
+    })
     return NextResponse.json({ success: true })
   } else {
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
+
