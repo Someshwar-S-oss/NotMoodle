@@ -115,8 +115,19 @@ export default function AdminPage() {
   const [auditSearch, setAuditSearch] = useState('')
   const [auditCategory, setAuditCategory] = useState<AuditCategoryFilter>('all')
 
-  // Detail Inspect Modal state
+  // Detail modal state
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLog | null>(null)
+
+  // Listen for Escape key to close the Audit Details modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedAuditLog) {
+        setSelectedAuditLog(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [selectedAuditLog])
 
   const router = useRouter()
   const supabase = createClient()
@@ -732,6 +743,9 @@ export default function AdminPage() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="audit-detail-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedAuditLog(null)
+            }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-xs animate-in fade-in duration-200"
           >
             <div className="relative w-full max-w-xl rounded-2xl border border-border/40 bg-card p-6 shadow-xl flex flex-col gap-5">

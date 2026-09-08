@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const action = searchParams.get('action')
   const search = searchParams.get('search')
 
-  const limit = isNaN(limitParam) || limitParam <= 0 ? 50 : limitParam
+  const limit = Math.min(isNaN(limitParam) || limitParam <= 0 ? 50 : limitParam, 100)
   const offset = isNaN(offsetParam) || offsetParam < 0 ? 0 : offsetParam
 
   let query = supabase

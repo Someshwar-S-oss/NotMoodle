@@ -21,10 +21,11 @@ create policy "Superusers can view audit logs"
   on public.audit_logs for select
   using ( public.is_admin() );
 
--- Authenticated users or server-side clients can insert audit logs
-create policy "Anyone can insert audit logs"
+-- Inserts are allowed for authenticated users for their own user_id or by superusers.
+-- Background server services (e.g. calendar feed) use SUPABASE_SERVICE_ROLE_KEY which bypasses RLS natively.
+create policy "Authenticated users can insert own audit logs"
   on public.audit_logs for insert
-  with check ( true );
+  with check ( auth.uid() = user_id or public.is_admin() );
 
 -- Indexes for performant filtering and sorting
 create index if not exists idx_audit_logs_created_at on public.audit_logs (created_at desc);
