@@ -1,4 +1,3 @@
-import { createClient as createServerClient } from '@/utils/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 
 export interface AuditLogParams {
@@ -29,15 +28,9 @@ export async function logServerAuditEvent(params: AuditLogParams): Promise<void>
       userAgent = params.req.headers.get('user-agent') || null
     }
 
-    let supabase: any
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      supabase = createServiceClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.SUPABASE_SERVICE_ROLE_KEY
-      )
-    } else {
-      supabase = await createServerClient()
-    }
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const supabase = createServiceClient(supabaseUrl, supabaseKey)
 
     const { error } = await supabase.from('audit_logs').insert({
       user_id: params.userId || null,

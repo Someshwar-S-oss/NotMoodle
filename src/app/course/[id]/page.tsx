@@ -20,6 +20,7 @@ import { createClient } from '@/utils/supabase/client'
 import { Drawer } from '@/components/Drawer'
 import { FileViewer } from '@/components/FileViewer'
 import { AssignmentDetails } from '@/components/AssignmentDetails'
+import { recordClientAudit } from '@/lib/audit-logger'
 
 type CategoryFilter = 'all' | 'assignments' | 'resources' | 'links'
 
@@ -445,6 +446,12 @@ export default function CoursePage({ params }: { params: Promise<{ id: string }>
 
                     const handleClick = () => {
                       if (isFile) {
+                        recordClientAudit({
+                          action: 'resource.view',
+                          entityType: 'course_resource',
+                          entityId: String(mod.id),
+                          details: { name: mod.name, courseId },
+                        })
                         setSelectedMod(mod)
                       } else if (isAssign) {
                         const assignData = assignments.find(a => a.cmid === mod.id)

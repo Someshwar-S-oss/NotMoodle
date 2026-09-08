@@ -38,7 +38,11 @@ export async function GET(request: Request) {
   }
 
   if (search) {
-    query = query.or(`user_email.ilike.%${search}%,entity_id.ilike.%${search}%`)
+    // Sanitize commas to prevent PostgREST .or(...) filter injection
+    const sanitizedSearch = search.replace(/,/g, ' ').trim()
+    if (sanitizedSearch) {
+      query = query.or(`user_email.ilike.%${sanitizedSearch}%,entity_id.ilike.%${sanitizedSearch}%`)
+    }
   }
 
   query = query.range(offset, offset + limit - 1)
