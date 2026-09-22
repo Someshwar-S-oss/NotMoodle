@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   FileText,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import {
   getSiteInfo,
@@ -33,12 +34,135 @@ import {
   getCourseAccent,
 } from "@/lib/dashboard-utils";
 
+function CourseCard({
+  course,
+  index = 0,
+  isPast = false,
+  pendingCount = 0,
+  events = [],
+  assignments = [],
+}: {
+  course: MoodleCourse;
+  index?: number;
+  isPast?: boolean;
+  pendingCount?: number;
+  events?: MoodleTimelineEvent[];
+  assignments?: MoodleAssignment[];
+}) {
+  const accent = getCourseAccent(course.id, index);
+  const courseCode = extractCourseCode(course.shortname, course.fullname);
+
+  // Upcoming items for this course (up to 3 items)
+  const courseEvents = events.filter((e) => e.course?.id === course.id);
+  const courseAssignments = assignments.filter((a) => a.course === course.id);
+  const combinedItems = [
+    ...courseEvents.map((e) => ({ id: `e-${e.id}`, name: e.name })),
+    ...courseAssignments.map((a) => ({ id: `a-${a.id}`, name: a.name })),
+  ];
+  // Deduplicate by name
+  const uniqueItems = Array.from(
+    new Map(combinedItems.map((item) => [item.name, item])).values(),
+  ).slice(0, 3);
+
+  const coursePapers = (
+    uniqueItems.length > 0
+      ? uniqueItems
+      : [{ id: "default-1", name: "Syllabus & Course Notes" }]
+  ).map((item, idx) => (
+    <div
+      key={item.id}
+      className="w-full h-full p-2 flex flex-col justify-start text-[9px] leading-tight text-neutral-800 font-medium overflow-hidden select-none relative"
+      title={item.name}
+    >
+      <div className="flex items-center gap-1 opacity-70 mb-1.5 border-b border-neutral-300/60 pb-0.5">
+        <FileText className="w-2.5 h-2.5 shrink-0 text-neutral-600" />
+        <span className="font-mono text-[8px] font-bold uppercase tracking-wider truncate">
+          {courseCode} · Doc #{idx + 1}
+        </span>
+      </div>
+      <div className="space-y-1 mt-0.5">
+        <div className="h-1.5 bg-neutral-700/60 rounded-xs w-4/5" />
+        <div className="h-1.5 bg-neutral-400/50 rounded-xs w-2/3" />
+        <div className="h-1.5 bg-neutral-300/60 rounded-xs w-1/2" />
+      </div>
+    </div>
+  ));
+
+  return (
+    <Link
+      href={`/course/${course.id}`}
+      className={`group relative flex flex-col justify-between min-h-[300px] p-7 rounded-xl border border-border/20 bg-card/60 hover:bg-card hover:-translate-y-1 hover:shadow-md transition-all duration-300 overflow-hidden ${
+        isPast ? "opacity-85 hover:opacity-100" : ""
+      }`}
+    >
+      {/* Top Accent Ribbon */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1.5 transition-opacity"
+        style={{ backgroundColor: accent.hex }}
+        aria-hidden="true"
+      />
+
+      <div>
+        {/* Card Header with Folder and Course Code Badge */}
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="w-14 h-14 rounded-lg border border-border/30 flex items-center justify-center bg-background shadow-2xs overflow-visible">
+            <Folder
+              size={0.65}
+              color={accent.hex}
+              items={coursePapers}
+              interactive={false}
+              className="transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
+            />
+          </div>
+          <span
+            data-testid="course-code-badge"
+            className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30"
+          >
+            {courseCode}
+          </span>
+        </div>
+
+        {/* Course Title */}
+        <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
+          {extractCourseDisplayName(course.fullname)}
+        </h3>
+      </div>
+
+      {/* Footer: Pending Deadlines Badge & Enter action */}
+      <div className="pt-6 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
+        {isPast ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-muted/60 text-secondary border border-border/30">
+            Past Course
+          </span>
+        ) : pendingCount > 0 ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
+            <Clock className="w-3 h-3 shrink-0" />
+            {pendingCount} {pendingCount === 1 ? "deadline pending" : "deadlines pending"}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
+            <CheckCircle2 className="w-3 h-3 shrink-0" />
+            All clear
+          </span>
+        )}
+
+        <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-secondary group-hover:text-foreground transition-colors">
+          <span>Enter</span>
+          <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
+        </span>
+      </div>
+    </Link>
+  );
+}
+
 export default function Home() {
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [events, setEvents] = useState<MoodleTimelineEvent[]>([]);
   const [courses, setCourses] = useState<MoodleCourse[]>([]);
   const [allAssignments, setAllAssignments] = useState<MoodleAssignment[]>([]);
+  const [hiddenCourseIds, setHiddenCourseIds] = useState<Set<number>>(new Set());
+  const [showPastCourses, setShowPastCourses] = useState(false);
   const [moodleError, setMoodleError] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [selectedAssignment, setSelectedAssignment] =
@@ -85,8 +209,15 @@ export default function Home() {
       if (cached) {
         try {
           const parsed = JSON.parse(cached);
+          const cachedHidden = new Set<number>(
+            (parsed.hiddenCourseIds || []).map(Number),
+          );
+          setHiddenCourseIds(cachedHidden);
           setCourses(parsed.courses || []);
-          setEvents(parsed.events || []);
+          const visibleCachedEvents = (parsed.events || []).filter(
+            (e: any) => !cachedHidden.has(Number(e.course?.id)),
+          );
+          setEvents(visibleCachedEvents);
           setAllAssignments(parsed.assignments || []);
           setLoading(false);
         } catch (e) {}
@@ -117,6 +248,28 @@ export default function Home() {
       const info = await getSiteInfo(token);
       const currentCourses = await getCurrentCourses(token, info.userid);
       const upcomingEvents = await getTimelineEvents(token);
+
+      // Fetch catalog visibility
+      let hiddenCourseIds = new Set<number>();
+      try {
+        const catRes = await fetch("/api/courses/catalog");
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          const hiddenList = (catData.courses || [])
+            .filter((c: any) => c.is_hidden)
+            .map((c: any) => Number(c.course_id));
+          hiddenCourseIds = new Set(hiddenList);
+        }
+      } catch (e) {
+        console.warn("Could not fetch course visibility rules", e);
+      }
+
+      // Background auto-discovery push
+      fetch("/api/courses/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ courses: currentCourses }),
+      }).catch(() => {});
 
       const assignments = await getAssignments(
         token,
@@ -163,8 +316,14 @@ export default function Home() {
         return true;
       });
 
+      // Exclude hidden course events from the active timeline
+      const visibleEvents = filteredEvents.filter(
+        (e) => !hiddenCourseIds.has(Number(e.course?.id)),
+      );
+
       setCourses(currentCourses);
-      setEvents(filteredEvents);
+      setHiddenCourseIds(hiddenCourseIds);
+      setEvents(visibleEvents);
       setAllAssignments(assignments);
 
       // Silently push the freshest assignments to our backend cache for the Calendar Feed
@@ -184,8 +343,9 @@ export default function Home() {
         "moodle_dashboard_cache",
         JSON.stringify({
           courses: currentCourses,
-          events: filteredEvents,
+          events: visibleEvents,
           assignments: assignments,
+          hiddenCourseIds: Array.from(hiddenCourseIds),
           timestamp: Date.now(),
         }),
       );
@@ -203,6 +363,14 @@ export default function Home() {
     "all" | "overdue" | "today" | "upcoming"
   >("all");
 
+  const activeCourses = useMemo(() => {
+    return courses.filter((c) => !hiddenCourseIds.has(Number(c.id)));
+  }, [courses, hiddenCourseIds]);
+
+  const inactiveCourses = useMemo(() => {
+    return courses.filter((c) => hiddenCourseIds.has(Number(c.id)));
+  }, [courses, hiddenCourseIds]);
+
   const { overdue, today, upcoming } = useMemo(() => {
     const now = Date.now();
     const buckets = {
@@ -212,6 +380,7 @@ export default function Home() {
     };
 
     events.forEach((e) => {
+      if (hiddenCourseIds.has(Number(e.course?.id))) return;
       const diff = Math.ceil(
         (e.timestart * 1000 - now) / (1000 * 60 * 60 * 24),
       );
@@ -221,7 +390,7 @@ export default function Home() {
     });
 
     return buckets;
-  }, [events]);
+  }, [events, hiddenCourseIds]);
 
   const greetingSubtitle = useMemo(() => {
     if (overdue.length > 0) {
@@ -234,23 +403,24 @@ export default function Home() {
   }, [overdue.length, today.length]);
 
   const displayedEvents = useMemo(() => {
+    const visible = events.filter((e) => !hiddenCourseIds.has(Number(e.course?.id)));
     if (activeFilter === "overdue") return overdue;
     if (activeFilter === "today") return today;
     if (activeFilter === "upcoming") return upcoming;
-    return events;
-  }, [activeFilter, overdue, today, upcoming, events]);
+    return visible;
+  }, [activeFilter, overdue, today, upcoming, events, hiddenCourseIds]);
 
   // Compute pending assignment/deadline count for each course
   const coursePendingCounts = useMemo(() => {
     const counts: Record<number, number> = {};
     events.forEach((event) => {
-      const cid = event.course?.id;
-      if (cid) {
+      const cid = Number(event.course?.id);
+      if (cid && !hiddenCourseIds.has(cid)) {
         counts[cid] = (counts[cid] || 0) + 1;
       }
     });
     return counts;
-  }, [events]);
+  }, [events, hiddenCourseIds]);
 
   return (
     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
@@ -552,109 +722,17 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {courses.map((course, i) => {
-                const accent = getCourseAccent(course.id, i);
-                const courseCode = extractCourseCode(course.shortname, course.fullname);
-                const pendingCount = coursePendingCounts[course.id] || 0;
-
-                // Upcoming items for this course (up to 3 items)
-                const courseEvents = events.filter((e) => e.course?.id === course.id);
-                const courseAssignments = allAssignments.filter((a) => a.course === course.id);
-                const combinedItems = [
-                  ...courseEvents.map((e) => ({ id: `e-${e.id}`, name: e.name })),
-                  ...courseAssignments.map((a) => ({ id: `a-${a.id}`, name: a.name })),
-                ];
-                // Deduplicate by name
-                const uniqueItems = Array.from(
-                  new Map(combinedItems.map((item) => [item.name, item])).values(),
-                ).slice(0, 3);
-
-                const coursePapers = (
-                  uniqueItems.length > 0
-                    ? uniqueItems
-                    : [{ id: 'default-1', name: 'Syllabus & Course Notes' }]
-                ).map((item, idx) => (
-                  <div
-                    key={item.id}
-                    className="w-full h-full p-2 flex flex-col justify-start text-[9px] leading-tight text-neutral-800 font-medium overflow-hidden select-none relative"
-                    title={item.name}
-                  >
-                    <div className="flex items-center gap-1 opacity-70 mb-1.5 border-b border-neutral-300/60 pb-0.5">
-                      <FileText className="w-2.5 h-2.5 shrink-0 text-neutral-600" />
-                      <span className="font-mono text-[8px] font-bold uppercase tracking-wider truncate">
-                        {courseCode} · Doc #{idx + 1}
-                      </span>
-                    </div>
-                    <div className="space-y-1 mt-0.5">
-                      <div className="h-1.5 bg-neutral-700/60 rounded-xs w-4/5" />
-                      <div className="h-1.5 bg-neutral-400/50 rounded-xs w-2/3" />
-                      <div className="h-1.5 bg-neutral-300/60 rounded-xs w-1/2" />
-                    </div>
-                  </div>
-                ));
-
-                return (
-                  <Link
-                    href={`/course/${course.id}`}
-                    key={course.id}
-                    className="group relative flex flex-col justify-between min-h-[300px] p-7 rounded-xl border border-border/20 bg-card/60 hover:bg-card hover:-translate-y-1 hover:shadow-md transition-all duration-300 overflow-hidden"
-                  >
-                    {/* Top Accent Ribbon */}
-                    <div
-                      className="absolute top-0 left-0 right-0 h-1.5 transition-opacity"
-                      style={{ backgroundColor: accent.hex }}
-                      aria-hidden="true"
-                    />
-
-                    <div>
-                      {/* Card Header with Folder and Course Code Badge */}
-                      <div className="flex items-center justify-between gap-3 mb-6">
-                        <div className="w-14 h-14 rounded-lg border border-border/30 flex items-center justify-center bg-background shadow-2xs overflow-visible">
-                          <Folder
-                            size={0.65}
-                            color={accent.hex}
-                            items={coursePapers}
-                            interactive={false}
-                            className="transition-transform duration-300 group-hover:scale-105 motion-reduce:transform-none motion-reduce:transition-none"
-                          />
-                        </div>
-                        <span
-                          data-testid="course-code-badge"
-                          className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30"
-                        >
-                          {courseCode}
-                        </span>
-                      </div>
-
-                      {/* Course Title */}
-                      <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
-                        {extractCourseDisplayName(course.fullname)}
-                      </h3>
-                    </div>
-
-                    {/* Footer: Pending Deadlines Badge & Enter action */}
-                    <div className="pt-6 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
-                      {pendingCount > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
-                          <Clock className="w-3 h-3 shrink-0" />
-                          {pendingCount} {pendingCount === 1 ? "deadline pending" : "deadlines pending"}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
-                          <CheckCircle2 className="w-3 h-3 shrink-0" />
-                          All clear
-                        </span>
-                      )}
-
-                      <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-secondary group-hover:text-foreground transition-colors">
-                        <span>Enter</span>
-                        <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
-                      </span>
-                    </div>
-                  </Link>
-                );
-              })}
-              {courses.length === 0 &&
+              {activeCourses.map((course, i) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  index={i}
+                  pendingCount={coursePendingCounts[course.id] || 0}
+                  events={events}
+                  assignments={allAssignments}
+                />
+              ))}
+              {activeCourses.length === 0 &&
                 loading &&
                 [1, 2, 3].map((i) => (
                   <div
@@ -663,6 +741,45 @@ export default function Home() {
                   ></div>
                 ))}
             </div>
+
+            {inactiveCourses.length > 0 && (
+              <div className="mt-8 rounded-2xl border border-border/40 bg-card/60 overflow-hidden shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setShowPastCourses(!showPastCourses)}
+                  aria-expanded={showPastCourses}
+                  className="w-full flex items-center justify-between p-4 px-6 text-left hover:bg-muted/30 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm clash-title uppercase tracking-wide text-foreground">
+                      Past / Inactive Courses
+                    </span>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-secondary">
+                      {inactiveCourses.length}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-secondary transition-transform duration-200 ${
+                      showPastCourses ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {showPastCourses && (
+                  <div className="p-6 pt-2 border-t border-border/20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
+                    {inactiveCourses.map((course, idx) => (
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        index={idx}
+                        isPast
+                        events={events}
+                        assignments={allAssignments}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       )}

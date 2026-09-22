@@ -305,5 +305,191 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
         screen.getByText(/You've tackled everything on your schedule/i),
       ).toBeInTheDocument();
     });
+
+    it('partitions hidden courses into a collapsible past courses accordion', async () => {
+      global.fetch = jest.fn((url: string, options?: any) => {
+        if (url === '/api/moodle/token') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ token: 'mock-token' }),
+          });
+        }
+        if (url === '/api/courses/catalog') {
+          if (options?.method === 'POST') {
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: async () => ({ success: true }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              courses: [
+                { course_id: 20, is_hidden: true, fullname: 'MATH 202 Linear Algebra' },
+              ],
+            }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
+      }) as any;
+
+      render(<Home />);
+
+      // CS 101 should be in the active grid
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { name: 'CS 101 Computer Science', level: 3 })).toBeInTheDocument();
+      });
+
+      // The collapsible Past / Inactive Courses accordion button should exist with count 1
+      const accordionButton = screen.getByRole('button', { name: /Past \/ Inactive Courses/i });
+      expect(accordionButton).toBeInTheDocument();
+      expect(accordionButton).toHaveAttribute('aria-expanded', 'false');
+      expect(accordionButton).toHaveTextContent('1');
+
+      // Inactive course MATH 202 should not be visible before expanding accordion
+      expect(screen.queryByRole('heading', { name: 'MATH 202 Linear Algebra', level: 3 })).not.toBeInTheDocument();
+
+      // Click to expand accordion
+      fireEvent.click(accordionButton);
+      expect(accordionButton).toHaveAttribute('aria-expanded', 'true');
+
+      // Now MATH 202 should be visible in the accordion
+      expect(screen.getByRole('heading', { name: 'MATH 202 Linear Algebra', level: 3 })).toBeInTheDocument();
+      expect(screen.getByText('Past Course')).toBeInTheDocument();
+
+      // Click to collapse accordion again
+      fireEvent.click(accordionButton);
+      expect(accordionButton).toHaveAttribute('aria-expanded', 'false');
+      expect(screen.queryByRole('heading', { name: 'MATH 202 Linear Algebra', level: 3 })).not.toBeInTheDocument();
+    });
+
+    it('excludes assignments and events belonging to hidden courses from timeline and urgency counts', async () => {
+      const mathEventTime = Math.floor((now + 3600 * 1000) / 1000); // 1 hour later (today)
+      mockTimelineEvents = [
+        ...mockCache.events,
+        {
+          id: 3,
+          name: 'Linear Algebra Quiz',
+          description: 'Matrix multiplication quiz',
+          eventtype: 'assign',
+          course: { id: 20, fullname: 'MATH 202 Linear Algebra' },
+          timestart: mathEventTime,
+          instance: 801,
+        },
+      ];
+
+      global.fetch = jest.fn((url: string, options?: any) => {
+        if (url === '/api/moodle/token') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ token: 'mock-token' }),
+          });
+        }
+        if (url === '/api/courses/catalog') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({
+              courses: [
+                { course_id: 20, is_hidden: true, fullname: 'MATH 202 Linear Algebra' },
+              ],
+            }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
+      }) as any;
+
+      render(<Home />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('heading', { name: 'Algorithm Analysis Homework', level: 3 }),
+        ).toBeInTheDocument();
+      });
+
+      // Active course events should be displayed
+      expect(
+        screen.getByRole('heading', { name: 'Algorithm Analysis Homework', level: 3 }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: 'Overdue Project Report', level: 3 }),
+      ).toBeInTheDocument();
+
+      // Linear Algebra Quiz belonging to hidden course 20 should NOT be in timeline
+      expect(
+        screen.queryByRole('heading', { name: 'Linear Algebra Quiz', level: 3 }),
+      ).not.toBeInTheDocument();
+
+      // Urgency counts: Due Today should be 0 (because the today event belongs to hidden course 20)
+      const dueTodayCard = screen.getByRole('button', { name: /Due today assignments/i });
+      expect(dueTodayCard).toHaveTextContent('0');
+
+      // Overdue card has 1 (from CS 101)
+      const overdueCard = screen.getByRole('button', { name: /Overdue assignments/i });
+      expect(overdueCard).toHaveTextContent('1');
+
+      // Upcoming card has 1 (from CS 101)
+      const upcomingCard = screen.getByRole('button', { name: /Upcoming assignments/i });
+      expect(upcomingCard).toHaveTextContent('1');
+    });
+
+    it('invokes silent background auto-discovery push to /api/courses/catalog with discovered courses', async () => {
+      let catalogPostCalled = false;
+      let postedBody: any = null;
+
+      global.fetch = jest.fn((url: string, options?: any) => {
+        if (url === '/api/moodle/token') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ token: 'mock-token' }),
+          });
+        }
+        if (url === '/api/courses/catalog') {
+          if (options?.method === 'POST') {
+            catalogPostCalled = true;
+            postedBody = JSON.parse(options.body);
+            return Promise.resolve({
+              ok: true,
+              status: 200,
+              json: async () => ({ success: true }),
+            });
+          }
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: async () => ({ courses: [] }),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: async () => ({}),
+        });
+      }) as any;
+
+      render(<Home />);
+
+      await waitFor(() => {
+        expect(catalogPostCalled).toBe(true);
+      });
+
+      expect(postedBody).toEqual({
+        courses: mockCache.courses,
+      });
+    });
   });
 });
+
