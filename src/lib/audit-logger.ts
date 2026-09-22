@@ -52,6 +52,11 @@ export async function logServerAuditEvent(params: AuditLogParams): Promise<void>
 }
 
 /**
+ * Alias for logServerAuditEvent for unified audit logging across server routes.
+ */
+export const recordAuditLog = logServerAuditEvent
+
+/**
  * Records an audit event from client-side code by dispatching a POST to /api/audit.
  * Fails silently on network errors so UI actions are never blocked.
  */
