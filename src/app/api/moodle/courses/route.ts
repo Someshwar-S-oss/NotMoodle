@@ -36,17 +36,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unexpected response from Moodle' }, { status: 502 })
     }
 
-    // Step 3: filter to current courses only
-    // A course is "current" if: now >= startdate AND (enddate == 0 OR now <= enddate)
-    const nowSec = Math.floor(Date.now() / 1000)
-    const currentCourses = allCourses.filter((c: any) => {
-      const started = c.startdate === 0 || nowSec >= c.startdate
-      const notEnded = c.enddate === 0 || nowSec <= c.enddate
-      return started && notEnded
-    })
-
-    // Return key fields only
-    const courses = currentCourses.map((c: any) => ({
+    // Return key fields for all enrolled courses (including past courses)
+    const courses = allCourses.map((c: any) => ({
       id: c.id,
       fullname: c.fullname,
       shortname: c.shortname,

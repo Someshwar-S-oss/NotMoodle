@@ -109,26 +109,20 @@ export async function getSiteInfo(token: string): Promise<MoodleSiteInfo> {
 
 // ─── Courses ─────────────────────────────────────────────────────────────────
 
-/** All enrolled courses, filtered to currently active (now between startdate and enddate) */
+/** All enrolled courses (including past durations) */
 export async function getCurrentCourses(token: string, userid: number): Promise<MoodleCourse[]> {
   const all: any[] = await moodleGet(token, 'core_enrol_get_users_courses', { userid })
-  const nowSec = Math.floor(Date.now() / 1000)
-  return all
-    .filter(c => {
-      const started = c.startdate === 0 || nowSec >= c.startdate
-      const notEnded = c.enddate === 0 || nowSec <= c.enddate
-      return started && notEnded
-    })
-    .map(c => ({
-      id: c.id,
-      fullname: c.fullname,
-      shortname: c.shortname,
-      progress: c.progress ?? null,
-      lastaccess: c.lastaccess ?? null,
-      startdate: c.startdate,
-      enddate: c.enddate,
-      courseimage: c.courseimage ?? null,
-    }))
+  if (!Array.isArray(all)) return []
+  return all.map(c => ({
+    id: c.id,
+    fullname: c.fullname,
+    shortname: c.shortname,
+    progress: c.progress ?? null,
+    lastaccess: c.lastaccess ?? null,
+    startdate: c.startdate,
+    enddate: c.enddate,
+    courseimage: c.courseimage ?? null,
+  }))
 }
 
 /** Course contents (sections + modules) for a single course */
