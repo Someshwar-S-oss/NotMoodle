@@ -16,8 +16,10 @@ import {
   Loader2,
   FileCode,
   Eye,
+  EyeOff,
   Check,
-  UserX
+  UserX,
+  BookOpen
 } from 'lucide-react'
 
 interface Profile {
@@ -42,8 +44,17 @@ interface AuditLog {
   created_at: string
 }
 
-type MainTab = 'users' | 'audit'
+interface CourseCatalogItem {
+  course_id: number
+  fullname: string
+  shortname: string | null
+  is_hidden: boolean
+  updated_at?: string
+}
+
+type MainTab = 'users' | 'courses' | 'audit'
 type UserStatusFilter = 'all' | 'approved' | 'pending'
+type CourseVisibilityFilter = 'all' | 'visible' | 'hidden'
 type AuditCategoryFilter = 'all' | 'logins' | 'submissions' | 'resources' | 'moodle' | 'admin'
 
 function formatRelativeTime(dateString: string): string {
@@ -111,6 +122,12 @@ export default function AdminPage() {
   const [userSearch, setUserSearch] = useState('')
   const [userStatusFilter, setUserStatusFilter] = useState<UserStatusFilter>('all')
 
+  // Course Management filters & state
+  const [courses, setCourses] = useState<CourseCatalogItem[]>([])
+  const [courseSearch, setCourseSearch] = useState('')
+  const [courseFilter, setCourseFilter] = useState<CourseVisibilityFilter>('all')
+  const [updatingCourseId, setUpdatingCourseId] = useState<number | null>(null)
+
   // Audit Logs filters
   const [auditSearch, setAuditSearch] = useState('')
   const [auditCategory, setAuditCategory] = useState<AuditCategoryFilter>('all')
@@ -158,7 +175,7 @@ export default function AdminPage() {
       }
 
       setIsSuperuser(true)
-      await Promise.all([fetchProfiles(), fetchAuditLogs()])
+      await Promise.all([fetchProfiles(), fetchCourses(), fetchAuditLogs()])
     } catch (err) {
       console.error('Error loading admin page:', err)
     } finally {
@@ -172,6 +189,18 @@ export default function AdminPage() {
       .select('*')
       .order('created_at', { ascending: false })
     setProfiles(data || [])
+  }
+
+  const fetchCourses = async () => {
+    try {
+      const res = await fetch('/api/courses/catalog')
+      if (res.ok) {
+        const data = await res.json()
+        setCourses(data.courses || [])
+      }
+    } catch (err) {
+      console.error('Error fetching course catalog:', err)
+    }
   }
 
   const fetchAuditLogs = async (categoryFilter = auditCategory, searchQuery = auditSearch) => {
@@ -256,6 +285,52 @@ export default function AdminPage() {
     }
   }
 
+  const toggleCourseVisibility = async (course: CourseCatalogItem) => {
+    const newStatus = !course.is_hidden
+    setUpdatingCourseId(course.course_id)
+
+    // Optimistic update
+    setCourses(prev =>
+      prev.map(c => (c.course_id === course.course_id ? { ...c, is_hidden: newStatus } : c))
+    )
+
+    try {
+      const res = await fetch('/api/admin/courses/toggle-visibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          courseId: course.course_id,
+          isHidden: newStatus,
+        }),
+      })
+
+      if (!res.ok) {
+        // Rollback
+        setCourses(prev =>
+          prev.map(c => (c.course_id === course.course_id ? { ...c, is_hidden: course.is_hidden } : c))
+        )
+      } else {
+        recordClientAudit({
+          action: 'admin.course_visibility',
+          entityType: 'course',
+          entityId: String(course.course_id),
+          details: {
+            courseName: course.fullname,
+            previousStatus: course.is_hidden,
+            newStatus,
+          },
+        })
+      }
+    } catch {
+      // Rollback
+      setCourses(prev =>
+        prev.map(c => (c.course_id === course.course_id ? { ...c, is_hidden: course.is_hidden } : c))
+      )
+    } finally {
+      setUpdatingCourseId(null)
+    }
+  }
+
   // Derived metrics
   const totalUsersCount = profiles.length
   const approvedUsersCount = useMemo(() => profiles.filter(p => p.is_approved).length, [profiles])
@@ -279,6 +354,31 @@ export default function AdminPage() {
       return true
     })
   }, [profiles, userStatusFilter, userSearch])
+
+  // Derived course metrics
+  const totalCoursesCount = courses.length
+  const visibleCoursesCount = useMemo(() => courses.filter(c => !c.is_hidden).length, [courses])
+  const hiddenCoursesCount = useMemo(() => courses.filter(c => c.is_hidden).length, [courses])
+
+  // Filtered courses
+  const filteredCourses = useMemo(() => {
+    return courses.filter(course => {
+      // Visibility filter
+      if (courseFilter === 'visible' && course.is_hidden) return false
+      if (courseFilter === 'hidden' && !course.is_hidden) return false
+
+      // Search filter
+      if (courseSearch.trim()) {
+        const query = courseSearch.toLowerCase().trim()
+        const titleMatch = course.fullname?.toLowerCase().includes(query)
+        const codeMatch = course.shortname?.toLowerCase().includes(query)
+        const idMatch = String(course.course_id).includes(query)
+        if (!titleMatch && !codeMatch && !idMatch) return false
+      }
+
+      return true
+    })
+  }, [courses, courseFilter, courseSearch])
 
   if (loading) {
     return (
@@ -399,6 +499,28 @@ export default function AdminPage() {
                 }`}
               >
                 {profiles.length}
+              </span>
+            </button>
+
+            <button
+              role="tab"
+              aria-selected={activeTab === 'courses'}
+              onClick={() => setActiveTab('courses')}
+              className={`flex items-center gap-2 pb-3 px-1 text-sm font-semibold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+                activeTab === 'courses'
+                  ? 'border-foreground text-foreground'
+                  : 'border-transparent text-secondary hover:text-foreground'
+              }`}
+            >
+              <span>Courses</span>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                  activeTab === 'courses'
+                    ? 'bg-foreground text-background font-bold'
+                    : 'bg-muted text-secondary'
+                }`}
+              >
+                {courses.length}
               </span>
             </button>
 
@@ -579,7 +701,199 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* TAB 2: Audit Logs Stream */}
+        {/* TAB 2: Course Management */}
+        {activeTab === 'courses' && (
+          <div className="flex flex-col gap-6">
+            
+            {/* Course Metrics Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
+                <div className="flex items-center justify-between text-secondary mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider">Total Courses</span>
+                  <BookOpen className="h-4 w-4 text-tertiary" />
+                </div>
+                <div className="text-3xl font-semibold clash-title tracking-tight text-foreground">
+                  {totalCoursesCount}
+                </div>
+                <div className="text-[11px] text-tertiary font-mono mt-1">Discovered in catalog</div>
+              </div>
+
+              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
+                <div className="flex items-center justify-between text-secondary mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider">Visible Courses</span>
+                  <Eye className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="text-3xl font-semibold clash-title tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {visibleCoursesCount}
+                </div>
+                <div className="text-[11px] text-tertiary font-mono mt-1">Active in student portal</div>
+              </div>
+
+              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
+                <div className="flex items-center justify-between text-secondary mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider">Hidden Courses</span>
+                  <EyeOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div className="text-3xl font-semibold clash-title tracking-tight text-amber-600 dark:text-amber-400">
+                  {hiddenCoursesCount}
+                </div>
+                <div className="text-[11px] text-tertiary font-mono mt-1">Suppressed from timeline</div>
+              </div>
+            </div>
+
+            {/* Controls Bar: Search & Status Filters */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search courses by title, code, or ID..."
+                  value={courseSearch}
+                  onChange={e => setCourseSearch(e.target.value)}
+                  aria-label="Search courses"
+                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-foreground/30 transition-all shadow-xs"
+                />
+                {courseSearch && (
+                  <button
+                    onClick={() => setCourseSearch('')}
+                    aria-label="Clear course search"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Status Filter Pills */}
+              <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/20 self-start sm:self-auto">
+                {(['all', 'visible', 'hidden'] as CourseVisibilityFilter[]).map(status => {
+                  const isActive = courseFilter === status
+                  return (
+                    <button
+                      key={status}
+                      type="button"
+                      onClick={() => setCourseFilter(status)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize tracking-wide transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-card text-foreground font-semibold shadow-xs border border-border/30'
+                          : 'text-secondary hover:text-foreground'
+                      }`}
+                    >
+                      {status}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Courses List */}
+            {filteredCourses.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3">
+                {filteredCourses.map(course => {
+                  const isUpdating = updatingCourseId === course.course_id
+                  return (
+                    <div
+                      key={course.course_id}
+                      data-testid={`course-card-${course.course_id}`}
+                      className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        {/* Course Icon Avatar */}
+                        <div className="h-11 w-11 rounded-xl bg-muted/80 border border-border/30 flex items-center justify-center font-semibold clash-title text-sm text-foreground shrink-0">
+                          <BookOpen className="h-5 w-5 text-secondary" />
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-base text-foreground truncate">
+                              {course.fullname}
+                            </span>
+                            {course.shortname && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold bg-muted text-foreground border border-border/30">
+                                {course.shortname}
+                              </span>
+                            )}
+                            <span
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-semibold border ${
+                                !course.is_hidden
+                                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20'
+                              }`}
+                            >
+                              {!course.is_hidden ? 'Visible' : 'Hidden'}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs text-secondary mt-1 flex-wrap font-mono">
+                            <span className="text-tertiary">ID: {course.course_id}</span>
+                            {course.updated_at && (
+                              <>
+                                <span>•</span>
+                                <span className="text-tertiary">
+                                  Updated {formatRelativeTime(course.updated_at)}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Visibility Toggle Action */}
+                      <div className="flex items-center gap-3 shrink-0 self-end md:self-auto">
+                        <button
+                          type="button"
+                          disabled={isUpdating}
+                          onClick={() => toggleCourseVisibility(course)}
+                          className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer border ${
+                            !course.is_hidden
+                              ? 'bg-card text-secondary border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30'
+                              : 'bg-foreground text-background border-foreground hover:opacity-90 shadow-xs'
+                          }`}
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : !course.is_hidden ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                          <span>{!course.is_hidden ? 'Hide Course' : 'Show Course'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              /* Empty state */
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-secondary">
+                  <Search className="h-4 w-4" />
+                </div>
+                <h3 className="font-semibold text-base text-foreground clash-title">No courses found</h3>
+                <p className="text-xs text-secondary max-w-sm">
+                  {courseSearch
+                    ? `No discovered courses match “${courseSearch}”.`
+                    : 'There are no courses in this visibility category.'}
+                </p>
+                {(courseSearch || courseFilter !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setCourseSearch('')
+                      setCourseFilter('all')
+                    }}
+                    className="mt-2 text-xs font-semibold text-foreground underline underline-offset-4 cursor-pointer"
+                  >
+                    Clear search and filters
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: Audit Logs Stream */}
         {activeTab === 'audit' && (
           <div className="flex flex-col gap-6">
             
