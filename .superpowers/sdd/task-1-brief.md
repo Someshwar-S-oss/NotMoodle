@@ -1,40 +1,95 @@
-### Task 1: Design Tokens, CSS Variables & Atmospheric Cloudy Ambient Background
+### Task 1: Supabase Migration for Course Visibility
 
 **Files:**
-- Modify: `src/app/globals.css`
-- Modify: `src/app/layout.tsx`
-- Test: `src/__tests__/sanity.test.ts`
+- Create: `supabase/migrations/20260922_course_visibility.sql`
+- Test: `src/__tests__/CourseVisibilityMigration.test.ts`
 
 **Interfaces:**
-- Consumes: Tailwind CSS v4 `@theme`, `next-themes` classes.
-- Produces: CSS color variables (`--background`, `--foreground`, `--card`, `--border`, `--urgency-overdue`, etc.) and `.cloudy-gradient` atmospheric layer.
+- Produces: `public.course_visibility` table schema definition with columns `course_id (BIGINT PRIMARY KEY)`, `fullname (TEXT)`, `shortname (TEXT)`, `is_hidden (BOOLEAN DEFAULT FALSE)`, `created_at (TIMESTAMPTZ)`, `updated_at (TIMESTAMPTZ)`, `updated_by (UUID REFERENCES auth.users)`.
 
-**Global Constraints:**
-- Preserve all existing Next.js App Router conventions and API route integrations.
-- Maintain existing Supabase authentication and Moodle token synchronization logic.
-- Ensure all color tokens support both Light mode and Dark mode with WCAG AA contrast compliance.
-- Support `prefers-reduced-motion` for all new transitions and animations.
-- Every task must be verified with `npm test` and `npm run build` or targeted component tests.
+- [ ] **Step 1: Write migration test asserting SQL schema statements**
 
-- [ ] **Step 1: Check existing test suite passes**
-Run: `npm test`
-Expected: 1 passing test (`src/__tests__/sanity.test.ts`)
+```typescript
+// src/__tests__/CourseVisibilityMigration.test.ts
+import fs from 'fs'
+import path from 'path'
 
-- [ ] **Step 2: Update `src/app/globals.css` with warm editorial palette and ambient cloud effects**
-Modify `src/app/globals.css` to add the warm palette variables, status urgency variables, and cloudy gradient styling:
-Ensure `--background: #f7f6f2`, `--foreground: #141414`, `--card: #ffffff`, `--border: rgba(20, 20, 20, 0.12)`, and corresponding dark mode variables (`--background: #0d0f12`, `--foreground: #f4f4f5`, `--card: #15181e`, etc.).
-Ensure urgency tokens (`--urgency-overdue`, `--urgency-today`, `--urgency-upcoming`, `--status-success` and their bg/border variants) are defined in both `:root` and `.dark`.
-Add the `.cloudy-gradient` fixed background styling with `::before` and `::after` radial gradients and blur for both light and dark themes.
+describe('Course Visibility Migration', () => {
+  it('defines public.course_visibility with required columns and RLS policies', () => {
+    const migrationPath = path.join(process.cwd(), 'supabase/migrations/20260922_course_visibility.sql')
+    expect(fs.existsSync(migrationPath)).toBe(true)
 
-- [ ] **Step 3: Add the fixed ambient cloudy gradient container into `src/app/layout.tsx`**
-In `src/app/layout.tsx`, render `<div className="cloudy-gradient" aria-hidden="true" />` inside `ThemeProvider` right before the main container, so the subtle cloud layer is active across every route without interfering with clicks or scrolling.
+    const sql = fs.readFileSync(migrationPath, 'utf8')
+    expect(sql).toContain('CREATE TABLE IF NOT EXISTS public.course_visibility')
+    expect(sql).toContain('course_id BIGINT PRIMARY KEY')
+    expect(sql).toContain('is_hidden BOOLEAN NOT NULL DEFAULT FALSE')
+    expect(sql).toContain('ENABLE ROW LEVEL SECURITY')
+    expect(sql).toContain('Allow authenticated users to read course visibility')
+    expect(sql).toContain('Allow superusers to update course visibility')
+  })
+})
+```
 
-- [ ] **Step 4: Verify build and test**
-Run: `npm test` and `npm run build`
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx jest src/__tests__/CourseVisibilityMigration.test.ts`
+Expected: FAIL with "no such file or directory"
+
+- [ ] **Step 3: Create the migration SQL file**
+
+```sql
+-- supabase/migrations/20260922_course_visibility.sql
+
+CREATE TABLE IF NOT EXISTS public.course_visibility (
+    course_id BIGINT PRIMARY KEY,
+    fullname TEXT NOT NULL,
+    shortname TEXT,
+    is_hidden BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_by UUID REFERENCES auth.users(id)
+);
+
+ALTER TABLE public.course_visibility ENABLE ROW LEVEL SECURITY;
+
+-- Allow authenticated users to view course visibility
+CREATE POLICY "Allow authenticated users to read course visibility"
+    ON public.course_visibility FOR SELECT
+    TO authenticated
+    USING (true);
+
+-- Allow authenticated users to insert newly discovered courses
+CREATE POLICY "Allow authenticated users to insert course metadata"
+    ON public.course_visibility FOR INSERT
+    TO authenticated
+    WITH CHECK (true);
+
+-- Only superusers can update course visibility status
+CREATE POLICY "Allow superusers to update course visibility"
+    ON public.course_visibility FOR UPDATE
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.id = auth.uid() AND profiles.is_superuser = true
+        )
+    )
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE profiles.id = auth.uid() AND profiles.is_superuser = true
+        )
+    );
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx jest src/__tests__/CourseVisibilityMigration.test.ts`
 Expected: PASS
 
-- [ ] **Step 5: Commit changes**
+- [ ] **Step 5: Commit**
+
 ```bash
-git add src/app/globals.css src/app/layout.tsx
-git commit -m "feat: add warm neo-editorial palette and atmospheric cloudy background"
+git add supabase/migrations/20260922_course_visibility.sql src/__tests__/CourseVisibilityMigration.test.ts
+git commit -m "feat(db): add course_visibility migration with RLS policies"
 ```

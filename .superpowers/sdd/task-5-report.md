@@ -1,43 +1,43 @@
-# Task 5 Report: Course Experience & Unified Resource Filtering
+# Task 5 Report: Student Dashboard Partitioning and Urgency Filtering
 
-## Summary of Implementation
-Upgraded `src/app/course/[id]/page.tsx` and created full test coverage in `src/__tests__/CoursePage.test.tsx` for the Course Explorer experience:
+## Execution Summary
+- **Status**: DONE
+- **Commit SHA**: `7c3518ee0cb831fd54248bb40571d58dd6891865`
+- **Branch**: `feature/course-duration-and-visibility`
 
-1. **Course Hero Header & Stats Summary Bar**:
-   - Clean breadcrumb bar with accessible `ArrowLeft` back button (`← Dashboard / [Course Title]`).
-   - Clash Display font for course title with clean truncation.
-   - Stats summary bar displaying total items count pill, active assignments count pill, and real-time filtered matching count pill when a search or category filter is active.
+## Changes Implemented
+1. **Failing Test Suite (`src/__tests__/DashboardTimelineCourses.test.tsx`)**:
+   - Implemented following strict TDD discipline.
+   - Initial run failed with expected missing collapsible accordion, unsuppressed hidden deadlines, and missing auto-discovery push.
+   - Test cases covered:
+     - Partitioning hidden courses (`is_hidden === true`) into a collapsible past courses accordion section with count pill, verifying aria-expanded toggle behavior and past course card rendering.
+     - Excluding deadlines and events belonging to hidden/inactive courses from both the active timeline feed and urgency counters (Overdue, Due Today, Upcoming).
+     - Triggering a background silent auto-discovery POST push to `/api/courses/catalog` with discovered enrolled courses.
 
-2. **Unified Search & Keyboard Shortcut**:
-   - Prominent search input with left magnifying glass icon.
-   - Dedicated clear button (`X`) that resets the search query.
-   - Keyboard shortcut `/` to focus the search input, guarded against active `<input>`, `<textarea>`, and `contentEditable` elements.
-   - Monospace keyboard shortcut indicator pill: `Press / to search`.
+2. **Dashboard (`src/app/dashboard/page.tsx`)**:
+   - Added `hiddenCourseIds` and `showPastCourses` states to track course visibility rules.
+   - Updated `checkConnection()` to restore `hiddenCourseIds` from localStorage cache when available.
+   - Updated `loadMoodleData()`:
+     - Queries `GET /api/courses/catalog` on load to fetch course visibility rules and collects hidden course IDs in a Set.
+     - Silently pushes enrolled courses to `POST /api/courses/catalog` for background auto-discovery without blocking rendering.
+     - Filters timeline events to exclude items belonging to hidden courses (`visibleEvents`).
+     - Updates localStorage cache with `hiddenCourseIds` alongside courses, events, and assignments.
+   - Partitioned courses using `useMemo`:
+     - `activeCourses`: enrolled courses not in `hiddenCourseIds`.
+     - `inactiveCourses`: enrolled courses present in `hiddenCourseIds`.
+   - Updated `overdue`, `today`, `upcoming` and `displayedEvents` memos to filter out events belonging to hidden courses.
+   - Updated `coursePendingCounts` to exclude hidden courses from deadline counts.
+   - Extracted reusable `CourseCard` component supporting `isPast` prop for rendering past/inactive course styling and "Past Course" status pill.
+   - Rendered active courses in the main grid and, when `inactiveCourses.length > 0`, rendered a collapsible accordion section below the grid with toggle button, count badge, and ChevronDown rotation indicator.
 
-3. **Interactive Category Filter Pills**:
-   - Filter pills below search bar: `All`, `Assignments`, `PDFs & Readings`, `Links & Folders`, each showing live item counts.
-   - Multi-criteria filtering logic combining both `searchQuery` and `activeCategory`.
+## Test Verification
+- Targeted Unit Tests:
+  - `npx jest src/__tests__/DashboardTimelineCourses.test.tsx` (PASS: 1 suite, 15 tests passed).
+  - `npx jest src/__tests__/DashboardUrgencyCards.test.tsx` (PASS: 1 suite, 8 tests passed).
+- Full Regression Test Suite:
+  - `npm test` (PASS: 15 suites passed, 114 tests passed, 0 failures).
+- Production Build Verification:
+  - `npm run build` (PASS: Next.js optimized production build and TypeScript type-checking completed with 0 errors).
 
-4. **Redesigned Resource Item Rows**:
-   - Type-specific icon badges with soft tinted backgrounds:
-     - Assignments: Amber tint + `ClipboardList` + `ASSIGNMENT` pill.
-     - PDFs: Rose tint + `FileText` + `PDF / DOCUMENT` pill.
-     - Other Documents: Sky tint + `FileText` + `[EXT] / DOCUMENT` pill.
-     - Folders: Emerald tint + `Folder` + `FOLDER` pill.
-     - Links: Purple tint + `LinkIcon` + `LINK` pill.
-   - Monospace section name badge (e.g., `Week 1: Foundations`).
-   - Title in Clash Display with subtle hover nudge (`group-hover:translate-x-1.5`) and reduced-motion support.
-   - Action buttons:
-     - Direct "Preview" button for files opening the full-screen `Drawer` with `FileViewer`.
-     - Direct "View Details" button for assignments opening the `AssignmentDetails` `Drawer`.
-     - Direct "Open Link" button for external URLs.
-   - Friendly empty state when zero results match, with "Clear search & filters" reset button.
-
-5. **Unit & Integration Tests**:
-   - Comprehensive test suite in `src/__tests__/CoursePage.test.tsx` verifying stats summary bar, category filter switching, real-time search filtering, clear button, keyboard shortcut `/`, assignment drawer trigger, file viewer drawer trigger, and empty state reset button.
-
-## Verification Results
-- `npm test`: **PASS** (6 test suites, 34 tests passed)
-- `npm run build`: **PASS** (Next.js 16.2.12 production build with full TypeScript type check and static generation succeeded)
-- Git Commit: `41ea948af4d99937ff75f6eaa2c66d599263cf3e`
-- Commit Message: `feat: upgrade course explorer with unified search and category filters`
+## Concerns
+- None. Active vs past courses cleanly partition, past courses remain accessible via the collapsible accordion, deadlines from hidden courses are excluded from urgency indicators, and catalog auto-discovery operates non-blockingly.

@@ -1,40 +1,34 @@
-# Task 3 Report: Dashboard Urgency Metric Cards & Interactive Filtering
+# Task 3 Report: Backend Catalog Sync & Admin Toggle Endpoints
 
-## Overview
-Successfully implemented Task 3 by transforming the dashboard metric cards and timeline into an interactive, warm neo-editorial urgency dashboard.
+## Execution Summary
+- **Status**: DONE
+- **Commit SHA**: `4d75907f3b0d7cd7cefd026af36b9abadcf99a47`
+- **Branch**: `feature/course-duration-and-visibility`
 
-## Key Changes
-1. **Interactive Filter State (`activeFilter`)**:
-   - Added `activeFilter` state supporting `'all' | 'overdue' | 'today' | 'upcoming'` in `src/app/dashboard/page.tsx`.
-   - Clicking an urgency card filters the timeline to that specific category; clicking the active card again toggles back to `'all'`.
+## Changes Implemented
+1. **Failing Test Suite (`src/__tests__/CourseVisibilityApi.test.ts`)**:
+   - Written prior to implementation following strict TDD discipline.
+   - Verified initial failure (`Cannot find module '../app/api/courses/catalog/route'`).
+   - Covered:
+     - `GET /api/courses/catalog`: 401 unauthenticated response and course catalog retrieval for authenticated users.
+     - `POST /api/courses/catalog`: catalog ingestion upsert and preservation of existing `is_hidden` values without overwriting admin toggles.
+     - `POST /api/admin/courses/toggle-visibility`: 403 forbidden response for non-superusers, input validation (400 for invalid parameter types), and superuser visibility update with `admin.course_visibility` audit log emission.
 
-2. **Contextual Dynamic Greeting Subtitle**:
-   - Computes dynamic status subtitles in real time:
-     - `overdue.length > 0`: `"Action required: You have [N] overdue item(s)."`
-     - `today.length > 0`: `"Focus mode: [N] deadline(s) scheduled today."`
-     - Otherwise: `"Clear horizon: You're all caught up on submissions."`
+2. **Course Catalog Route (`src/app/api/courses/catalog/route.ts`)**:
+   - `GET`: Authenticates user, queries `course_visibility` ordered by `fullname`, returning `{ courses }`.
+   - `POST`: Authenticates user, extracts course IDs from payload, queries existing `course_visibility` to build an `is_hidden` lookup map, preserving existing visibility settings, and performs upsert on conflict with `course_id`.
 
-3. **Elevated Warm Editorial Urgency Metric Cards**:
-   - Replaced heavy solid black metric boxes with elevated warm neo-editorial cards:
-     - **Overdue Card**: Tinted background `bg-[var(--urgency-overdue-bg)]`, border `border-[var(--urgency-overdue-border)]`, large numeral in Clash Display, status badge `"NEEDS ATTENTION"` with exclamation indicator icon (`AlertCircle`), and active outline ring `ring-2 ring-[var(--urgency-overdue)]`.
-     - **Due Today Card**: Tinted background `bg-[var(--urgency-today-bg)]`, border `border-[var(--urgency-today-border)]`, large numeral in Clash Display, status badge `"TACKLE TODAY"` with clock icon (`Clock`), and active outline ring `ring-2 ring-[var(--urgency-today)]`.
-     - **Upcoming Card**: Tinted background `bg-[var(--urgency-upcoming-bg)]`, border `border-[var(--urgency-upcoming-border)]`, large numeral in Clash Display, status badge `"ON SCHEDULE"` with calendar icon (`Calendar`), and active outline ring `ring-2 ring-[var(--urgency-upcoming)]`.
-   - Fully accessible buttons with `aria-pressed`, descriptive `aria-label`, and keyboard navigation support.
+3. **Admin Course Visibility Toggle Route (`src/app/api/admin/courses/toggle-visibility/route.ts`)**:
+   - `POST`: Authenticates user, validates superuser status via `profiles` table (returning 403 if unauthorized), validates `courseId` (number) and `isHidden` (boolean), updates `course_visibility` with `is_hidden`, `updated_at`, and `updated_by`, and emits an audit event with action `admin.course_visibility`.
 
-4. **Timeline Interactive Filtering & Reset Control**:
-   - Connected `activeFilter` to timeline event rendering via `displayedEvents`.
-   - Added an active filter chip indicating active category and item count.
-   - Added a `"Clear filter (Show all)"` reset button allowing students to clear filters at any time.
-   - Handled empty state messages when filtered buckets have no items.
+4. **Audit Logger Utility (`src/lib/audit-logger.ts`)**:
+   - Exported `recordAuditLog` alias for `logServerAuditEvent` to unify server-side audit logging semantics across endpoints.
 
-5. **Unit & Integration Tests**:
-   - Created `src/__tests__/DashboardUrgencyCards.test.tsx` testing:
-     - Badge and count rendering.
-     - Dynamic greeting subtitle logic for overdue, today, and clear horizon states.
-     - Card click filtering, active ring styling, and reset button behavior.
-     - Empty bucket message and accessibility attributes.
+## Test Verification
+- Targeted Suite:
+  - `npx jest src/__tests__/CourseVisibilityApi.test.ts` (PASS: 1 suite, 7 tests passed).
+- Full Regression Test Suite:
+  - `npm test` (PASS: 14 suites passed, 107 tests passed, 0 failures).
 
-## Verification Results
-- `npm test`: **All 4 test suites passed** (17 total tests passing).
-- `npm run build`: **Compiled successfully** (exit code 0, all 25 static & dynamic routes generated).
-- Git commit: `9569d46` (`feat: add interactive urgency metric cards to dashboard`).
+## Concerns
+- None. Catalog sync preserves admin overrides, and non-superusers cannot toggle course visibility.

@@ -1,79 +1,117 @@
-﻿### Task 5: Course Experience & Unified Resource Filtering
+### Task 5: Student Dashboard Partitioning and Urgency Filtering
 
 **Files:**
-- Modify: `src/app/course/[id]/page.tsx`
-- Test: `src/__tests__/CoursePage.test.tsx` (and run `npm test`)
+- Modify: `src/app/dashboard/page.tsx`
+- Test: `src/__tests__/DashboardTimelineCourses.test.tsx`
 
 **Interfaces:**
-- Consumes: `getCourseContents`, `getAssignments`, `useRouter`, `useSearchParams`, `Drawer`, `FileViewer`, `AssignmentDetails`.
-- Produces: Polished course view with breadcrumb header, summary stats bar, keyboard-accessible search input (`/`), interactive category filter pills (`All`, `Assignments`, `PDFs & Readings`, `Links & Folders`), and enhanced resource item cards with distinct file-type badges and direct preview triggers.
+- Consumes: `GET /api/courses/catalog`, `POST /api/courses/catalog`, `getCurrentCourses()`
+- Produces:
+  - Partitioned courses: Active courses in main grid, past/inactive courses in collapsible accordion.
+  - Urgency and timeline filtering: assignments and events from hidden courses are excluded from active urgency alerts and timeline feed.
 
-**Global Constraints:**
-- Preserve all existing Next.js App Router conventions and API route integrations.
-- Maintain existing Supabase authentication and Moodle token synchronization logic.
-- Ensure all color tokens support both Light mode and Dark mode with WCAG AA contrast compliance.
-- Support `prefers-reduced-motion` for all new transitions and animations.
-- Every task must be verified with `npm test` and `npm run build` or targeted component tests.
+- [ ] **Step 1: Write test for dashboard course partitioning and urgency suppression**
 
-- [ ] **Step 1: Course Hero Header & Summary Stats Bar**
-In `src/app/course/[id]/page.tsx`:
-- Header navigation:
-  - Clean breadcrumb bar with `ArrowLeft` back button (`← Dashboard / [Course Title or Course Library]`).
-  - Course title in Clash Display font with clean truncation.
-- Stats summary bar below title:
-  - Total items pill count (e.g., `42 Materials`).
-  - Active assignments count (e.g., `3 Assignments`).
-  - Current matching count when searched or filtered.
+Update `src/__tests__/DashboardTimelineCourses.test.tsx` to assert:
+1. Courses with `is_hidden === true` are partitioned into an inactive/past collapsible section.
+2. Deadlines belonging to hidden courses are filtered out of urgency cards and timeline.
+3. Silent background push to `/api/courses/catalog` is invoked with enrolled courses.
 
-- [ ] **Step 2: Unified Search & Category Filter Pills**
-In `src/app/course/[id]/page.tsx`:
-- Add `activeCategory: 'all' | 'assignments' | 'resources' | 'links'` state (default `'all'`).
-- Add prominent search bar with:
-  - Magnifying glass icon.
-  - Clear button (`X`) when query is present.
-  - Monospace keyboard shortcut indicator pill: `Press / to search` (with `useEffect` listening for `/` keypress to focus the input when not typing in an input).
-- Add category filter pills below search:
-  - `All` (count)
-  - `Assignments` (count)
-  - `PDFs & Readings` (count)
-  - `Links & Folders` (count)
-- Filter logic:
-  - Categorize by `modname`:
-    - Assignments: `modname === 'assign'`
-    - Resources: `modname === 'resource' || modname === 'folder'`
-    - Links: `modname === 'url'` or others
-  - Apply both `searchQuery` and `activeCategory` to filter `allModules`.
+- [ ] **Step 2: Run test to verify existing behavior vs new requirement**
 
-- [ ] **Step 3: Redesign Resource Item Rows**
-In `src/app/course/[id]/page.tsx`:
-- Each item row:
-  - Left icon box: Dedicated iconography with soft pastel background for file type (`PDF`, `DOCX`, `URL`, `ASSIGNMENT`).
-  - Title in Clash Display with hover nudge (`group-hover:translate-x-1.5`).
-  - Metadata row:
-    - Dedicated file type pill badge (`ASSIGNMENT`, `PDF / DOCUMENT`, `LINK`, `FOLDER`).
-    - Section name badge (e.g., `Week 2: Advanced Data Structures`).
-  - Right action button:
-    - For files: Direct "Preview" button opening full-screen `Drawer` with `FileViewer`.
-    - For assignments: Direct "View Details" button opening `AssignmentDetails` `Drawer`.
-    - For external links: "Open Link" action with `ExternalLink` icon.
-- Empty states:
-  - Friendly editorial message when search or filter returns 0 items, with a "Reset filters" button.
+Run: `npx jest src/__tests__/DashboardTimelineCourses.test.tsx`
+Expected: FAIL until implemented
 
-- [ ] **Step 4: Add Unit/Integration Tests**
-Create `src/__tests__/CoursePage.test.tsx` verifying:
-- Course page renders materials list, stats summary bar, and search bar.
-- Category filter pills switch view to Assignments, Resources, and Links accurately.
-- Search input filters items in real time.
-- Clicking an assignment triggers the assignment drawer.
-- Clicking a resource file triggers the file viewer drawer.
-- Empty state renders reset action when zero results match.
+- [ ] **Step 3: Modify `src/app/dashboard/page.tsx`**
 
-- [ ] **Step 5: Verify build and test**
-Run: `npm test` and `npm run build`
+1. In `loadData()`:
+```typescript
+// Fetch catalog visibility
+let hiddenCourseIds = new Set<number>()
+try {
+  const catRes = await fetch('/api/courses/catalog')
+  if (catRes.ok) {
+    const catData = await catRes.json()
+    const hiddenList = (catData.courses || [])
+      .filter((c: any) => c.is_hidden)
+      .map((c: any) => Number(c.course_id))
+    hiddenCourseIds = new Set(hiddenList)
+  }
+} catch (e) {
+  console.warn('Could not fetch course visibility rules', e)
+}
+
+// Background auto-discovery push
+fetch('/api/courses/catalog', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ courses: currentCourses }),
+}).catch(() => {})
+```
+
+2. Store `hiddenIds` in state:
+```typescript
+const [hiddenCourseIds, setHiddenCourseIds] = useState<Set<number>>(new Set())
+const [showPastCourses, setShowPastCourses] = useState(false)
+```
+
+3. Filter deadlines & events belonging to hidden courses:
+```typescript
+// Exclude hidden course events from the active timeline
+const visibleEvents = filteredEvents.filter(e => !hiddenCourseIds.has(e.course?.id))
+setEvents(visibleEvents)
+```
+
+4. Split courses into active and past:
+```typescript
+const activeCourses = useMemo(() => {
+  return courses.filter(c => !hiddenCourseIds.has(c.id))
+}, [courses, hiddenCourseIds])
+
+const inactiveCourses = useMemo(() => {
+  return courses.filter(c => hiddenCourseIds.has(c.id))
+}, [courses, hiddenCourseIds])
+```
+
+5. Render active courses in the main grid, and if `inactiveCourses.length > 0`, render a collapsible Accordion below it:
+```tsx
+{inactiveCourses.length > 0 && (
+  <div className="mt-8 rounded-2xl border border-border/40 bg-card/60 overflow-hidden shadow-xs">
+    <button
+      type="button"
+      onClick={() => setShowPastCourses(!showPastCourses)}
+      aria-expanded={showPastCourses}
+      className="w-full flex items-center justify-between p-4 px-6 text-left hover:bg-muted/30 transition-colors cursor-pointer"
+    >
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-sm clash-title uppercase tracking-wide text-foreground">
+          Past / Inactive Courses
+        </span>
+        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-secondary">
+          {inactiveCourses.length}
+        </span>
+      </div>
+      <ChevronDown className={`h-4 w-4 text-secondary transition-transform duration-200 ${showPastCourses ? 'rotate-180' : ''}`} />
+    </button>
+    {showPastCourses && (
+      <div className="p-6 pt-2 border-t border-border/20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
+        {inactiveCourses.map(course => (
+          <CourseCard key={course.id} course={course} isPast />
+        ))}
+      </div>
+    )}
+  </div>
+)}
+```
+
+- [ ] **Step 4: Run tests to verify it passes**
+
+Run: `npx jest src/__tests__/DashboardTimelineCourses.test.tsx`
 Expected: PASS
 
-- [ ] **Step 6: Commit changes**
+- [ ] **Step 5: Commit**
+
 ```bash
-git add src/app/course/[id]/page.tsx src/__tests__/CoursePage.test.tsx
-git commit -m "feat: upgrade course explorer with unified search and category filters"
+git add src/app/dashboard/page.tsx src/__tests__/DashboardTimelineCourses.test.tsx
+git commit -m "feat(dashboard): partition active vs past courses and filter inactive deadlines"
 ```

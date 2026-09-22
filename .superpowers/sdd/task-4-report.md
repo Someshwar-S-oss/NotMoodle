@@ -1,59 +1,43 @@
-# Task 4 Report: Dashboard Timeline & Enrolled Course Cards Redesign
+# Task 4 Report: Admin Console Course Management Tab
 
-**Status:** Completed  
-**Commit SHA:** `960a533e881efa8a69ab7492372de8ceb5db666f`  
-**Date:** 2026-09-07  
+## Execution Summary
+- **Status**: DONE
+- **Commit SHA**: `61dd5f3e1a49c28d64738f2260982a2835dca1f1`
+- **Branch**: `feature/course-duration-and-visibility`
 
----
+## Changes Implemented
+1. **Failing Test Suite (`src/__tests__/AdminCourseManagement.test.tsx`)**:
+   - Implemented following strict TDD discipline.
+   - Initial run failed with expected missing Courses tab (`Unable to find role="tab" and name /courses/i`).
+   - Test cases covered:
+     - Rendering Courses tab alongside User Management and Audit Logs, displaying course cards with course ID, code, title, and "Hide Course" / "Show Course" actions.
+     - Real-time search filtering across course title, shortname code, and course ID.
+     - Filter pills (`all`, `visible`, `hidden`) correctly partitioning course list.
+     - Optimistic UI updates when toggling visibility, invoking `POST /api/admin/courses/toggle-visibility`, and logging client audit events (`recordClientAudit({ action: 'admin.course_visibility', ... })`).
+     - Graceful rollback on endpoint failure without logging audit events.
 
-## 1. Summary of Work Implemented
+2. **Admin Console (`src/app/admin/page.tsx`)**:
+   - Extended `MainTab` union type to include `'courses'`: `'users' | 'courses' | 'audit'`.
+   - Added `CourseVisibilityFilter` (`'all' | 'visible' | 'hidden'`) and `CourseCatalogItem` interface.
+   - Initialized `courses`, `courseSearch`, `courseFilter`, and `updatingCourseId` states.
+   - Added `fetchCourses()` querying `/api/courses/catalog`, included in `checkAccessAndLoad()` via `Promise.all([fetchProfiles(), fetchCourses(), fetchAuditLogs()])`.
+   - Added `toggleCourseVisibility()` handler with optimistic updates, POST request to `/api/admin/courses/toggle-visibility`, rollback on error, and audit logging via `recordClientAudit` on success.
+   - Added derived course metric counts: `totalCoursesCount`, `visibleCoursesCount`, `hiddenCoursesCount`.
+   - Added "Courses" tab button in the navigation bar between User Management and Audit Logs.
+   - Added Courses tab view featuring:
+     - 3 summary metric cards (Total Courses, Visible Courses, Hidden Courses).
+     - Search input with clear button and visibility filter pills (All, Visible, Hidden).
+     - Course cards displaying icon, title, course code, status pill (`Visible` / `Hidden`), course ID, and "Hide Course" / "Show Course" toggle action with spinner while updating.
+     - Clean empty state with search reset.
 
-### A. Relative Time Countdown Badge Helper
-- Implemented `getRelativeTimeBadge(timestart: number)` in `src/lib/dashboard-utils.ts`:
-  - Accurately calculates time differences against current time.
-  - "Overdue" (`variant: "overdue"`) for past deadlines with red urgency styling.
-  - "Due in Xm" / "Due in Xh" for immediate same-day deadlines.
-  - "Today HH:MM AM/PM" for later same-day deadlines.
-  - "Tomorrow" for next-day deadlines.
-  - "In X days" for 2–7 days away (`variant: "upcoming"`).
-  - "In X weeks" for > 7 days away (`variant: "upcoming"`).
+## Test Verification
+- Targeted Unit Tests:
+  - `npx jest src/__tests__/AdminCourseManagement.test.tsx` (PASS: 1 suite, 4 tests passed).
+  - `npx jest src/__tests__/AdminPageAndAuditLogs.test.tsx` (PASS: 1 suite, 8 tests passed).
+- Full Regression Test Suite:
+  - `npm test` (PASS: 15 suites passed, 111 tests passed, 0 failures).
+- Production Build Verification:
+  - `npm run build` (PASS: Next.js optimized build and TypeScript checks completed with 0 errors).
 
-### B. Polished Timeline Rows & Drawer Preview
-- **Date column**: Large day numeral in Clash Display, month and year uppercase tracking, formatted time in monospace, and relative urgency countdown badge pill.
-- **Content column**: Course name with accent dot, assignment name in Clash Display with subtle hover translation, and description excerpt.
-- **Action column**: "View Details" action pill with sliding arrow on hover.
-- **Direct Assignment Drawer Trigger**: Clicking a timeline row or "View Details" checks if the event corresponds to a matching assignment in `allAssignments` (matching `instance` or positive `id`). If matched, it immediately opens the `AssignmentDetails` slide-over drawer via `setSelectedAssignment(matchingAssignment)`. If no assignment matches, gracefully routes to `/course/${event.course.id}`.
-- **Editorial Empty State**: When zero deadlines match the active filter or overall schedule, an editorial empty card with comforting copy (*"No deadlines here — you're all set!"*), check circle icon, and a "Show all deadlines" button is presented.
-
-### C. Redesigned Enrolled Modules Grid
-- **Top Accent Ribbon**: Derived deterministic color bar on each course card's top edge using Slate Blue (`#4f46e5`), Sage (`#059669`), Terracotta (`#ea580c`), Plum (`#9333ea`), or Amber (`#d97706`).
-- **Course Code Badge**: Monospace editorial badge extracted cleanly from `course.shortname` or `course.fullname` (e.g. `CS 101`, `MATH 202`).
-- **Course Title**: Clash Display, font-medium, clamped to 2 lines.
-- **Pending Deadlines Badge**: Dynamically counts pending/upcoming deadlines for each course from current active events (e.g., `"2 deadlines pending"` or `"All clear"` with check icon).
-- **Hover Transitions**: Smooth card lift transition (`hover:-translate-y-1 hover:shadow-md transition-all duration-300`) and animated arrow.
-
----
-
-## 2. Verification & Test Summary
-
-- **Unit/Integration Tests**:
-  - `src/__tests__/DashboardTimelineCourses.test.tsx` created with 11 tests covering:
-    - Relative time countdown formatting for overdue, today, tomorrow, upcoming days, and upcoming weeks.
-    - Course code extraction and deterministic accent color hashing.
-    - Timeline row rendering with badges and dates.
-    - Assignment details slide-over drawer opening on row click.
-    - Enrolled modules rendering course codes, top accents, and deadline pending badges.
-    - Editorial empty state display when no events match.
-  - `src/__tests__/DashboardUrgencyCards.test.tsx` updated to query card headings cleanly.
-- **Test Results**:
-  - `npx jest`: **5 passed, 5 total suites, 28 passed, 28 total tests**.
-- **Build Verification**:
-  - `npm run build`: **Passed cleanly with 0 errors** (TypeScript validation passed, static pages optimized).
-
----
-
-## 3. Files Changed
-- `src/app/dashboard/page.tsx`
-- `src/lib/dashboard-utils.ts`
-- `src/__tests__/DashboardTimelineCourses.test.tsx`
-- `src/__tests__/DashboardUrgencyCards.test.tsx`
+## Concerns
+- None. Optimistic state transitions, error rollback, and client audit logging function as expected.
