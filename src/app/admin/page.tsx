@@ -309,17 +309,6 @@ export default function AdminPage() {
         setCourses(prev =>
           prev.map(c => (c.course_id === course.course_id ? { ...c, is_hidden: course.is_hidden } : c))
         )
-      } else {
-        recordClientAudit({
-          action: 'admin.course_visibility',
-          entityType: 'course',
-          entityId: String(course.course_id),
-          details: {
-            courseName: course.fullname,
-            previousStatus: course.is_hidden,
-            newStatus,
-          },
-        })
       }
     } catch {
       // Rollback

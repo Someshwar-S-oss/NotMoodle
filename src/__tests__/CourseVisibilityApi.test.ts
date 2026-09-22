@@ -75,11 +75,11 @@ describe('Course Visibility APIs', () => {
           shortname: 'C101',
         }),
       ]),
-      expect.objectContaining({ onConflict: 'course_id', ignoreDuplicates: false })
+      expect.objectContaining({ onConflict: 'course_id', ignoreDuplicates: true })
     )
   })
 
-  it('POST /api/courses/catalog preserves existing is_hidden values', async () => {
+  it('POST /api/courses/catalog preserves existing is_hidden values by skipping existing courses', async () => {
     const mockUpsert = jest.fn().mockResolvedValue({ error: null })
     createClient.mockResolvedValueOnce({
       auth: { getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'u1' } } }) },
@@ -95,18 +95,29 @@ describe('Course Visibility APIs', () => {
     const req = new Request('http://localhost/api/courses/catalog', {
       method: 'POST',
       body: JSON.stringify({
-        courses: [{ id: 101, fullname: 'Course 101 Updated Name', shortname: 'C101' }],
+        courses: [
+          { id: 101, fullname: 'Course 101 Updated Name', shortname: 'C101' },
+          { id: 102, fullname: 'Course 102 New', shortname: 'C102' },
+        ],
       }),
     })
 
     const res = await postCatalog(req)
     expect(res.status).toBe(200)
     expect(mockUpsert).toHaveBeenCalledWith(
-      expect.arrayContaining([
+      [
         expect.objectContaining({
-          course_id: 101,
-          is_hidden: true,
+          course_id: 102,
+          fullname: 'Course 102 New',
+          shortname: 'C102',
+          is_hidden: false,
         }),
+      ],
+      expect.objectContaining({ onConflict: 'course_id', ignoreDuplicates: true })
+    )
+    expect(mockUpsert).not.toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ course_id: 101 }),
       ]),
       expect.anything()
     )

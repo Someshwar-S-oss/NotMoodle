@@ -31,7 +31,14 @@ export async function POST(req: Request) {
     }
 
     // Fetch existing records to avoid overwriting is_hidden
-    const courseIds = inputCourses.map((c: any) => Number(c.id)).filter(id => !isNaN(id))
+    const courseIds = inputCourses
+      .filter((c: any) => c && !isNaN(Number(c.id)))
+      .map((c: any) => Number(c.id))
+
+    if (courseIds.length === 0) {
+      return NextResponse.json({ success: true, count: 0 })
+    }
+
     const { data: existing } = await supabase
       .from('course_visibility')
       .select('course_id, is_hidden')
@@ -39,23 +46,27 @@ export async function POST(req: Request) {
 
     const existingMap = new Map((existing || []).map((r: any) => [r.course_id, r.is_hidden]))
 
-    const rows = inputCourses.map((c: any) => ({
-      course_id: Number(c.id),
-      fullname: String(c.fullname || ''),
-      shortname: c.shortname ? String(c.shortname) : '',
-      is_hidden: existingMap.has(Number(c.id)) ? existingMap.get(Number(c.id)) : false,
-      updated_at: new Date().toISOString(),
-    }))
+    const newRows = inputCourses
+      .filter((c: any) => c && !isNaN(Number(c.id)) && !existingMap.has(Number(c.id)))
+      .map((c: any) => ({
+        course_id: Number(c.id),
+        fullname: String(c.fullname || ''),
+        shortname: c.shortname ? String(c.shortname) : '',
+        is_hidden: false,
+        updated_at: new Date().toISOString(),
+      }))
 
-    const { error } = await supabase
-      .from('course_visibility')
-      .upsert(rows, { onConflict: 'course_id', ignoreDuplicates: false })
+    if (newRows.length > 0) {
+      const { error } = await supabase
+        .from('course_visibility')
+        .upsert(newRows, { onConflict: 'course_id', ignoreDuplicates: true })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
     }
 
-    return NextResponse.json({ success: true, count: rows.length })
+    return NextResponse.json({ success: true, count: newRows.length })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Invalid request' }, { status: 400 })
   }

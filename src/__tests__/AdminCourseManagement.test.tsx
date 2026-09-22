@@ -138,7 +138,7 @@ describe('AdminPage Course Management', () => {
     expect(screen.getByText('Old Chemistry Lab')).toBeInTheDocument()
   })
 
-  it('optimistically updates visibility, calls toggle endpoint, and records client audit log', async () => {
+  it('optimistically updates visibility and calls toggle endpoint without duplicate client audit log', async () => {
     let togglePayload: any = null
 
     ;(global.fetch as jest.Mock).mockImplementation((url: string, opts?: any) => {
@@ -178,16 +178,7 @@ describe('AdminPage Course Management', () => {
 
     await waitFor(() => {
       expect(togglePayload).toEqual({ courseId: 101, isHidden: true })
-      expect(recordClientAudit).toHaveBeenCalledWith({
-        action: 'admin.course_visibility',
-        entityType: 'course',
-        entityId: '101',
-        details: {
-          courseName: 'Machine Learning',
-          previousStatus: false,
-          newStatus: true,
-        },
-      })
+      expect(recordClientAudit).not.toHaveBeenCalled()
       expect(screen.getByRole('button', { name: /show course/i })).toBeInTheDocument()
     })
   })
