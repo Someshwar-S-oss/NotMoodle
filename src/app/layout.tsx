@@ -52,13 +52,18 @@ export default async function RootLayout({
           </a>
           <div className="cloudy-gradient" aria-hidden="true" />
           <div className="min-h-screen flex flex-col">
-            <header className="sticky top-0 h-[80px] bg-background/80 backdrop-blur-md border-b border-border/10 px-4 md:px-8 flex justify-between items-center relative z-50 transition-colors duration-300">
-              <Link href={user ? "/dashboard" : "/"} className="clash-title text-xl md:text-3xl uppercase tracking-tight hover:opacity-85 transition-opacity truncate mr-4">The NotMoodle</Link>
+            <header className="sticky top-0 h-[72px] bg-background/80 backdrop-blur-md border-b border-border/15 px-4 md:px-8 flex justify-between items-center relative z-50 transition-colors duration-300">
+              <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 group mr-4">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20 animate-pulse" />
+                <span className="text-xl md:text-2xl font-bold tracking-tight lowercase text-foreground group-hover:opacity-85 transition-opacity">
+                  not moodle
+                </span>
+              </Link>
               <div className="flex items-center gap-4 md:gap-8 shrink-0">
                 {!user && (
-                  <nav className="hidden md:flex items-center gap-6 text-[14px] uppercase tracking-wide font-medium">
-                    <Link href="/" className="transition-colors duration-150 hover:text-foreground/70">Platform</Link>
-                    <Link href="/" className="transition-colors duration-150 hover:text-foreground/70">Philosophy</Link>
+                  <nav className="hidden md:flex items-center gap-6 text-[14px] lowercase tracking-normal font-medium text-muted-foreground">
+                    <Link href="/" className="transition-colors duration-150 hover:text-foreground">platform</Link>
+                    <Link href="/" className="transition-colors duration-150 hover:text-foreground">philosophy</Link>
                   </nav>
                 )}
                 <div className="flex items-center gap-3 md:gap-4">
@@ -67,14 +72,14 @@ export default async function RootLayout({
                     <>
                       <NotificationBell />
                       <form action={logout}>
-                        <button type="submit" className="px-5 py-2 text-[13px] md:text-[14px] uppercase tracking-wider font-semibold rounded-full border border-border/40 hover:border-foreground bg-card/40 hover:bg-foreground hover:text-background transition-all duration-200 cursor-pointer shadow-xs">
-                          Log Out
+                        <button type="submit" className="px-4 py-1.5 text-[13px] lowercase font-medium rounded-full border border-border/40 hover:border-foreground/40 bg-card/40 hover:bg-muted text-foreground transition-all duration-200 cursor-pointer shadow-2xs">
+                          log out
                         </button>
                       </form>
                     </>
                   ) : (
-                    <Link href="/login" className="px-5 py-2 text-[13px] md:text-[14px] uppercase tracking-wider font-semibold rounded-full border border-border/40 hover:border-foreground bg-card/40 hover:bg-foreground hover:text-background transition-all duration-200 shadow-xs">
-                      Log In
+                    <Link href="/login" className="px-4 py-1.5 text-[13px] lowercase font-medium rounded-full border border-border/40 hover:border-foreground/40 bg-card/40 hover:bg-muted text-foreground transition-all duration-200 shadow-2xs">
+                      log in
                     </Link>
                   )}
                 </div>
