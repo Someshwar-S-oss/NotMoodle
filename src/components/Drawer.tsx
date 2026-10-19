@@ -76,17 +76,17 @@ export function Drawer({ isOpen, onClose, title, children, fullScreen }: { isOpe
             : 'w-full max-w-4xl max-h-full rounded-2xl border border-border/60 shadow-2xl'
         }`}
       >
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border/40 bg-card/90 backdrop-blur-sm">
-          <h2 className="clash-title text-2xl md:text-3xl uppercase tracking-wide truncate">{title}</h2>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/40 bg-card/95 backdrop-blur-md">
+          <h2 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground truncate">{title}</h2>
           <button 
             onClick={onClose} 
-            className="rounded-full p-2 text-secondary hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer" 
+            className="rounded-full p-2 text-secondary hover:text-foreground hover:bg-muted/70 transition-colors cursor-pointer" 
             aria-label="Close drawer"
           >
             <X size={20} className="stroke-[2px]" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-card custom-scrollbar">
+        <div className={`flex-1 overflow-y-auto bg-card custom-scrollbar ${fullScreen ? 'p-0 sm:p-2 md:p-3 flex flex-col min-h-0' : 'p-6 md:p-8'}`}>
           {children}
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { Loader2, AlertCircle, ExternalLink } from 'lucide-react'
+import { AlertCircle, ExternalLink } from 'lucide-react'
+import { Loader } from '@/components/kokonutui/loader'
 
 export function FileViewer({ mod, courseId, token }: { mod: any, courseId: number, token: string }) {
   const [loading, setLoading] = useState(true)
@@ -91,29 +92,27 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-28 rounded-xl border border-border/30 bg-card/60 p-8 text-secondary shadow-xs" aria-live="polite" aria-busy="true">
-        <Loader2 className="h-9 w-9 animate-spin mb-4 text-foreground/80" />
-        <p className="font-semibold text-foreground text-sm tracking-wide">Loading file preview...</p>
-        <p className="text-xs mt-1 text-secondary">Fetching the latest version from storage.</p>
+      <div className="flex flex-col items-center justify-center py-24 rounded-2xl border border-border/40 bg-card/60 p-8 text-secondary shadow-xs" aria-live="polite" aria-busy="true">
+        <Loader size="md" title="Loading file preview..." subtitle="fetching the latest version from storage" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 rounded-xl border border-border/30 bg-card/60 p-8 text-center shadow-xs">
-        <AlertCircle className="h-10 w-10 mb-4 text-destructive/80 stroke-[2px]" />
-        <p className="clash-title text-xl uppercase tracking-wide text-foreground mb-1">{error}</p>
-        <p className="text-xs text-secondary mt-1 mb-6">Could not load preview.</p>
+      <div className="flex flex-col items-center justify-center py-16 rounded-2xl border border-border/40 bg-card/60 p-8 text-center shadow-xs">
+        <AlertCircle className="h-10 w-10 mb-3 text-destructive/80 stroke-[2px]" />
+        <p className="text-lg font-semibold tracking-tight text-foreground mb-1">{error}</p>
+        <p className="text-xs text-secondary mb-6">could not load preview</p>
         {fallbackUrl && (
           <a 
             href={fallbackUrl} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 hover:bg-muted/50 transition-colors text-foreground text-xs font-medium cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border/40 hover:bg-muted/70 transition-colors text-foreground text-xs font-medium cursor-pointer"
           >
             <ExternalLink className="h-4 w-4 stroke-[2px]" />
-            Download Original File
+            download original file
           </a>
         )}
       </div>
@@ -121,22 +120,28 @@ export function FileViewer({ mod, courseId, token }: { mod: any, courseId: numbe
   }
 
   return (
-    <div className="space-y-4 h-full">
-      <div className="flex justify-between items-center text-xs font-mono uppercase tracking-wider border-b border-border/30 pb-3 text-secondary">
-        <span>
-          {isPdf ? 'Native Browser Preview' : 'Office Document Preview'}
+    <div className="flex flex-col h-full w-full gap-2 sm:gap-3">
+      {/* Sleek Lowkey Reader Toolbar */}
+      <div className="flex justify-between items-center text-xs font-mono lowercase tracking-wider border-b border-border/40 pb-2.5 px-1 text-secondary">
+        <span className="inline-flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>{isPdf ? 'Native Browser Preview' : 'Office Document Preview'}</span>
         </span>
-        <a 
-          href={fallbackUrl || previewUrl!} 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/40 hover:bg-muted/50 transition-colors text-foreground text-xs font-medium"
-        >
-          <ExternalLink className="h-3.5 w-3.5 stroke-[2px]" />
-          Download Direct
-        </a>
+        <div className="flex items-center gap-2">
+          <a 
+            href={fallbackUrl || previewUrl!} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/40 hover:bg-muted/70 transition-colors text-foreground text-xs font-medium"
+          >
+            <ExternalLink className="h-3.5 w-3.5 stroke-[2px]" />
+            <span>Download Direct</span>
+          </a>
+        </div>
       </div>
-      <div className="w-full h-[calc(100vh-180px)] rounded-xl border border-border/40 overflow-hidden shadow-md bg-card relative">
+
+      {/* Maximized Full-Bleed Document Canvas */}
+      <div className="w-full flex-1 h-[calc(100vh-140px)] rounded-lg md:rounded-xl border border-border/40 overflow-hidden shadow-sm bg-card relative">
         <iframe 
           src={previewUrl!} 
           className="w-full h-full border-0 bg-card relative z-10" 
