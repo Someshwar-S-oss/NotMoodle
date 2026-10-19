@@ -54,7 +54,6 @@ export default async function RootLayout({
           <div className="min-h-screen flex flex-col">
             <header className="sticky top-0 h-[72px] bg-background/80 backdrop-blur-md border-b border-border/15 px-4 md:px-8 flex justify-between items-center relative z-50 transition-colors duration-300">
               <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 group mr-4">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/20 animate-pulse" />
                 <span className="text-xl md:text-2xl font-bold tracking-tight lowercase text-foreground group-hover:opacity-85 transition-opacity">
                   not moodle
                 </span>
