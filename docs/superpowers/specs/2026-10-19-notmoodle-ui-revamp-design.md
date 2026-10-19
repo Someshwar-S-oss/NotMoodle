@@ -120,8 +120,42 @@
 
 ---
 
-## 5. Non-Functional Requirements & Test Preservation
+## 5. Course Page & Curriculum Revamp (Brilliant-Style Learning Hub)
+
+- **Curriculum Architecture**:
+  - Replace harsh brutalist tables and massive margins with compact, tactile lesson/module cards inspired by Brilliant course roadmaps.
+  - Category selector pills in clean lowercase: `all items`, `assignments`, `documents & resources`, `links`.
+  - Quick inline filter & search with smooth keyboard shortcut `/`.
+- **Module Cards**:
+  - Tactile rounded cards with subtle left accent line indicating type:
+    - 🔴 `assignment`: Due date, submission status pill (`pending` / `submitted`), quick view button.
+    - 🔵 `document`: File size, extension (`pdf`, `slides`, `doc`), instant preview trigger.
+    - 🟢 `folder`: Resource count, direct explore.
+    - 🟣 `link`: Clean domain pill and one-tap external open.
+- **Lowercase Tone**:
+  - Section headers softened from `SECTION 01: INTRODUCTION` to `section 1: introduction`.
+  - Action pills: `preview`, `view details`, `open resource`.
+
+---
+
+## 6. File Viewer & Document Reader Overhaul (Zero Wasted Space)
+
+- **Root Cause of Empty Space**:
+  - Excessive outer padding in modal drawer (`p-6 md:p-8`) combined with fixed iframe margins and large placeholder containers created massive blank margins around documents.
+- **Revamped Document Reader Architecture**:
+  - **Full-Bleed Viewport Utilization**: In-drawer reader expands to 100% width and maximizes height with edge-to-edge content borders.
+  - **Refined Reader Toolbar**:
+    - Left: Document title and clean type badge (`pdf document`, `slides`).
+    - Right: Sleek tactile button group (direct download, open in new tab, full-screen toggle).
+  - **Fluid Preview Canvas**:
+    - Embedded PDF and Office previews stretch seamlessly with zero dead whitespace or scrollbar collisions.
+    - Fallback and loading states use the lightweight Kokonut `Loader` centered without disproportionate padding.
+
+---
+
+## 7. Non-Functional Requirements & Test Preservation
 
 1. **Test Suite Compatibility**: All 15 existing test suites (114 unit & integration tests) covering course visibility, audit logging, calendar sync, navigation dock, and assignment details must continue passing.
 2. **Next.js & React 19 Compatibility**: Kokonut components and motion animations must strictly comply with Next.js App Router client components (`"use client"`), Tailwind v4, and React 19.
 3. **Accessibility**: ARIA labels, keyboard navigability, reduced-motion preferences honored via `useReducedMotion`.
+
