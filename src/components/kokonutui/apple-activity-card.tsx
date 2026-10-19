@@ -221,9 +221,7 @@ function CircleProgress({
       <svg
         aria-label={progressLabel}
         className={cn(
-          "-rotate-90 overflow-visible rounded-full outline-none transition-opacity duration-200 ease-out focus-visible:ring-2 focus-visible:ring-zinc-400",
-          "[--ring-from:oklch(from_var(--ring)_min(l,0.8)_c_h)] [--ring-to:oklch(from_var(--ring)_min(l,0.7)_c_h)]",
-          "dark:[--ring-from:var(--ring)] dark:[--ring-to:var(--ring-end)]",
+          "-rotate-90 overflow-visible rounded-full outline-none transition-opacity duration-200 ease-out focus-visible:ring-2 focus-visible:ring-foreground/30",
           dimmed && "opacity-25"
         )}
         height={data.size}
@@ -240,8 +238,8 @@ function CircleProgress({
         <title>{progressLabel}</title>
         <defs>
           <linearGradient id={gradientId} x1="0%" x2="100%" y1="0%" y2="100%">
-            <stop offset="0%" style={{ stopColor: "var(--ring-from)" }} />
-            <stop offset="100%" style={{ stopColor: "var(--ring-to)" }} />
+            <stop offset="0%" stopColor={data.color} />
+            <stop offset="100%" stopColor={data.colorEnd} />
           </linearGradient>
           <filter height="300%" id={shadowId} width="300%" x="-100%" y="-100%">
             <feDropShadow
@@ -255,7 +253,7 @@ function CircleProgress({
         </defs>
 
         <circle
-          className="text-zinc-200/60 dark:text-zinc-800/60"
+          className="text-border/40"
           cx={center}
           cy={center}
           fill="none"
@@ -298,7 +296,7 @@ function CircleProgress({
           strokeDashoffset={circumference}
           strokeLinecap="round"
           strokeWidth={STROKE}
-          style={{ opacity: 0, stroke: "var(--ring-to)" }}
+          style={{ opacity: 0, stroke: data.colorEnd }}
         />
         <g
           pointerEvents="none"
@@ -316,7 +314,7 @@ function CircleProgress({
             cy={center}
             filter={`url(#${shadowId})`}
             r={STROKE / 2}
-            style={{ fill: "var(--ring-to)" }}
+            style={{ fill: data.colorEnd }}
           />
         </g>
         <circle
@@ -331,7 +329,7 @@ function CircleProgress({
           strokeWidth={2}
           style={{
             opacity: 0,
-            stroke: "var(--ring-to)",
+            stroke: data.colorEnd,
             transformBox: "fill-box",
             transformOrigin: "center",
           }}
@@ -377,7 +375,7 @@ function DetailedActivityInfo({
           }}
           onPointerLeave={() => onActive(null)}
         >
-          <span className="font-medium text-xs lowercase text-zinc-500 dark:text-zinc-400">
+          <span className="font-medium text-xs lowercase text-secondary">
             {activity.label}
           </span>
           <span
@@ -399,7 +397,7 @@ function DetailedActivityInfo({
                 {activity.current}
               </span>
               /{activity.target}
-              <span className="ml-1 text-sm font-normal text-zinc-500 dark:text-zinc-400">
+              <span className="ml-1 text-sm font-normal text-secondary">
                 {activity.unit}
               </span>
             </span>
@@ -439,8 +437,8 @@ export function AppleActivityCard({
   return (
     <div
       className={cn(
-        "@container relative mx-auto w-full max-w-3xl rounded-3xl p-6 md:p-8",
-        "text-zinc-900 dark:text-white",
+        "relative mx-auto w-full max-w-3xl rounded-3xl p-6 md:p-8",
+        "text-foreground",
         className
       )}
       ref={ref}
@@ -452,7 +450,7 @@ export function AppleActivityCard({
               animate={
                 inView ? { opacity: 1, transform: "translateY(0px)" } : undefined
               }
-              className="font-medium text-xl md:text-2xl lowercase text-zinc-900 dark:text-white"
+              className="font-medium text-xl md:text-2xl lowercase text-foreground"
               initial={{ opacity: 0, transform: "translateY(-12px)" }}
               transition={{ duration: 0.5, ease: EASE_OUT }}
             >
@@ -460,7 +458,7 @@ export function AppleActivityCard({
             </Heading>
           )}
 
-          <div className="flex @md:flex-row flex-col items-center gap-8">
+          <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-8">
             <div
               className="relative shrink-0"
               style={{ width: boxSize, height: boxSize }}

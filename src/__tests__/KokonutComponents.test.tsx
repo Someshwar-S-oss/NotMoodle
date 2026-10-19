@@ -28,6 +28,19 @@ describe('Kokonut UI Components', () => {
     expect(screen.getByText('daily goals')).toBeInTheDocument()
   })
 
+  it('renders AppleActivityCard with custom activity data and labels', () => {
+    const mockActivities = [
+      { label: 'pending deadlines', color: '#f59e0b', colorEnd: '#ef4444', size: 170, current: 2, target: 5, unit: 'tasks' },
+      { label: 'completed submissions', color: '#10b981', colorEnd: '#34d399', size: 135, current: 8, target: 10, unit: 'done' },
+      { label: 'active modules', color: '#6366f1', colorEnd: '#818cf8', size: 100, current: 4, target: 6, unit: 'courses' },
+    ]
+    render(<AppleActivityCard title="daily activity" activities={mockActivities} />)
+    expect(screen.getByText('daily activity')).toBeInTheDocument()
+    expect(screen.getByText('pending deadlines')).toBeInTheDocument()
+    expect(screen.getByText('completed submissions')).toBeInTheDocument()
+    expect(screen.getByText('active modules')).toBeInTheDocument()
+  })
+
   it('renders Loader with custom title and subtitle in lowercase', () => {
     render(<Loader title="syncing coursework" subtitle="please wait" />)
     expect(screen.getByText('syncing coursework')).toBeInTheDocument()

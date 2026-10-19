@@ -427,41 +427,37 @@ export default function Home() {
 
   const activityData: ActivityData[] = useMemo(() => {
     const pendingTotal = today.length + overdue.length;
-    const completedCount =
-      allAssignments.length - pendingTotal > 0
-        ? allAssignments.length - pendingTotal
-        : allAssignments.length > 0
-          ? 1
-          : 0;
-    const targetAssignments = Math.max(allAssignments.length, 1);
+    const totalAssignments = Math.max(allAssignments.length, pendingTotal, 1);
+    const completedCount = Math.max(0, allAssignments.length - pendingTotal);
+    const totalCourses = Math.max(courses.length, 1);
     const activeCount = courses.filter((c) => !hiddenCourseIds.has(c.id)).length;
 
     return [
       {
-        label: "due today / overdue",
+        label: "pending deadlines",
         color: "#f59e0b",
-        colorEnd: "#fbbf24",
-        size: 180,
+        colorEnd: "#ef4444",
+        size: 170,
         current: pendingTotal,
-        target: Math.max(pendingTotal, 1),
+        target: totalAssignments,
         unit: "tasks",
       },
       {
         label: "completed submissions",
         color: "#10b981",
         colorEnd: "#34d399",
-        size: 145,
+        size: 135,
         current: completedCount,
-        target: targetAssignments,
+        target: totalAssignments,
         unit: "done",
       },
       {
         label: "active modules",
         color: "#6366f1",
         colorEnd: "#818cf8",
-        size: 110,
+        size: 100,
         current: activeCount,
-        target: Math.max(activeCount, 1),
+        target: totalCourses,
         unit: "courses",
       },
     ];
