@@ -135,16 +135,16 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       <div className="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-border/20">
         <div>
           {statusLoading ? (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-card text-tertiary border border-border/30 animate-pulse">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Checking submission status...
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium lowercase tracking-normal bg-card text-tertiary border border-border/30 animate-pulse">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> checking submission status...
             </div>
           ) : isSubmitted ? (
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30 shadow-xs">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-normal bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30 shadow-xs">
               <CheckCircle className="h-4 w-4 shrink-0 stroke-[2.5px]" />
-              <span>Submitted for grading</span>
+              <span>submitted for grading</span>
             </div>
           ) : (
-            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border shadow-xs ${
+            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium tracking-normal border shadow-xs ${
               isOverdue
                 ? 'bg-[var(--urgency-overdue-bg)] text-[var(--urgency-overdue)] border-[var(--urgency-overdue-border)]'
                 : 'bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border-[var(--urgency-today-border)]'
@@ -154,9 +154,9 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
               ) : (
                 <AlertTriangle className="h-4 w-4 shrink-0 stroke-[2.5px]" />
               )}
-              <span>Pending submission</span>
+              <span>pending submission</span>
               {timeRemaining && (
-                <span className="opacity-90 font-mono text-[11px] font-semibold">
+                <span className="opacity-90 font-mono text-[11px] font-medium">
                   • {timeRemaining}
                 </span>
               )}
@@ -169,22 +169,22 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           href={moodleAssignUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-lg px-4 py-2 bg-foreground text-background hover:bg-foreground/90 font-medium text-xs shadow-xs inline-flex items-center gap-2 transition-all group"
+          className="rounded-xl px-4 py-2 bg-foreground text-background hover:bg-foreground/90 font-medium text-xs shadow-xs inline-flex items-center gap-2 transition-all group"
         >
           <span>Open in Moodle</span>
           <ExternalLink className="h-3.5 w-3.5 stroke-[2px] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </a>
       </div>
 
-      {/* Assignment Title & Clean Monospace Due Date Hierarchy */}
+      {/* Assignment Title & Course Info */}
       <div className="space-y-4">
         <div>
           {assignment.coursename && (
-            <p className="text-xs font-bold uppercase tracking-widest text-tertiary mb-2">
+            <p className="text-xs font-medium lowercase tracking-normal text-tertiary mb-1.5">
               {assignment.coursename}
             </p>
           )}
-          <h3 className="clash-title text-2xl md:text-4xl uppercase tracking-wide leading-tight text-foreground">
+          <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground lowercase">
             {assignment.name}
           </h3>
         </div>
@@ -192,17 +192,17 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
         {/* Due date and Grade Meta Overview Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
           {assignment.duedate > 0 && (
-            <div className="rounded-xl border border-border/30 bg-card/50 p-4 shadow-xs flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-muted/60 text-foreground shrink-0">
+            <div className="rounded-2xl border border-border/30 bg-card/60 p-4 shadow-xs flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-muted/60 text-foreground shrink-0">
                 <Clock className="h-4 w-4 stroke-[2px]" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[11px] font-bold uppercase tracking-widest text-tertiary">Due Date</span>
+                <span className="block text-[11px] font-medium lowercase tracking-normal text-tertiary">due date</span>
                 <span className="font-mono text-sm font-semibold text-foreground">
                   {formatDate(assignment.duedate)}
                 </span>
                 {timeRemaining && (
-                  <span className={`block text-xs font-medium mt-0.5 ${isOverdue ? 'text-[var(--urgency-overdue)]' : 'text-secondary'}`}>
+                  <span className={`block text-xs font-medium mt-1 ${isOverdue ? 'text-[var(--urgency-overdue)]' : 'text-secondary'}`}>
                     {timeRemaining}
                   </span>
                 )}
@@ -211,18 +211,18 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
           )}
 
           {assignment.grade > 0 && (
-            <div className="rounded-xl border border-border/30 bg-card/50 p-4 shadow-xs flex items-start gap-3">
-              <div className="p-2 rounded-lg bg-muted/60 text-foreground shrink-0">
+            <div className="rounded-2xl border border-border/30 bg-card/60 p-4 shadow-xs flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-muted/60 text-foreground shrink-0">
                 <Star className="h-4 w-4 stroke-[2px]" />
               </div>
               <div className="min-w-0">
-                <span className="block text-[11px] font-bold uppercase tracking-widest text-tertiary">Grading</span>
+                <span className="block text-[11px] font-medium lowercase tracking-normal text-tertiary">grading</span>
                 <span className="font-mono text-sm font-semibold text-foreground">
-                  Max grade: {assignment.grade}
+                  max grade: {assignment.grade}
                 </span>
                 {assignment.cutoffdate > 0 && (
-                  <span className="block text-xs font-medium text-tertiary mt-0.5">
-                    Cutoff: {formatDate(assignment.cutoffdate)}
+                  <span className="block text-xs font-medium text-tertiary mt-1">
+                    cutoff: {formatDate(assignment.cutoffdate)}
                   </span>
                 )}
               </div>
@@ -233,22 +233,22 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
 
       {/* Instructions & Elevated Attachment Cards */}
       {(assignment.intro || (assignment.introattachments && assignment.introattachments.length > 0)) && (
-        <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs space-y-5">
-          <h4 className="font-bold pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
-            Instructions & Attachments
+        <div className="bg-card/75 p-6 border border-border/30 rounded-2xl shadow-xs space-y-5">
+          <h4 className="font-medium pb-2 border-b border-border/20 text-xs lowercase tracking-normal text-tertiary">
+            instructions & attachments
           </h4>
 
           {assignment.intro && (
             <div
-              className="text-sm md:text-base prose prose-sm max-w-none text-foreground/90 prose-p:leading-relaxed prose-headings:clash-title prose-headings:uppercase prose-a:text-foreground prose-a:underline"
+              className="text-sm md:text-base prose prose-sm max-w-none text-foreground/90 prose-p:leading-relaxed prose-a:text-foreground prose-a:underline"
               dangerouslySetInnerHTML={{ __html: assignment.intro }}
             />
           )}
 
           {assignment.introattachments && assignment.introattachments.length > 0 && (
             <div className="space-y-3 pt-2">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">
-                Assignment Files ({assignment.introattachments.length})
+              <span className="text-[11px] font-medium lowercase tracking-normal text-tertiary block">
+                assignment files ({assignment.introattachments.length})
               </span>
               <div className="grid grid-cols-1 gap-3">
                 {assignment.introattachments.map((attachment: any, i: number) => {
@@ -267,7 +267,7 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
                       href={fileUrlStr}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-3 p-3.5 rounded-xl bg-background/50 hover:bg-muted/40 border border-border/30 hover:border-border transition-all shadow-xs group cursor-pointer"
+                      className="flex items-center gap-3.5 p-3.5 rounded-xl bg-background/60 hover:bg-muted/40 border border-border/30 hover:border-border transition-all shadow-xs group cursor-pointer"
                     >
                       <div className="p-2 rounded-lg bg-muted text-foreground shrink-0 group-hover:bg-foreground group-hover:text-background transition-colors">
                         <FileText className="h-4 w-4 stroke-[2px]" />
@@ -293,38 +293,38 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       )}
 
       {/* Current Submission status */}
-      <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs">
-        <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
-          Current Submission
+      <div className="bg-card/75 p-6 border border-border/30 rounded-2xl shadow-xs">
+        <h4 className="font-medium mb-4 pb-2 border-b border-border/20 text-xs lowercase tracking-normal text-tertiary">
+          current submission
         </h4>
         {statusLoading ? (
-          <div className="flex items-center gap-2 text-tertiary font-bold text-xs uppercase tracking-widest py-4">
-            <Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Loading submission info...
+          <div className="flex items-center gap-2 text-tertiary font-medium text-xs lowercase py-4">
+            <Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> loading submission info...
           </div>
         ) : !status || status.status === 'new' ? (
           <p className="text-secondary font-medium text-sm py-2">No submission recorded on Moodle yet.</p>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <span className={`text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full ${
+              <span className={`text-xs font-medium lowercase px-3.5 py-1 rounded-full ${
                 status.submitted
                   ? 'bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/30'
                   : 'bg-muted text-foreground border border-border/40'
               }`}>
-                {status.submitted ? 'Submitted' : 'Draft'}
+                {status.submitted ? 'submitted' : 'draft'}
               </span>
               {status.graded && (
-                <span className="text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full bg-card text-foreground border border-border/40 shadow-xs">
-                  Graded
+                <span className="text-xs font-medium lowercase px-3.5 py-1 rounded-full bg-card text-foreground border border-border/40 shadow-xs">
+                  graded
                 </span>
               )}
             </div>
             {status.timemodified && (
-              <p className="text-xs font-mono text-tertiary">Last modified: {formatDate(status.timemodified)}</p>
+              <p className="text-xs font-mono text-tertiary">last modified: {formatDate(status.timemodified)}</p>
             )}
             {status.files.length > 0 && (
               <div className="mt-4 space-y-2 border-t border-border/20 pt-4">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-tertiary block">Submitted Files</span>
+                <span className="text-[11px] font-medium lowercase tracking-normal text-tertiary block">submitted files</span>
                 {status.files.map((f, i) => (
                   <div key={i} className="flex items-center gap-3 text-sm font-medium bg-background border border-border/30 rounded-xl p-3 shadow-xs">
                     <FileText className="h-4 w-4 shrink-0 stroke-[2px] text-tertiary" />
@@ -339,15 +339,15 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
       </div>
 
       {/* Submit or Resubmit new file */}
-      <div className="bg-card p-6 border border-border/30 rounded-xl shadow-xs">
-        <h4 className="font-bold mb-4 pb-2 border-b border-border/20 text-xs uppercase tracking-widest text-foreground">
-          {status?.submitted ? 'Resubmit Assignment' : 'Submit Assignment'}
+      <div className="bg-card/75 p-6 border border-border/30 rounded-2xl shadow-xs">
+        <h4 className="font-medium mb-4 pb-2 border-b border-border/20 text-xs lowercase tracking-normal text-tertiary">
+          {status?.submitted ? 'resubmit assignment' : 'submit assignment'}
         </h4>
 
         {success ? (
           <div className="flex items-center gap-3 text-foreground bg-[var(--status-success-bg)] border border-[var(--status-success)]/40 p-4 rounded-xl shadow-xs">
             <CheckCircle className="h-5 w-5 shrink-0 stroke-[2px] text-[var(--status-success)]" />
-            <span className="font-bold tracking-wide text-xs text-[var(--status-success)]">Submitted successfully to Moodle!</span>
+            <span className="font-medium tracking-normal text-xs text-[var(--status-success)]">Submitted successfully to Moodle!</span>
           </div>
         ) : (
           <div className="space-y-4">
@@ -419,13 +419,13 @@ export function AssignmentDetails({ assignment }: { assignment: any }) {
               </div>
             )}
 
-            {error && <p className="text-xs font-bold text-red-500 bg-red-500/10 border border-red-500/30 p-3 rounded-xl">{error}</p>}
+            {error && <p className="text-xs font-medium text-red-500 bg-red-500/10 border border-red-500/30 p-3 rounded-xl">{error}</p>}
             
             <button
               type="button"
               onClick={handleUpload}
               disabled={!file || uploading}
-              className="w-full rounded-xl py-3 px-6 bg-foreground text-background font-bold text-xs uppercase tracking-wider hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full rounded-xl py-3 px-6 bg-foreground text-background font-medium text-xs hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
             >
               {uploading
                 ? <><Loader2 className="h-4 w-4 animate-spin stroke-[2px]" /> Submitting...</>
