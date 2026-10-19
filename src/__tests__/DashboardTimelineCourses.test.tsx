@@ -7,6 +7,13 @@ import {
   getCourseAccent,
 } from '@/lib/dashboard-utils';
 
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
 jest.mock('../utils/supabase/client', () => ({
   createClient: () => ({
     auth: {
@@ -304,6 +311,11 @@ describe('Dashboard Timeline & Course Cards Redesign', () => {
       expect(
         screen.getByText(/You've tackled everything on your schedule/i),
       ).toBeInTheDocument();
+      const allAssignmentLinks = screen.getAllByRole('link', {
+        name: /view all assignments/i,
+      });
+      expect(allAssignmentLinks.length).toBeGreaterThanOrEqual(1);
+      expect(allAssignmentLinks[0]).toHaveAttribute('href', '/assignments');
     });
 
     it('partitions hidden courses into a collapsible past courses accordion', async () => {

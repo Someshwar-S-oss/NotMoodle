@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { MoodleConnect } from "@/components/MoodleConnect";
 import { Drawer } from "@/components/Drawer";
@@ -11,7 +12,6 @@ import {
   ArrowRight,
   Clock,
   Calendar,
-  X,
   CheckCircle2,
   FileText,
   AlertCircle,
@@ -159,6 +159,7 @@ function CourseCard({
 }
 
 export default function Home() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
   const [events, setEvents] = useState<MoodleTimelineEvent[]>([]);
@@ -362,10 +363,6 @@ export default function Home() {
   const formatDate = (ts: number) =>
     ts ? new Date(ts * 1000).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'
 
-  const [activeFilter, setActiveFilter] = useState<
-    "all" | "overdue" | "today" | "upcoming"
-  >("all");
-
   const activeCourses = useMemo(() => {
     return courses.filter((c) => !hiddenCourseIds.has(Number(c.id)));
   }, [courses, hiddenCourseIds]);
@@ -406,12 +403,8 @@ export default function Home() {
   }, [overdue.length, today.length]);
 
   const displayedEvents = useMemo(() => {
-    const visible = events.filter((e) => !hiddenCourseIds.has(Number(e.course?.id)));
-    if (activeFilter === "overdue") return overdue;
-    if (activeFilter === "today") return today;
-    if (activeFilter === "upcoming") return upcoming;
-    return visible;
-  }, [activeFilter, overdue, today, upcoming, events, hiddenCourseIds]);
+    return events.filter((e) => !hiddenCourseIds.has(Number(e.course?.id)));
+  }, [events, hiddenCourseIds]);
 
   // Compute pending assignment/deadline count for each course
   const coursePendingCounts = useMemo(() => {
@@ -512,14 +505,9 @@ export default function Home() {
               {/* Overdue Card */}
               <button
                 type="button"
-                onClick={() => setActiveFilter(activeFilter === "overdue" ? "all" : "overdue")}
-                aria-pressed={activeFilter === "overdue"}
-                aria-label={`Overdue assignments: ${overdue.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] hover:opacity-95 ${
-                  activeFilter === "overdue"
-                    ? "ring-2 ring-[var(--urgency-overdue)] ring-offset-2 ring-offset-background shadow-md"
-                    : "hover:shadow-xs"
-                }`}
+                onClick={() => router.push("/assignments?filter=overdue")}
+                aria-label={`Overdue assignments: ${overdue.length}. Click to view overdue assignments.`}
+                className="group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] hover:opacity-95 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--urgency-overdue)]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
@@ -538,19 +526,18 @@ export default function Home() {
                     ? `${overdue.length} ${overdue.length === 1 ? "assignment" : "assignments"} need your attention.`
                     : "Nothing past its deadline."}
                 </p>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--urgency-overdue)] opacity-85 group-hover:opacity-100 transition-opacity">
+                  <span>Click to view overdue assignments</span>
+                  <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </button>
 
               {/* Due Today Card */}
               <button
                 type="button"
-                onClick={() => setActiveFilter(activeFilter === "today" ? "all" : "today")}
-                aria-pressed={activeFilter === "today"}
-                aria-label={`Due today assignments: ${today.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] hover:opacity-95 ${
-                  activeFilter === "today"
-                    ? "ring-2 ring-[var(--urgency-today)] ring-offset-2 ring-offset-background shadow-md"
-                    : "hover:shadow-xs"
-                }`}
+                onClick={() => router.push("/assignments?filter=today")}
+                aria-label={`Due today assignments: ${today.length}. Click to view today's assignments.`}
+                className="group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] hover:opacity-95 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--urgency-today)]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
@@ -569,19 +556,18 @@ export default function Home() {
                     ? "Tackle these before the day is over."
                     : "Nothing due today."}
                 </p>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--urgency-today)] opacity-85 group-hover:opacity-100 transition-opacity">
+                  <span>Click to view today&apos;s assignments</span>
+                  <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </button>
 
               {/* Upcoming Card */}
               <button
                 type="button"
-                onClick={() => setActiveFilter(activeFilter === "upcoming" ? "all" : "upcoming")}
-                aria-pressed={activeFilter === "upcoming"}
-                aria-label={`Upcoming assignments: ${upcoming.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] hover:opacity-95 ${
-                  activeFilter === "upcoming"
-                    ? "ring-2 ring-[var(--urgency-upcoming)] ring-offset-2 ring-offset-background shadow-md"
-                    : "hover:shadow-xs"
-                }`}
+                onClick={() => router.push("/assignments?filter=upcoming")}
+                aria-label={`Upcoming assignments: ${upcoming.length}. Click to view upcoming assignments.`}
+                className="group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] hover:opacity-95 hover:shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--urgency-upcoming)]"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
@@ -600,6 +586,10 @@ export default function Home() {
                     ? "Planned deadlines on the horizon."
                     : "Your calendar is clear."}
                 </p>
+                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-[var(--urgency-upcoming)] opacity-85 group-hover:opacity-100 transition-opacity">
+                  <span>Click to view upcoming assignments</span>
+                  <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
               </button>
             </div>
           </section>
@@ -684,164 +674,183 @@ export default function Home() {
                 <h2 className="text-2xl md:text-3xl font-semibold lowercase tracking-tight text-foreground">
                   timeline
                 </h2>
-                {activeFilter !== "all" && (
-                  <div className="flex items-center gap-2" role="status" aria-live="polite">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium lowercase bg-card border border-border text-foreground shadow-xs">
-                      Filtered:{" "}
-                      <span
-                        className={
-                          activeFilter === "overdue"
-                            ? "text-[var(--urgency-overdue)]"
-                            : activeFilter === "today"
-                              ? "text-[var(--urgency-today)]"
-                              : "text-[var(--urgency-upcoming)]"
-                        }
-                      >
-                        {activeFilter === "today" ? "Due Today" : activeFilter}
-                      </span>
-                      <span className="text-secondary font-mono">({displayedEvents.length})</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setActiveFilter("all")}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-secondary hover:text-foreground hover:bg-muted/50 rounded-md border border-border/50 transition-colors cursor-pointer"
-                      aria-label="Clear filter (Show all)"
-                    >
-                      <X className="w-3.5 h-3.5" aria-hidden="true" />
-                      Clear filter (Show all)
-                    </button>
-                  </div>
-                )}
+                <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-muted/80 text-secondary border border-border/30">
+                  {displayedEvents.length} {displayedEvents.length === 1 ? "deadline" : "deadlines"}
+                </span>
               </div>
               <div className="hidden md:block flex-1 hairline-divider h-px ml-4"></div>
+              <Link
+                href="/assignments"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-secondary hover:text-foreground transition-colors"
+              >
+                <span>view all assignments</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
 
-            <div className="flex flex-col border-t border-border/20">
+            <div className="flex flex-col">
               {displayedEvents.length === 0 ? (
                 <div className="py-14 px-6 my-4 text-center rounded-2xl border border-dashed border-border/40 bg-card/30 flex flex-col items-center justify-center">
                   <div className="w-12 h-12 rounded-full bg-[var(--status-success-bg)] text-[var(--status-success)] flex items-center justify-center mb-3">
                     <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
                   </div>
                   <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-2 tracking-tight">
-                    {activeFilter !== "all"
-                      ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
-                      : "No deadlines here — you're all set!"}
+                    No deadlines here — you&apos;re all set!
                   </h3>
                   <p className="text-sm text-secondary max-w-md mb-6 lowercase">
-                    {activeFilter !== "all"
-                      ? "Check your other urgency views or clear the filter to see all upcoming coursework."
-                      : "You've tackled everything on your schedule. Take a breather or explore your enrolled modules."}
+                    You&apos;ve tackled everything on your schedule. Take a breather or explore your enrolled modules.
                   </p>
-                  {activeFilter !== "all" && (
-                    <button
-                      type="button"
-                      onClick={() => setActiveFilter("all")}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium lowercase tracking-wide text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
-                    >
-                      Show all deadlines
-                    </button>
-                  )}
+                  <Link
+                    href="/assignments"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium lowercase tracking-wide text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
+                  >
+                    <span>view all assignments</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 </div>
               ) : (
-                displayedEvents.map((event) => {
-                  const date = new Date(event.timestart * 1000);
-                  const day = date.getDate().toString().padStart(2, "0");
-                  const month = date
-                    .toLocaleString("default", { month: "short" })
-                    .toLowerCase();
-                  const time = date.toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  });
+                <div className="relative pl-6 md:pl-8 before:absolute before:top-4 before:bottom-4 before:left-[11px] md:before:left-[15px] before:w-0.5 before:bg-border/30 space-y-6">
+                  {displayedEvents.map((event, index) => {
+                    const date = new Date(event.timestart * 1000);
+                    const day = date.getDate().toString().padStart(2, "0");
+                    const month = date
+                      .toLocaleString("default", { month: "short" })
+                      .toLowerCase();
+                    const time = date.toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    });
 
-                  const matchingAssignment = allAssignments.find(
-                    (a) => a.id === event.instance || (event.id > 0 && a.id === event.id),
-                  );
+                    const matchingAssignment = allAssignments.find(
+                      (a) => a.id === event.instance || (event.id > 0 && a.id === event.id),
+                    );
 
-                  const badge = getRelativeTimeBadge(event.timestart);
-                  const badgeVariantStyles =
-                    badge.variant === "overdue"
-                      ? "bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)]"
-                      : badge.variant === "today"
-                        ? "bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] text-[var(--urgency-today)]"
-                        : "bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)]";
+                    const badge = getRelativeTimeBadge(event.timestart);
+                    const badgeVariantStyles =
+                      badge.variant === "overdue"
+                        ? "bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)]"
+                        : badge.variant === "today"
+                          ? "bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] text-[var(--urgency-today)]"
+                          : "bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)]";
 
-                  const handleItemClick = () => {
-                    if (matchingAssignment) {
-                      setSelectedAssignment(matchingAssignment);
-                      return;
-                    }
-                    if (event.course?.id) {
-                      window.location.href = `/course/${event.course.id}`;
-                    }
-                  };
+                    const courseCode = event.course
+                      ? extractCourseCode(event.course.shortname, event.course.fullname)
+                      : "COURSE";
+                    const courseName = event.course
+                      ? extractCourseDisplayName(event.course.fullname)
+                      : "Course";
+                    const courseAccent = getCourseAccent(event.course?.id || 0, index);
 
-                  return (
-                    <div
-                      key={event.id}
-                      onClick={handleItemClick}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleItemClick();
-                        }
-                      }}
-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-6 border-b border-border/20 hover:bg-card/40 transition-colors duration-200 text-left px-4 md:px-6 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-xl"
-                    >
-                      {/* Date Column */}
-                      <div className="md:col-span-3 flex flex-col justify-start items-start">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-4xl md:text-5xl font-semibold leading-none text-foreground tracking-tight">
-                            {day}
-                          </span>
-                          <span className="text-xs font-semibold lowercase text-secondary">
-                            {month} {date.getFullYear()}
-                          </span>
+                    const handleItemClick = () => {
+                      if (matchingAssignment) {
+                        setSelectedAssignment(matchingAssignment);
+                        return;
+                      }
+                      if (event.course?.id) {
+                        window.location.href = `/course/${event.course.id}`;
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={event.id}
+                        onClick={handleItemClick}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            handleItemClick();
+                          }
+                        }}
+                        className="group relative flex flex-col md:grid md:grid-cols-12 gap-4 md:gap-6 p-5 md:p-6 rounded-2xl border border-border/25 bg-card/40 hover:bg-card hover:border-border/60 transition-all duration-200 cursor-pointer shadow-2xs text-left"
+                      >
+                        {/* Timeline Node Dot */}
+                        <div
+                          className={`absolute -left-[18px] md:-left-[22px] top-6 w-3 h-3 rounded-full ring-4 ring-background transition-transform duration-200 group-hover:scale-125 ${
+                            badge.variant === "overdue"
+                              ? "bg-red-500 ring-red-500/20"
+                              : badge.variant === "today"
+                                ? "bg-amber-500 ring-amber-500/20"
+                                : "bg-slate-400 dark:bg-slate-500 ring-slate-400/20"
+                          }`}
+                          aria-hidden="true"
+                        />
+
+                        {/* Left Column: Day number, month, year, time, and relative countdown pill */}
+                        <div className="md:col-span-3 flex flex-col justify-start items-start">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-4xl md:text-5xl font-semibold leading-none text-foreground tracking-tight">
+                              {day}
+                            </span>
+                            <span className="text-xs font-semibold lowercase text-secondary">
+                              {month} {date.getFullYear()}
+                            </span>
+                          </div>
+                          <div className="text-xs font-mono mt-1 text-secondary">
+                            {time}
+                          </div>
+                          <div className="mt-2.5">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border shadow-2xs ${badgeVariantStyles}`}
+                            >
+                              {badge.label}
+                            </span>
+                          </div>
                         </div>
-                        <div className="text-xs font-mono mt-1 text-secondary">
-                          {time}
-                        </div>
-                        {/* Countdown Badge */}
-                        <div className="mt-2.5">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border shadow-2xs ${badgeVariantStyles}`}
-                          >
-                            {badge.label}
-                          </span>
-                        </div>
-                      </div>
 
-                      {/* Content Column */}
-                      <div className="md:col-span-7 flex flex-col justify-center">
-                        <div className="text-xs font-medium lowercase mb-1 text-secondary flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0"></span>
-                          <span className="truncate">{event.course?.fullname || "system event"}</span>
+                        {/* Content Column: Course tag with course accent color, title, and sanitized description snippet */}
+                        <div className="md:col-span-7 flex flex-col justify-center">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold border shadow-2xs"
+                              style={{
+                                backgroundColor: `${courseAccent.hex}15`,
+                                borderColor: `${courseAccent.hex}40`,
+                                color: courseAccent.hex,
+                              }}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{ backgroundColor: courseAccent.hex }}
+                              />
+                              {courseCode}
+                            </span>
+                            <span className="text-xs font-medium text-secondary truncate max-w-[200px] md:max-w-[280px]">
+                              {courseName}
+                            </span>
+                          </div>
+                          <h3 className="text-lg md:text-xl font-semibold text-foreground group-hover:translate-x-0.5 transition-transform duration-200 tracking-tight">
+                            {event.name}
+                          </h3>
+                          {event.description && (
+                            <div
+                              className="mt-1 text-secondary line-clamp-2 text-xs md:text-sm font-normal"
+                              dangerouslySetInnerHTML={{
+                                __html: event.description,
+                              }}
+                            />
+                          )}
                         </div>
-                        <h3 className="text-lg md:text-xl font-semibold text-foreground group-hover:translate-x-1 transition-transform duration-200 tracking-tight">
-                          {event.name}
-                        </h3>
-                        {event.description && (
-                          <div
-                            className="mt-1 text-secondary line-clamp-2 text-xs md:text-sm font-normal"
-                            dangerouslySetInnerHTML={{
-                              __html: event.description,
+
+                        {/* Action Column: "View Details" button opening the AssignmentDetails drawer */}
+                        <div className="md:col-span-2 flex items-center md:justify-end">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleItemClick();
                             }}
-                          />
-                        )}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card hover:bg-card transition-all duration-200 shadow-2xs cursor-pointer"
+                          >
+                            <span>View Details</span>
+                            <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-200" />
+                          </button>
+                        </div>
                       </div>
-
-                      {/* Action Column */}
-                      <div className="md:col-span-2 flex items-center justify-end">
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card transition-all duration-200 shadow-2xs">
-                          <span>View Details</span>
-                          <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-200" />
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </div>
           </section>

@@ -1,6 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import Home from '@/app/dashboard/page';
 
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+  }),
+}));
+
 jest.mock('../utils/supabase/client', () => ({
   createClient: () => ({
     auth: {
@@ -77,6 +84,7 @@ describe('Dashboard Urgency Metric Cards & Interactive Filtering', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockPush.mockClear();
     mockTimelineEvents = [...mockCache.events];
     global.fetch = jest.fn((url: string) => {
       if (url === '/api/moodle/token') {
@@ -125,119 +133,49 @@ describe('Dashboard Urgency Metric Cards & Interactive Filtering', () => {
     });
   });
 
-  it('filters timeline when clicking Overdue card and clears filter with reset button', async () => {
-    render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Database Project Milestone')).toBeInTheDocument();
-    });
-
-    // Initially all 3 events are present
-    expect(screen.getByText('Database Project Milestone')).toBeInTheDocument();
-    expect(screen.getByText('Algorithms Problem Set 4')).toBeInTheDocument();
-    expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-
-    // Click Overdue card to filter
-    const overdueCard = screen.getByRole('button', {
-      name: /Overdue assignments/i,
-    });
-    fireEvent.click(overdueCard);
-
-    // Overdue event should be visible, others should not
-    expect(screen.getByText('Database Project Milestone')).toBeInTheDocument();
-    expect(screen.queryByText('Algorithms Problem Set 4')).not.toBeInTheDocument();
-    expect(screen.queryByText('Operating Systems Lab 2')).not.toBeInTheDocument();
-
-    // Filter indicator and Clear filter button should be shown
-    const clearButton = screen.getByRole('button', {
-      name: /Clear filter \(Show all\)/i,
-    });
-    expect(clearButton).toBeInTheDocument();
-
-    // Reset filter
-    fireEvent.click(clearButton);
-
-    // All events restored
-    expect(screen.getByText('Database Project Milestone')).toBeInTheDocument();
-    expect(screen.getByText('Algorithms Problem Set 4')).toBeInTheDocument();
-    expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('button', { name: /Clear filter \(Show all\)/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('toggles filter off when clicking the same active card again', async () => {
-    render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Algorithms Problem Set 4')).toBeInTheDocument();
-    });
-
-    const todayCard = screen.getByRole('button', {
-      name: /Due today assignments/i,
-    });
-
-    // Click to filter by today
-    fireEvent.click(todayCard);
-    expect(screen.getByText('Algorithms Problem Set 4')).toBeInTheDocument();
-    expect(screen.queryByText('Database Project Milestone')).not.toBeInTheDocument();
-
-    // Click today card again to toggle off
-    fireEvent.click(todayCard);
-    expect(screen.getByText('Algorithms Problem Set 4')).toBeInTheDocument();
-    expect(screen.getByText('Database Project Milestone')).toBeInTheDocument();
-    expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-  });
-
-  it('filters timeline when clicking Upcoming card', async () => {
-    render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-    });
-
-    const upcomingCard = screen.getByRole('button', {
-      name: /Upcoming assignments/i,
-    });
-
-    fireEvent.click(upcomingCard);
-    expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-    expect(screen.queryByText('Database Project Milestone')).not.toBeInTheDocument();
-    expect(screen.queryByText('Algorithms Problem Set 4')).not.toBeInTheDocument();
-  });
-
-  it('applies active ring classes to cards when selected', async () => {
+  it('navigates to /assignments?filter=overdue when clicking Overdue card', async () => {
     render(<Home />);
 
     await waitFor(() => {
       expect(screen.getByText('NEEDS ATTENTION')).toBeInTheDocument();
     });
 
-    const overdueCard = screen.getByRole('button', { name: /Overdue assignments/i });
-    const todayCard = screen.getByRole('button', { name: /Due today assignments/i });
-    const upcomingCard = screen.getByRole('button', { name: /Upcoming assignments/i });
-
-    // Initially none have the active ring
-    expect(overdueCard.className).not.toContain('ring-[var(--urgency-overdue)]');
-    expect(todayCard.className).not.toContain('ring-[var(--urgency-today)]');
-    expect(upcomingCard.className).not.toContain('ring-[var(--urgency-upcoming)]');
-
-    // Click Overdue
+    const overdueCard = screen.getByRole('button', {
+      name: /Overdue assignments/i,
+    });
     fireEvent.click(overdueCard);
-    expect(overdueCard.className).toContain('ring-[var(--urgency-overdue)]');
-    expect(overdueCard).toHaveAttribute('aria-pressed', 'true');
 
-    // Click Today
+    expect(mockPush).toHaveBeenCalledWith('/assignments?filter=overdue');
+  });
+
+  it('navigates to /assignments?filter=today when clicking Due Today card', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('TACKLE TODAY')).toBeInTheDocument();
+    });
+
+    const todayCard = screen.getByRole('button', {
+      name: /Due today assignments/i,
+    });
     fireEvent.click(todayCard);
-    expect(todayCard.className).toContain('ring-[var(--urgency-today)]');
-    expect(todayCard).toHaveAttribute('aria-pressed', 'true');
-    expect(overdueCard.className).not.toContain('ring-[var(--urgency-overdue)]');
 
-    // Click Upcoming
+    expect(mockPush).toHaveBeenCalledWith('/assignments?filter=today');
+  });
+
+  it('navigates to /assignments?filter=upcoming when clicking Upcoming card', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('ON SCHEDULE')).toBeInTheDocument();
+    });
+
+    const upcomingCard = screen.getByRole('button', {
+      name: /Upcoming assignments/i,
+    });
     fireEvent.click(upcomingCard);
-    expect(upcomingCard.className).toContain('ring-[var(--urgency-upcoming)]');
-    expect(upcomingCard).toHaveAttribute('aria-pressed', 'true');
-    expect(todayCard.className).not.toContain('ring-[var(--urgency-today)]');
+
+    expect(mockPush).toHaveBeenCalledWith('/assignments?filter=upcoming');
   });
 
   it('shows focus mode greeting when no overdue but today events exist', async () => {
@@ -271,25 +209,5 @@ describe('Dashboard Urgency Metric Cards & Interactive Filtering', () => {
         screen.getByText(/Clear horizon: You're all caught up on submissions\./i),
       ).toBeInTheDocument();
     });
-  });
-
-  it('displays empty state message when a filtered category has no items', async () => {
-    mockTimelineEvents = [mockCache.events[2]]; // only upcoming
-    localStorage.setItem(
-      'moodle_dashboard_cache',
-      JSON.stringify({ ...mockCache, events: mockTimelineEvents }),
-    );
-
-    render(<Home />);
-
-    await waitFor(() => {
-      expect(screen.getByText('Operating Systems Lab 2')).toBeInTheDocument();
-    });
-
-    const overdueCard = screen.getByRole('button', { name: /Overdue assignments/i });
-    fireEvent.click(overdueCard);
-
-    expect(screen.getByText(/No overdue items found\./i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Clear filter \(Show all\)/i })).toBeInTheDocument();
   });
 });
