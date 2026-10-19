@@ -176,14 +176,14 @@ describe('Admin Console & Audit Log Stream (Task 2)', () => {
     render(<AdminPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Admin Console')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: /admin console/i })).toBeInTheDocument()
     })
 
     // Metric cards
-    expect(screen.getByText('Total Users')).toBeInTheDocument()
-    expect(screen.getAllByText('Approved').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Pending').length).toBeGreaterThan(0)
-    expect(screen.getByText('Total Events')).toBeInTheDocument()
+    expect(screen.getByText(/total users/i)).toBeInTheDocument()
+    expect(screen.getAllByText(/approved/i).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/pending/i).length).toBeGreaterThan(0)
+    expect(screen.getByText(/total events/i)).toBeInTheDocument()
 
     // 3 total users, 2 approved, 1 pending, 3 total events
     expect(screen.getAllByText('3').length).toBeGreaterThan(0) // Total users & events
@@ -301,7 +301,7 @@ describe('Admin Console & Audit Log Stream (Task 2)', () => {
     render(<AdminPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Admin Console')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { level: 1, name: /admin console/i })).toBeInTheDocument()
     })
 
     // Switch to Audit Logs tab
@@ -330,7 +330,7 @@ describe('Admin Console & Audit Log Stream (Task 2)', () => {
     // Modal dialog
     await waitFor(() => {
       expect(screen.getByRole('dialog')).toBeInTheDocument()
-      expect(screen.getByText('Audit Event Details')).toBeInTheDocument()
+      expect(screen.getByText(/audit event details/i)).toBeInTheDocument()
       expect(screen.getByTestId('audit-modal-details-json')).toHaveTextContent('report.pdf')
     })
 

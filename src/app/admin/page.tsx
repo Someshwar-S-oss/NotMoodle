@@ -19,7 +19,7 @@ import {
   EyeOff,
   Check,
   UserX,
-  BookOpen
+  BookOpen,
 } from 'lucide-react'
 
 interface Profile {
@@ -372,9 +372,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-80px)] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-tertiary" />
-        <span className="text-xs font-mono uppercase tracking-widest text-secondary">
-          Loading Admin Console...
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <span className="text-xs font-mono lowercase tracking-wide text-muted-foreground">
+          loading admin console...
         </span>
       </div>
     )
@@ -386,9 +386,9 @@ export default function AdminPage() {
         <div className="h-12 w-12 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center mb-4">
           <ShieldAlert className="h-6 w-6" />
         </div>
-        <h1 className="clash-title text-3xl uppercase tracking-wider mb-2">Unauthorized</h1>
-        <p className="text-secondary font-medium text-sm max-w-sm">
-          You do not have superuser privileges to access the administrative console.
+        <h1 className="text-2xl font-bold tracking-tight lowercase text-foreground mb-2">unauthorized</h1>
+        <p className="text-muted-foreground font-normal text-sm max-w-sm">
+          you do not have superuser privileges to access the administrative console.
         </p>
       </div>
     )
@@ -400,91 +400,96 @@ export default function AdminPage() {
         
         {/* Hero Header */}
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-widest text-secondary mb-2">
-            <span>Administration</span>
-            <span className="text-tertiary">/</span>
-            <span className="text-foreground font-semibold">Console</span>
+          <div className="flex items-center gap-2 text-xs font-mono lowercase tracking-wide text-muted-foreground mb-2">
+            <span>admin</span>
+            <span className="text-border">/</span>
+            <span className="text-foreground font-medium">console</span>
           </div>
           <div className="flex flex-col md:flex-row md:items-baseline md:justify-between gap-2">
-            <h1 className="clash-title text-4xl md:text-5xl uppercase tracking-tight text-foreground">
-              Admin Console
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight lowercase text-foreground">
+              admin console
             </h1>
-            <span className="text-xs font-mono text-secondary uppercase tracking-widest">
-              Live Auditing & Access Control
+            <span className="text-xs font-mono text-muted-foreground lowercase tracking-wide">
+              live auditing & access control
             </span>
           </div>
-          <p className="text-secondary font-medium text-sm mt-1">
-            Manage user authorization credentials, monitor activity telemetry, and review live audit records.
+          <p className="text-muted-foreground font-normal text-sm mt-1">
+            manage user authorization credentials, monitor activity telemetry, and review live audit records.
           </p>
-          <div className="hairline-divider w-full h-px mt-6 bg-border/20" />
+          <div className="w-full h-px mt-6 bg-border/30" />
         </div>
 
         {/* 4 Metric Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between text-secondary mb-3">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Total Users</span>
-              <Users className="h-4 w-4 text-tertiary" />
+          <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground mb-3">
+              <span className="text-xs font-medium lowercase tracking-wide">total users</span>
+              <Users className="h-4 w-4 text-muted-foreground/70" />
             </div>
-            <div className="text-3xl font-semibold clash-title tracking-tight text-foreground">
+            <div className="text-3xl font-semibold tracking-tight text-foreground">
               {totalUsersCount}
             </div>
-            <div className="text-[11px] text-tertiary font-mono mt-1">Registered accounts</div>
+            <div className="text-xs text-muted-foreground/70 mt-1 lowercase">registered accounts</div>
           </div>
 
-          <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between text-secondary mb-3">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Approved</span>
+          <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground mb-3">
+              <span className="text-xs font-medium lowercase tracking-wide">approved</span>
               <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div className="text-3xl font-semibold clash-title tracking-tight text-emerald-600 dark:text-emerald-400">
+            <div className="text-3xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
               {approvedUsersCount}
             </div>
-            <div className="text-[11px] text-tertiary font-mono mt-1">Full portal access</div>
+            <div className="text-xs text-muted-foreground/70 mt-1 lowercase">full portal access</div>
           </div>
 
-          <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between text-secondary mb-3">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Pending</span>
+          <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground mb-3">
+              <span className="text-xs font-medium lowercase tracking-wide">pending</span>
               <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="text-3xl font-semibold clash-title tracking-tight text-amber-600 dark:text-amber-400">
+            <div className="text-3xl font-semibold tracking-tight text-amber-600 dark:text-amber-400">
               {pendingUsersCount}
             </div>
-            <div className="text-[11px] text-tertiary font-mono mt-1">Awaiting approval</div>
+            <div className="text-xs text-muted-foreground/70 mt-1 lowercase">awaiting approval</div>
           </div>
 
-          <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between text-secondary mb-3">
-              <span className="text-[11px] font-mono uppercase tracking-wider">Total Events</span>
+          <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+            <div className="flex items-center justify-between text-muted-foreground mb-3">
+              <span className="text-xs font-medium lowercase tracking-wide">total events</span>
               <Activity className="h-4 w-4 text-sky-600 dark:text-sky-400" />
             </div>
-            <div className="text-3xl font-semibold clash-title tracking-tight text-foreground">
+            <div className="text-3xl font-semibold tracking-tight text-foreground">
               {totalAuditCount}
             </div>
-            <div className="text-[11px] text-tertiary font-mono mt-1">Telemetry log entries</div>
+            <div className="text-xs text-muted-foreground/70 mt-1 lowercase">telemetry log entries</div>
           </div>
         </div>
 
         {/* Segmented Main Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-border/40 pb-px">
-          <div className="flex items-center gap-3" role="tablist" aria-label="Admin Navigation Tabs">
+        <div className="flex items-center justify-between border-b border-border/30 pb-4">
+          <div
+            className="flex items-center gap-1.5 p-1 bg-muted/50 backdrop-blur-md rounded-2xl border border-border/30 overflow-x-auto"
+            role="tablist"
+            aria-label="Admin Navigation Tabs"
+          >
             <button
               role="tab"
               aria-selected={activeTab === 'users'}
               onClick={() => setActiveTab('users')}
-              className={`flex items-center gap-2 pb-3 px-1 text-sm font-semibold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'users'
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-secondary hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
               }`}
             >
-              <span>User Management</span>
+              <Users className="h-4 w-4" />
+              <span className="lowercase">user management</span>
               <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full font-mono transition-colors ${
                   activeTab === 'users'
-                    ? 'bg-foreground text-background font-bold'
-                    : 'bg-muted text-secondary'
+                    ? 'bg-foreground/10 text-foreground font-semibold'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {profiles.length}
@@ -495,18 +500,19 @@ export default function AdminPage() {
               role="tab"
               aria-selected={activeTab === 'courses'}
               onClick={() => setActiveTab('courses')}
-              className={`flex items-center gap-2 pb-3 px-1 text-sm font-semibold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'courses'
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-secondary hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
               }`}
             >
-              <span>Courses</span>
+              <BookOpen className="h-4 w-4" />
+              <span className="lowercase">courses</span>
               <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full font-mono transition-colors ${
                   activeTab === 'courses'
-                    ? 'bg-foreground text-background font-bold'
-                    : 'bg-muted text-secondary'
+                    ? 'bg-foreground/10 text-foreground font-semibold'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {courses.length}
@@ -517,18 +523,19 @@ export default function AdminPage() {
               role="tab"
               aria-selected={activeTab === 'audit'}
               onClick={() => setActiveTab('audit')}
-              className={`flex items-center gap-2 pb-3 px-1 text-sm font-semibold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'audit'
-                  ? 'border-foreground text-foreground'
-                  : 'border-transparent text-secondary hover:text-foreground'
+                  ? 'bg-background text-foreground shadow-xs font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
               }`}
             >
-              <span>Audit Logs</span>
+              <Activity className="h-4 w-4" />
+              <span className="lowercase">audit logs</span>
               <span
-                className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                className={`text-xs px-2 py-0.5 rounded-full font-mono transition-colors ${
                   activeTab === 'audit'
-                    ? 'bg-foreground text-background font-bold'
-                    : 'bg-muted text-secondary'
+                    ? 'bg-foreground/10 text-foreground font-semibold'
+                    : 'bg-muted text-muted-foreground'
                 }`}
               >
                 {totalAuditCount}
@@ -545,20 +552,20 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               {/* Search Bar */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search by name or email..."
                   value={userSearch}
                   onChange={e => setUserSearch(e.target.value)}
                   aria-label="Search users"
-                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-foreground/30 transition-all shadow-xs"
+                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-border transition-all shadow-xs"
                 />
                 {userSearch && (
                   <button
                     onClick={() => setUserSearch('')}
                     aria-label="Clear user search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-foreground transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -576,8 +583,8 @@ export default function AdminPage() {
                       onClick={() => setUserStatusFilter(status)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize tracking-wide transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-card text-foreground font-semibold shadow-xs border border-border/30'
-                          : 'text-secondary hover:text-foreground'
+                          ? 'bg-background text-foreground font-semibold shadow-xs border border-border/30'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {status}
@@ -596,11 +603,11 @@ export default function AdminPage() {
                     <div
                       key={user.id}
                       data-testid={`user-card-${user.id}`}
-                      className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
                     >
-                      <div className="flex items-center gap-4">
-                        {/* Avatar initials */}
-                        <div className="h-11 w-11 rounded-xl bg-muted/80 border border-border/30 flex items-center justify-center font-semibold clash-title text-sm text-foreground shrink-0">
+                      <div className="flex items-center gap-4 min-w-0">
+                        {/* Avatar initials chip */}
+                        <div className="h-10 w-10 rounded-full bg-muted/80 border border-border/30 flex items-center justify-center font-semibold text-sm text-foreground shrink-0 shadow-2xs">
                           {(user.full_name || user.email || '?').charAt(0).toUpperCase()}
                         </div>
 
@@ -609,14 +616,18 @@ export default function AdminPage() {
                             <span className="font-semibold text-base text-foreground truncate">
                               {user.full_name || 'No Name Provided'}
                             </span>
-                            {user.is_superuser && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold bg-foreground text-background">
+                            {user.is_superuser ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-foreground text-background">
                                 <ShieldCheck className="h-3 w-3" />
-                                Superuser
+                                superuser
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-medium text-muted-foreground bg-muted/60 border border-border/20">
+                                member
                               </span>
                             )}
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-semibold border ${
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${
                                 user.is_approved
                                   ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                                   : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20'
@@ -626,10 +637,10 @@ export default function AdminPage() {
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3 text-xs text-secondary mt-1 flex-wrap">
-                            <span className="font-mono text-tertiary">{user.email}</span>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                            <span className="font-mono text-muted-foreground/80">{user.email}</span>
                             <span>•</span>
-                            <span className="font-mono text-tertiary">
+                            <span className="font-mono text-muted-foreground/80">
                               Joined {new Date(user.created_at).toLocaleDateString()}
                             </span>
                           </div>
@@ -644,7 +655,7 @@ export default function AdminPage() {
                           onClick={() => toggleApproval(user)}
                           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer border ${
                             user.is_approved
-                              ? 'bg-card text-secondary border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30'
+                              ? 'bg-card text-muted-foreground border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30'
                               : 'bg-foreground text-background border-foreground hover:opacity-90 shadow-xs'
                           }`}
                         >
@@ -664,12 +675,12 @@ export default function AdminPage() {
               </div>
             ) : (
               /* Empty state */
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-12 text-center flex flex-col items-center justify-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-secondary">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <Search className="h-4 w-4" />
                 </div>
-                <h3 className="font-semibold text-base text-foreground clash-title">No users found</h3>
-                <p className="text-xs text-secondary max-w-sm">
+                <h3 className="font-semibold text-base text-foreground lowercase">no users found</h3>
+                <p className="text-xs text-muted-foreground max-w-sm">
                   {userSearch
                     ? `No registered accounts match “${userSearch}”.`
                     : 'There are no users in this status category.'}
@@ -696,37 +707,37 @@ export default function AdminPage() {
             
             {/* Course Metrics Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between text-secondary mb-3">
-                  <span className="text-[11px] font-mono uppercase tracking-wider">Total Courses</span>
-                  <BookOpen className="h-4 w-4 text-tertiary" />
+              <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+                <div className="flex items-center justify-between text-muted-foreground mb-3">
+                  <span className="text-xs font-medium lowercase tracking-wide">total courses</span>
+                  <BookOpen className="h-4 w-4 text-muted-foreground/70" />
                 </div>
-                <div className="text-3xl font-semibold clash-title tracking-tight text-foreground">
+                <div className="text-3xl font-semibold tracking-tight text-foreground">
                   {totalCoursesCount}
                 </div>
-                <div className="text-[11px] text-tertiary font-mono mt-1">Discovered in catalog</div>
+                <div className="text-xs text-muted-foreground/70 mt-1 lowercase">discovered in catalog</div>
               </div>
 
-              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between text-secondary mb-3">
-                  <span className="text-[11px] font-mono uppercase tracking-wider">Visible Courses</span>
+              <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+                <div className="flex items-center justify-between text-muted-foreground mb-3">
+                  <span className="text-xs font-medium lowercase tracking-wide">visible courses</span>
                   <Eye className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-3xl font-semibold clash-title tracking-tight text-emerald-600 dark:text-emerald-400">
+                <div className="text-3xl font-semibold tracking-tight text-emerald-600 dark:text-emerald-400">
                   {visibleCoursesCount}
                 </div>
-                <div className="text-[11px] text-tertiary font-mono mt-1">Active in student portal</div>
+                <div className="text-xs text-muted-foreground/70 mt-1 lowercase">active in student portal</div>
               </div>
 
-              <div className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-shadow hover:shadow-md">
-                <div className="flex items-center justify-between text-secondary mb-3">
-                  <span className="text-[11px] font-mono uppercase tracking-wider">Hidden Courses</span>
+              <div className="rounded-2xl border border-border/40 bg-card/60 backdrop-blur-xs p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm">
+                <div className="flex items-center justify-between text-muted-foreground mb-3">
+                  <span className="text-xs font-medium lowercase tracking-wide">hidden courses</span>
                   <EyeOff className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <div className="text-3xl font-semibold clash-title tracking-tight text-amber-600 dark:text-amber-400">
+                <div className="text-3xl font-semibold tracking-tight text-amber-600 dark:text-amber-400">
                   {hiddenCoursesCount}
                 </div>
-                <div className="text-[11px] text-tertiary font-mono mt-1">Suppressed from timeline</div>
+                <div className="text-xs text-muted-foreground/70 mt-1 lowercase">suppressed from timeline</div>
               </div>
             </div>
 
@@ -734,20 +745,20 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               {/* Search Bar */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search courses by title, code, or ID..."
                   value={courseSearch}
                   onChange={e => setCourseSearch(e.target.value)}
                   aria-label="Search courses"
-                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-foreground/30 transition-all shadow-xs"
+                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-border transition-all shadow-xs"
                 />
                 {courseSearch && (
                   <button
                     onClick={() => setCourseSearch('')}
                     aria-label="Clear course search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-foreground transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -765,8 +776,8 @@ export default function AdminPage() {
                       onClick={() => setCourseFilter(status)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize tracking-wide transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-card text-foreground font-semibold shadow-xs border border-border/30'
-                          : 'text-secondary hover:text-foreground'
+                          ? 'bg-background text-foreground font-semibold shadow-xs border border-border/30'
+                          : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       {status}
@@ -785,12 +796,12 @@ export default function AdminPage() {
                     <div
                       key={course.course_id}
                       data-testid={`course-card-${course.course_id}`}
-                      className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-all hover:shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4"
+                      className="rounded-2xl border border-border/40 bg-card p-5 shadow-xs transition-all hover:border-border/80 hover:shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
                     >
                       <div className="flex items-center gap-4 min-w-0">
                         {/* Course Icon Avatar */}
-                        <div className="h-11 w-11 rounded-xl bg-muted/80 border border-border/30 flex items-center justify-center font-semibold clash-title text-sm text-foreground shrink-0">
-                          <BookOpen className="h-5 w-5 text-secondary" />
+                        <div className="h-10 w-10 rounded-xl bg-muted/80 border border-border/30 flex items-center justify-center font-medium text-sm text-muted-foreground shrink-0 shadow-2xs">
+                          <BookOpen className="h-4 w-4" />
                         </div>
 
                         <div className="flex flex-col min-w-0">
@@ -799,27 +810,27 @@ export default function AdminPage() {
                               {course.fullname}
                             </span>
                             {course.shortname && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-bold bg-muted text-foreground border border-border/30">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold bg-muted text-foreground border border-border/30">
                                 {course.shortname}
                               </span>
                             )}
                             <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono uppercase tracking-wider font-semibold border ${
+                              className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border ${
                                 !course.is_hidden
                                   ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
                                   : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20'
                               }`}
                             >
-                              {!course.is_hidden ? 'Visible' : 'Hidden'}
+                              {!course.is_hidden ? 'Active' : 'Hidden'}
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-3 text-xs text-secondary mt-1 flex-wrap font-mono">
-                            <span className="text-tertiary">ID: {course.course_id}</span>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap font-mono">
+                            <span className="text-muted-foreground/80">ID: {course.course_id}</span>
                             {course.updated_at && (
                               <>
                                 <span>•</span>
-                                <span className="text-tertiary">
+                                <span className="text-muted-foreground/80">
                                   Updated {formatRelativeTime(course.updated_at)}
                                 </span>
                               </>
@@ -836,7 +847,7 @@ export default function AdminPage() {
                           onClick={() => toggleCourseVisibility(course)}
                           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold tracking-wide transition-all cursor-pointer border ${
                             !course.is_hidden
-                              ? 'bg-card text-secondary border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30'
+                              ? 'bg-card text-muted-foreground border-border/40 hover:bg-rose-500/10 hover:text-rose-600 hover:border-rose-500/30'
                               : 'bg-foreground text-background border-foreground hover:opacity-90 shadow-xs'
                           }`}
                         >
@@ -856,12 +867,12 @@ export default function AdminPage() {
               </div>
             ) : (
               /* Empty state */
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-12 text-center flex flex-col items-center justify-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-secondary">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <Search className="h-4 w-4" />
                 </div>
-                <h3 className="font-semibold text-base text-foreground clash-title">No courses found</h3>
-                <p className="text-xs text-secondary max-w-sm">
+                <h3 className="font-semibold text-base text-foreground lowercase">no courses found</h3>
+                <p className="text-xs text-muted-foreground max-w-sm">
                   {courseSearch
                     ? `No discovered courses match “${courseSearch}”.`
                     : 'There are no courses in this visibility category.'}
@@ -890,20 +901,20 @@ export default function AdminPage() {
             <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
               {/* Search Bar */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-secondary pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <input
                   type="text"
                   placeholder="Search by user email or entity ID..."
                   value={auditSearch}
                   onChange={e => setAuditSearch(e.target.value)}
                   aria-label="Search audit logs"
-                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder-secondary focus:outline-none focus:ring-2 focus:ring-foreground/30 transition-all shadow-xs"
+                  className="w-full bg-card border border-border/40 pl-10 pr-10 py-2.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 focus:border-border transition-all shadow-xs"
                 />
                 {auditSearch && (
                   <button
                     onClick={() => setAuditSearch('')}
                     aria-label="Clear audit search"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-foreground transition-colors cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
@@ -911,7 +922,7 @@ export default function AdminPage() {
               </div>
 
               {/* Action Category Filter Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none" role="tablist" aria-label="Audit category filters">
+              <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-2xl border border-border/30 overflow-x-auto" role="tablist" aria-label="Audit category filters">
                 {(
                   [
                     { id: 'all', label: 'All' },
@@ -930,10 +941,10 @@ export default function AdminPage() {
                       role="tab"
                       aria-selected={isActive}
                       onClick={() => setAuditCategory(id)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all border cursor-pointer ${
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
-                          : 'bg-card text-secondary border-border/40 hover:border-foreground/30 hover:text-foreground'
+                          ? 'bg-background text-foreground font-semibold shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-background/40'
                       }`}
                     >
                       {label}
@@ -945,7 +956,7 @@ export default function AdminPage() {
 
             {/* Audit Log Rows */}
             {auditLogs.length > 0 ? (
-              <div className="rounded-2xl border border-border/40 bg-card overflow-hidden shadow-xs divide-y divide-border/30">
+              <div className="rounded-2xl border border-border/40 bg-card overflow-hidden shadow-xs divide-y divide-border/20">
                 {auditLogs.map(log => {
                   const badgeProps = getActionBadgeProps(log.action)
                   return (
@@ -956,7 +967,7 @@ export default function AdminPage() {
                     >
                       {/* User Avatar + Action info */}
                       <div className="flex items-start md:items-center gap-3.5 min-w-0 flex-1">
-                        <div className="h-9 w-9 rounded-lg bg-muted/80 border border-border/30 flex items-center justify-center font-semibold clash-title text-xs text-foreground shrink-0 mt-0.5 md:mt-0">
+                        <div className="h-9 w-9 rounded-full bg-muted/80 border border-border/30 flex items-center justify-center font-semibold text-xs text-foreground shrink-0 mt-0.5 md:mt-0 shadow-2xs">
                           {(log.user_email || '?').charAt(0).toUpperCase()}
                         </div>
 
@@ -971,24 +982,24 @@ export default function AdminPage() {
                               {badgeProps.label}
                             </span>
                             {log.entity_id && (
-                              <span className="text-[10px] font-mono text-tertiary bg-muted/50 border border-border/30 px-1.5 py-0.2 rounded truncate max-w-[140px]">
+                              <span className="text-[10px] font-mono text-muted-foreground bg-muted/60 border border-border/30 px-1.5 py-0.5 rounded truncate max-w-[140px]">
                                 {log.entity_id}
                               </span>
                             )}
                           </div>
 
-                          <div className="flex items-center gap-3 text-[11px] text-secondary font-mono mt-1 flex-wrap">
+                          <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono mt-1 flex-wrap">
                             <span>{formatRelativeTime(log.created_at)}</span>
                             {log.ip_address && (
                               <>
                                 <span>•</span>
-                                <span className="text-tertiary">IP: {log.ip_address}</span>
+                                <span className="text-muted-foreground/80">IP: {log.ip_address}</span>
                               </>
                             )}
                             {log.user_agent && (
                               <>
                                 <span>•</span>
-                                <span className="text-tertiary truncate max-w-[200px]" title={log.user_agent}>
+                                <span className="text-muted-foreground/80 truncate max-w-[200px]" title={log.user_agent}>
                                   {log.user_agent}
                                 </span>
                               </>
@@ -1002,7 +1013,7 @@ export default function AdminPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedAuditLog(log)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/40 text-xs font-medium text-secondary hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/40 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                         >
                           <Eye className="h-3.5 w-3.5" />
                           <span>Inspect</span>
@@ -1014,12 +1025,12 @@ export default function AdminPage() {
               </div>
             ) : (
               /* Empty state */
-              <div className="rounded-2xl border border-dashed border-border/60 bg-card/50 p-12 text-center flex flex-col items-center justify-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-secondary">
+              <div className="rounded-2xl border border-dashed border-border/60 bg-card/40 p-12 text-center flex flex-col items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
                   <FileCode className="h-4 w-4" />
                 </div>
-                <h3 className="font-semibold text-base text-foreground clash-title">No audit records found</h3>
-                <p className="text-xs text-secondary max-w-sm">
+                <h3 className="font-semibold text-base text-foreground lowercase">no audit records found</h3>
+                <p className="text-xs text-muted-foreground max-w-sm">
                   {auditSearch
                     ? `No telemetry logs match “${auditSearch}”.`
                     : 'No telemetry logs recorded in this category.'}
@@ -1054,10 +1065,10 @@ export default function AdminPage() {
             <div className="relative w-full max-w-xl rounded-2xl border border-border/40 bg-card p-6 shadow-xl flex flex-col gap-5">
               <div className="flex items-center justify-between border-b border-border/20 pb-4">
                 <div>
-                  <h3 id="audit-detail-modal-title" className="clash-title text-xl font-semibold text-foreground">
-                    Audit Event Details
+                  <h3 id="audit-detail-modal-title" className="text-lg font-bold tracking-tight lowercase text-foreground">
+                    audit event details
                   </h3>
-                  <p className="text-xs font-mono text-tertiary mt-0.5">
+                  <p className="text-xs font-mono text-muted-foreground mt-0.5">
                     ID: {selectedAuditLog.id}
                   </p>
                 </div>
@@ -1065,7 +1076,7 @@ export default function AdminPage() {
                   type="button"
                   onClick={() => setSelectedAuditLog(null)}
                   aria-label="Close dialog"
-                  className="p-1.5 rounded-lg text-secondary hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1074,21 +1085,21 @@ export default function AdminPage() {
               {/* Event Metadata Summary */}
               <div className="grid grid-cols-2 gap-3 text-xs font-mono bg-muted/30 p-3.5 rounded-xl border border-border/20">
                 <div>
-                  <span className="text-tertiary block">Action:</span>
+                  <span className="text-muted-foreground block lowercase">action:</span>
                   <span className="text-foreground font-semibold">{selectedAuditLog.action}</span>
                 </div>
                 <div>
-                  <span className="text-tertiary block">Entity Type:</span>
+                  <span className="text-muted-foreground block lowercase">entity type:</span>
                   <span className="text-foreground font-semibold">{selectedAuditLog.entity_type}</span>
                 </div>
                 <div>
-                  <span className="text-tertiary block">User:</span>
+                  <span className="text-muted-foreground block lowercase">user:</span>
                   <span className="text-foreground font-semibold truncate block">
                     {selectedAuditLog.user_email || 'anonymous'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-tertiary block">Timestamp:</span>
+                  <span className="text-muted-foreground block lowercase">timestamp:</span>
                   <span className="text-foreground font-semibold">
                     {new Date(selectedAuditLog.created_at).toLocaleString()}
                   </span>
@@ -1097,12 +1108,12 @@ export default function AdminPage() {
 
               {/* Formatted JSON Details */}
               <div className="flex flex-col gap-1.5">
-                <span className="text-xs font-mono uppercase tracking-wider text-secondary">
-                  Payload Details
+                <span className="text-xs font-mono lowercase tracking-wide text-muted-foreground">
+                  payload details
                 </span>
                 <pre
                   data-testid="audit-modal-details-json"
-                  className="p-4 rounded-xl bg-muted/60 border border-border/30 text-xs font-mono text-foreground overflow-x-auto max-h-60 scrollbar-none"
+                  className="p-4 rounded-xl bg-muted/60 border border-border/30 text-xs font-mono text-foreground overflow-x-auto max-h-60"
                 >
                   {JSON.stringify(selectedAuditLog.details || {}, null, 2)}
                 </pre>
@@ -1125,4 +1136,3 @@ export default function AdminPage() {
     </div>
   )
 }
-

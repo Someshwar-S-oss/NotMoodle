@@ -65,7 +65,7 @@ describe('AdminPage Course Management', () => {
     render(<AdminPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Courses')).toBeInTheDocument()
+      expect(screen.getByRole('tab', { name: /courses/i })).toBeInTheDocument()
     })
 
     // Click on Courses tab
