@@ -1,5 +1,6 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { NavigationDock } from '@/components/NavigationDock';
+import { usePathname } from 'next/navigation';
 
 let mockPathname = '/dashboard';
 const mockPush = jest.fn();
@@ -8,7 +9,7 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
-  usePathname: () => mockPathname,
+  usePathname: jest.fn(() => mockPathname),
 }));
 
 let mockUser: any = null;
@@ -48,6 +49,7 @@ describe('NavigationDock', () => {
   beforeEach(() => {
     mockPush.mockClear();
     mockPathname = '/dashboard';
+    (usePathname as jest.Mock).mockImplementation(() => mockPathname);
     mockUser = null;
     mockProfile = null;
   });
@@ -71,6 +73,7 @@ describe('NavigationDock', () => {
 
     render(<NavigationDock />);
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assignments' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Admin' })).not.toBeInTheDocument();
@@ -87,6 +90,7 @@ describe('NavigationDock', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Assignments' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Settings' })).toBeInTheDocument();
 
@@ -97,6 +101,17 @@ describe('NavigationDock', () => {
     fireEvent.click(adminBtn);
     expect(mockPush).toHaveBeenCalledWith('/admin');
   });
+
+  it('renders Assignments dock item and marks active on /assignments', async () => {
+    ;(usePathname as jest.Mock).mockReturnValue('/assignments')
+    render(<NavigationDock />)
+    const assignmentsBtn = screen.getByRole('button', { name: /assignments/i })
+    expect(assignmentsBtn).toBeInTheDocument()
+    expect(assignmentsBtn).toHaveAttribute('aria-current', 'page')
+
+    fireEvent.click(assignmentsBtn)
+    expect(mockPush).toHaveBeenCalledWith('/assignments')
+  })
 
   it('marks Dashboard as active with aria-current="page" when on /dashboard', () => {
     mockPathname = '/dashboard';

@@ -1,7 +1,7 @@
 'use client'
 
 import Dock from './Dock'
-import { Home, Settings, Bell, Shield } from 'lucide-react'
+import { Home, Settings, Bell, Shield, BookOpen } from 'lucide-react'
 import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
@@ -78,6 +78,7 @@ export function NavigationDock() {
 
   const currentPath = pathname || ''
   const isDashboardActive = currentPath === '/dashboard' || currentPath.startsWith('/dashboard/') || currentPath.startsWith('/course')
+  const isAssignmentsActive = currentPath === '/assignments' || currentPath.startsWith('/assignments/')
   const isNotificationsActive = currentPath === '/notifications' || currentPath.startsWith('/notifications/')
   const isSettingsActive = currentPath === '/settings' || currentPath.startsWith('/settings/')
   const isAdminActive = currentPath === '/admin' || currentPath.startsWith('/admin/')
@@ -98,6 +99,22 @@ export function NavigationDock() {
       label: 'Dashboard',
       onClick: () => router.push('/dashboard'),
       isActive: isDashboardActive,
+    },
+    {
+      icon: (
+        <div className="relative flex flex-col items-center justify-center">
+          <BookOpen size={18} className={isAssignmentsActive ? 'text-foreground' : 'text-foreground/75'} />
+          {isAssignmentsActive && (
+            <span
+              className="absolute -bottom-2.5 w-1.5 h-1.5 rounded-full bg-foreground transition-all duration-300 motion-reduce:transition-none"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+      ),
+      label: 'Assignments',
+      onClick: () => router.push('/assignments'),
+      isActive: isAssignmentsActive,
     },
     {
       icon: (
