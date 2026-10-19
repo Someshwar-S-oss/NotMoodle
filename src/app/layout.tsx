@@ -22,8 +22,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Not Moodle - Brutalist Academic Dashboard",
-  description: "A sophisticated synthesis of academic workflows.",
+  title: "not moodle - your focused learning space",
+  description: "a lowkey, human-first academic workspace inspired by intuitive fitness and learning platforms.",
 };
 
 export default async function RootLayout({
