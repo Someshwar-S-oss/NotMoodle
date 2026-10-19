@@ -33,6 +33,9 @@ import {
   extractCourseDisplayName,
   getCourseAccent,
 } from "@/lib/dashboard-utils";
+import { AppleActivityCard, type ActivityData } from "@/components/kokonutui/apple-activity-card";
+import { Loader } from "@/components/kokonutui/loader";
+import { TypewriterTitle } from "@/components/kokonutui/type-writer";
 
 function CourseCard({
   course,
@@ -91,7 +94,7 @@ function CourseCard({
   return (
     <Link
       href={`/course/${course.id}`}
-      className={`group relative flex flex-col justify-between min-h-[300px] p-7 rounded-xl border border-border/20 bg-card/60 hover:bg-card hover:-translate-y-1 hover:shadow-md transition-all duration-300 overflow-hidden ${
+      className={`group relative flex flex-col justify-between min-h-[280px] p-6 md:p-7 rounded-2xl border border-border/25 bg-card/75 hover:bg-card hover:-translate-y-1 hover:shadow-lg transition-all duration-300 overflow-hidden ${
         isPast ? "opacity-85 hover:opacity-100" : ""
       }`}
     >
@@ -104,8 +107,8 @@ function CourseCard({
 
       <div>
         {/* Card Header with Folder and Course Code Badge */}
-        <div className="flex items-center justify-between gap-3 mb-6">
-          <div className="w-14 h-14 rounded-lg border border-border/30 flex items-center justify-center bg-background shadow-2xs overflow-visible">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <div className="w-13 h-13 rounded-xl border border-border/30 flex items-center justify-center bg-background/80 shadow-2xs overflow-visible">
             <Folder
               size={0.65}
               color={accent.hex}
@@ -116,37 +119,37 @@ function CourseCard({
           </div>
           <span
             data-testid="course-code-badge"
-            className="font-mono text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-muted/60 text-secondary border border-border/30"
+            className="font-mono text-xs font-semibold px-2.5 py-1 rounded-full bg-muted/70 text-secondary border border-border/30"
           >
             {courseCode}
           </span>
         </div>
 
         {/* Course Title */}
-        <h3 className="clash-title text-xl md:text-2xl font-medium mb-3 line-clamp-2 text-foreground group-hover:text-foreground">
+        <h3 className="text-xl md:text-2xl font-semibold mb-2 line-clamp-2 text-foreground group-hover:text-foreground tracking-tight">
           {extractCourseDisplayName(course.fullname)}
         </h3>
       </div>
 
       {/* Footer: Pending Deadlines Badge & Enter action */}
-      <div className="pt-6 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
+      <div className="pt-5 mt-4 border-t border-border/15 flex items-center justify-between gap-2">
         {isPast ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-muted/60 text-secondary border border-border/30">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium tracking-normal bg-muted/60 text-secondary border border-border/30">
             Past Course
           </span>
         ) : pendingCount > 0 ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium tracking-normal bg-[var(--urgency-today-bg)] text-[var(--urgency-today)] border border-[var(--urgency-today-border)]">
             <Clock className="w-3 h-3 shrink-0" />
             {pendingCount} {pendingCount === 1 ? "deadline pending" : "deadlines pending"}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium tracking-normal bg-[var(--status-success-bg)] text-[var(--status-success)] border border-[var(--status-success)]/20">
             <CheckCircle2 className="w-3 h-3 shrink-0" />
             All clear
           </span>
         )}
 
-        <span className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-secondary group-hover:text-foreground transition-colors">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-secondary group-hover:text-foreground transition-colors">
           <span>Enter</span>
           <ArrowRight className="w-3.5 h-3.5 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
         </span>
@@ -422,53 +425,116 @@ export default function Home() {
     return counts;
   }, [events, hiddenCourseIds]);
 
+  const activityData: ActivityData[] = useMemo(() => {
+    const pendingTotal = today.length + overdue.length;
+    const completedCount =
+      allAssignments.length - pendingTotal > 0
+        ? allAssignments.length - pendingTotal
+        : allAssignments.length > 0
+          ? 1
+          : 0;
+    const targetAssignments = Math.max(allAssignments.length, 1);
+    const activeCount = courses.filter((c) => !hiddenCourseIds.has(c.id)).length;
+
+    return [
+      {
+        label: "due today / overdue",
+        color: "#f59e0b",
+        colorEnd: "#fbbf24",
+        size: 180,
+        current: pendingTotal,
+        target: Math.max(pendingTotal, 1),
+        unit: "tasks",
+      },
+      {
+        label: "completed submissions",
+        color: "#10b981",
+        colorEnd: "#34d399",
+        size: 145,
+        current: completedCount,
+        target: targetAssignments,
+        unit: "done",
+      },
+      {
+        label: "active modules",
+        color: "#6366f1",
+        colorEnd: "#818cf8",
+        size: 110,
+        current: activeCount,
+        target: Math.max(activeCount, 1),
+        unit: "courses",
+      },
+    ];
+  }, [today.length, overdue.length, allAssignments.length, courses, hiddenCourseIds]);
+
   return (
     <main className="flex min-h-[calc(100vh-80px)] w-full flex-col items-center bg-background text-foreground font-sans">
       {loading ? (
         <div className="flex h-[70vh] w-full flex-col items-center justify-center gap-6" aria-live="polite" aria-busy="true">
-          <img src="/notmoodlelogo.png" alt="Loading your workspace..." className="h-20 w-auto object-contain animate-pulse" />
-          <span className="text-xs uppercase tracking-widest font-bold animate-pulse">Loading your workspace...</span>
+          <Loader size="lg" title="loading your workspace..." subtitle="syncing your courses and deadlines" />
+          <span className="sr-only">Loading your workspace...</span>
         </div>
       ) : (
         <div className="w-full max-w-[1440px] px-4 md:px-12 pb-24">
-          {/* Greeting Section */}
-          <section className="w-full mt-12 mb-8">
-            <h2 className="clash-title text-4xl md:text-6xl text-left">
-              Hello{userName ? `, ` : ""}{" "}
-              <span className="font-serif italic font-normal">
-                {userName || "there"}
-              </span>
-            </h2>
-            <p className="mt-3 text-base md:text-lg text-secondary font-medium">
-              {greetingSubtitle}
-            </p>
+          {/* Greeting & Vitality Section */}
+          <section className="w-full mt-8 md:mt-12 mb-8 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
+            <div className="flex-1">
+              <h2 className="text-3xl md:text-5xl font-semibold tracking-tight lowercase text-foreground">
+                hello{userName ? `, ` : " "}
+                <span className="text-secondary font-medium">
+                  {userName || "there"}
+                </span>
+              </h2>
+              <p className="mt-2 text-sm md:text-base font-medium text-secondary">
+                {greetingSubtitle}
+              </p>
+              <div className="mt-1 text-xs md:text-sm font-normal text-muted-foreground lowercase">
+                <TypewriterTitle
+                  sequences={[
+                    { text: "ready to tackle your coursework?", deleteAfter: true, pauseAfter: 2000 },
+                    { text: "you're making great progress", deleteAfter: true, pauseAfter: 2000 },
+                    { text: "focus on today's priorities", deleteAfter: false },
+                  ]}
+                  textClassName="text-xs md:text-sm text-muted-foreground lowercase"
+                />
+              </div>
+            </div>
+
+            {/* Apple Activity Card Vitality Rings */}
+            <div className="w-full lg:w-auto shrink-0 bg-card/40 border border-border/25 rounded-2xl backdrop-blur-xs p-2 md:p-3 shadow-2xs">
+              <AppleActivityCard
+                title="daily activity"
+                activities={activityData}
+                className="p-3 md:p-4 max-w-xl"
+              />
+            </div>
           </section>
 
-          {/* Focus Overview */}
-          <section className="pb-16 pt-2 w-full" aria-label="Assignment focus overview">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {/* Focus Overview (Urgency Metric Cards) */}
+          <section className="pb-10 pt-2 w-full" aria-label="Assignment focus overview">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
               {/* Overdue Card */}
               <button
                 type="button"
                 onClick={() => setActiveFilter(activeFilter === "overdue" ? "all" : "overdue")}
                 aria-pressed={activeFilter === "overdue"}
                 aria-label={`Overdue assignments: ${overdue.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] hover:opacity-95 ${
+                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-overdue-bg)] border-[var(--urgency-overdue-border)] hover:opacity-95 ${
                   activeFilter === "overdue"
                     ? "ring-2 ring-[var(--urgency-overdue)] ring-offset-2 ring-offset-background shadow-md"
                     : "hover:shadow-xs"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
+                  <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
                     {overdue.length}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)] shadow-xs">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-background/80 border border-[var(--urgency-overdue-border)] text-[var(--urgency-overdue)] shadow-xs">
                     <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     NEEDS ATTENTION
                   </span>
                 </div>
-                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-overdue)]">
+                <h3 className="mt-4 text-sm font-semibold uppercase tracking-wider text-[var(--urgency-overdue)]">
                   Overdue
                 </h3>
                 <p className="mt-2 text-sm font-medium text-secondary">
@@ -484,22 +550,22 @@ export default function Home() {
                 onClick={() => setActiveFilter(activeFilter === "today" ? "all" : "today")}
                 aria-pressed={activeFilter === "today"}
                 aria-label={`Due today assignments: ${today.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] hover:opacity-95 ${
+                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-today-bg)] border-[var(--urgency-today-border)] hover:opacity-95 ${
                   activeFilter === "today"
                     ? "ring-2 ring-[var(--urgency-today)] ring-offset-2 ring-offset-background shadow-md"
                     : "hover:shadow-xs"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
+                  <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
                     {today.length}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-today-border)] text-[var(--urgency-today)] shadow-xs">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-background/80 border border-[var(--urgency-today-border)] text-[var(--urgency-today)] shadow-xs">
                     <Clock className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     TACKLE TODAY
                   </span>
                 </div>
-                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-today)]">
+                <h3 className="mt-4 text-sm font-semibold uppercase tracking-wider text-[var(--urgency-today)]">
                   Due Today
                 </h3>
                 <p className="mt-2 text-sm font-medium text-secondary">
@@ -515,22 +581,22 @@ export default function Home() {
                 onClick={() => setActiveFilter(activeFilter === "upcoming" ? "all" : "upcoming")}
                 aria-pressed={activeFilter === "upcoming"}
                 aria-label={`Upcoming assignments: ${upcoming.length}. Click to toggle filter.`}
-                className={`group p-6 text-left rounded-xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] hover:opacity-95 ${
+                className={`group p-6 text-left rounded-2xl transition-all duration-300 cursor-pointer border bg-[var(--urgency-upcoming-bg)] border-[var(--urgency-upcoming-border)] hover:opacity-95 ${
                   activeFilter === "upcoming"
                     ? "ring-2 ring-[var(--urgency-upcoming)] ring-offset-2 ring-offset-background shadow-md"
                     : "hover:shadow-xs"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="clash-title text-5xl md:text-6xl text-foreground leading-none">
+                  <span className="text-4xl md:text-5xl font-semibold text-foreground leading-none">
                     {upcoming.length}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-background/80 border border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)] shadow-xs">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider bg-background/80 border border-[var(--urgency-upcoming-border)] text-[var(--urgency-upcoming)] shadow-xs">
                     <Calendar className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
                     ON SCHEDULE
                   </span>
                 </div>
-                <h3 className="mt-4 text-sm font-bold uppercase tracking-widest text-[var(--urgency-upcoming)]">
+                <h3 className="mt-4 text-sm font-semibold uppercase tracking-wider text-[var(--urgency-upcoming)]">
                   Upcoming
                 </h3>
                 <p className="mt-2 text-sm font-medium text-secondary">
@@ -542,14 +608,89 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Timeline */}
+          {/* Enrolled Course Modules (Directly Above Fold - Zero Scrolling) */}
+          <section className="mb-14" aria-label="Enrolled courses">
+            <div className="flex items-center gap-4 mb-6">
+              <h2 className="text-2xl md:text-3xl font-semibold lowercase tracking-tight text-foreground">
+                enrolled modules
+              </h2>
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-muted/80 text-secondary border border-border/30">
+                {activeCourses.length} active
+              </span>
+              <div className="flex-1 hairline-divider h-px w-full"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {activeCourses.map((course, i) => (
+                <CourseCard
+                  key={course.id}
+                  course={course}
+                  index={i}
+                  pendingCount={coursePendingCounts[course.id] || 0}
+                  events={events}
+                  assignments={allAssignments}
+                />
+              ))}
+              {activeCourses.length === 0 &&
+                loading &&
+                [1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="p-8 border border-border/10 rounded-2xl animate-pulse bg-card/50 min-h-[280px]"
+                  ></div>
+                ))}
+            </div>
+
+            {inactiveCourses.length > 0 && (
+              <div className="mt-8 rounded-2xl border border-border/30 bg-card/60 overflow-hidden shadow-2xs">
+                <button
+                  type="button"
+                  onClick={() => setShowPastCourses(!showPastCourses)}
+                  aria-expanded={showPastCourses}
+                  className="w-full flex items-center justify-between p-4 px-6 text-left hover:bg-muted/30 transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-sm tracking-tight text-foreground lowercase">
+                      Past / Inactive Courses
+                    </span>
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-secondary">
+                      {inactiveCourses.length}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={`h-4 w-4 text-secondary transition-transform duration-200 ${
+                      showPastCourses ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {showPastCourses && (
+                  <div className="p-6 pt-2 border-t border-border/20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
+                    {inactiveCourses.map((course, idx) => (
+                      <CourseCard
+                        key={course.id}
+                        course={course}
+                        index={idx}
+                        isPast
+                        events={events}
+                        assignments={allAssignments}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* Timeline / Agenda (Collapsible & Filterable below Courses) */}
           <section className="mb-16" aria-label="Deadline timeline">
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-              <div className="flex flex-wrap items-center gap-4">
-                <h2 className="clash-title text-3xl uppercase">Timeline</h2>
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl md:text-3xl font-semibold lowercase tracking-tight text-foreground">
+                  timeline
+                </h2>
                 {activeFilter !== "all" && (
                   <div className="flex items-center gap-2" role="status" aria-live="polite">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-card border border-border text-foreground shadow-xs">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium lowercase bg-card border border-border text-foreground shadow-xs">
                       Filtered:{" "}
                       <span
                         className={
@@ -581,16 +722,16 @@ export default function Home() {
 
             <div className="flex flex-col border-t border-border/20">
               {displayedEvents.length === 0 ? (
-                <div className="py-16 px-6 my-4 text-center rounded-2xl border border-dashed border-border/40 bg-card/40 flex flex-col items-center justify-center">
-                  <div className="w-12 h-12 rounded-full bg-[var(--status-success-bg)] text-[var(--status-success)] flex items-center justify-center mb-4">
+                <div className="py-14 px-6 my-4 text-center rounded-2xl border border-dashed border-border/40 bg-card/30 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-[var(--status-success-bg)] text-[var(--status-success)] flex items-center justify-center mb-3">
                     <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
                   </div>
-                  <h3 className="clash-title text-xl md:text-2xl font-medium text-foreground mb-2">
+                  <h3 className="text-xl md:text-2xl font-semibold text-foreground mb-2 tracking-tight">
                     {activeFilter !== "all"
                       ? `No ${activeFilter === "today" ? "due today" : activeFilter} items found.`
                       : "No deadlines here — you're all set!"}
                   </h3>
-                  <p className="text-sm text-secondary max-w-md mb-6">
+                  <p className="text-sm text-secondary max-w-md mb-6 lowercase">
                     {activeFilter !== "all"
                       ? "Check your other urgency views or clear the filter to see all upcoming coursework."
                       : "You've tackled everything on your schedule. Take a breather or explore your enrolled modules."}
@@ -599,7 +740,7 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => setActiveFilter("all")}
-                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wider text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-xs font-medium lowercase tracking-wide text-foreground bg-card border border-border/60 rounded-lg hover:border-foreground transition-all cursor-pointer shadow-xs"
                     >
                       Show all deadlines
                     </button>
@@ -611,13 +752,12 @@ export default function Home() {
                   const day = date.getDate().toString().padStart(2, "0");
                   const month = date
                     .toLocaleString("default", { month: "short" })
-                    .toUpperCase();
+                    .toLowerCase();
                   const time = date.toLocaleTimeString("en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
                   });
-                  
-                  const isAssignment = event.eventtype === "assign";
+
                   const matchingAssignment = allAssignments.find(
                     (a) => a.id === event.instance || (event.id > 0 && a.id === event.id),
                   );
@@ -652,25 +792,25 @@ export default function Home() {
                           handleItemClick();
                         }
                       }}
-                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-8 border-b border-border/20 hover:bg-card/40 transition-colors duration-300 text-left px-4 md:px-6 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-lg"
+                      className="group grid grid-cols-1 md:grid-cols-12 gap-6 py-6 border-b border-border/20 hover:bg-card/40 transition-colors duration-200 text-left px-4 md:px-6 w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-xl"
                     >
                       {/* Date Column */}
                       <div className="md:col-span-3 flex flex-col justify-start items-start">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-5xl clash-title font-medium leading-none text-foreground">
+                          <span className="text-4xl md:text-5xl font-semibold leading-none text-foreground tracking-tight">
                             {day}
                           </span>
-                          <span className="text-sm font-bold tracking-widest uppercase text-tertiary">
+                          <span className="text-xs font-semibold lowercase text-secondary">
                             {month} {date.getFullYear()}
                           </span>
                         </div>
-                        <div className="text-xs font-mono mt-2 text-tertiary uppercase">
+                        <div className="text-xs font-mono mt-1 text-secondary">
                           {time}
                         </div>
                         {/* Countdown Badge */}
-                        <div className="mt-3">
+                        <div className="mt-2.5">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase border shadow-2xs ${badgeVariantStyles}`}
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border shadow-2xs ${badgeVariantStyles}`}
                           >
                             {badge.label}
                           </span>
@@ -679,16 +819,16 @@ export default function Home() {
 
                       {/* Content Column */}
                       <div className="md:col-span-7 flex flex-col justify-center">
-                        <div className="text-xs font-bold tracking-widest uppercase mb-2 text-tertiary flex items-center gap-2">
-                          <span className="w-2 h-2 bg-foreground/60 rounded-full shrink-0"></span>
-                          <span className="truncate">{event.course?.fullname || "System Event"}</span>
+                        <div className="text-xs font-medium lowercase mb-1 text-secondary flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full shrink-0"></span>
+                          <span className="truncate">{event.course?.fullname || "system event"}</span>
                         </div>
-                        <h3 className="text-xl md:text-2xl font-medium clash-title text-foreground group-hover:translate-x-1.5 transition-transform duration-300">
+                        <h3 className="text-lg md:text-xl font-semibold text-foreground group-hover:translate-x-1 transition-transform duration-200 tracking-tight">
                           {event.name}
                         </h3>
                         {event.description && (
                           <div
-                            className="mt-2 text-secondary line-clamp-2 text-sm max-w-2xl font-medium"
+                            className="mt-1 text-secondary line-clamp-2 text-xs md:text-sm font-normal"
                             dangerouslySetInnerHTML={{
                               __html: event.description,
                             }}
@@ -698,11 +838,9 @@ export default function Home() {
 
                       {/* Action Column */}
                       <div className="md:col-span-2 flex items-center justify-end">
-                        <span
-                          className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card transition-all duration-300 shadow-2xs"
-                        >
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border/40 text-secondary bg-background/60 group-hover:border-foreground/30 group-hover:text-foreground group-hover:bg-card transition-all duration-200 shadow-2xs">
                           <span>View Details</span>
-                          <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-300" />
+                          <ArrowRight className="w-3.5 h-3.5 shrink-0 -translate-x-0.5 group-hover:translate-x-0.5 transition-transform duration-200" />
                         </span>
                       </div>
                     </div>
@@ -710,76 +848,6 @@ export default function Home() {
                 })
               )}
             </div>
-          </section>
-
-          {/* Enrolled Course Modules */}
-          <section className="mb-16" aria-label="Enrolled courses">
-            <div className="flex items-center gap-6 mb-8">
-              <h2 className="clash-title text-3xl uppercase">
-                Enrolled Modules
-              </h2>
-              <div className="flex-1 hairline-divider h-px w-full"></div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {activeCourses.map((course, i) => (
-                <CourseCard
-                  key={course.id}
-                  course={course}
-                  index={i}
-                  pendingCount={coursePendingCounts[course.id] || 0}
-                  events={events}
-                  assignments={allAssignments}
-                />
-              ))}
-              {activeCourses.length === 0 &&
-                loading &&
-                [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="p-8 border border-border/10 rounded-xl animate-pulse bg-card/50 min-h-[300px]"
-                  ></div>
-                ))}
-            </div>
-
-            {inactiveCourses.length > 0 && (
-              <div className="mt-8 rounded-2xl border border-border/40 bg-card/60 overflow-hidden shadow-xs">
-                <button
-                  type="button"
-                  onClick={() => setShowPastCourses(!showPastCourses)}
-                  aria-expanded={showPastCourses}
-                  className="w-full flex items-center justify-between p-4 px-6 text-left hover:bg-muted/30 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-sm clash-title uppercase tracking-wide text-foreground">
-                      Past / Inactive Courses
-                    </span>
-                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-muted text-secondary">
-                      {inactiveCourses.length}
-                    </span>
-                  </div>
-                  <ChevronDown
-                    className={`h-4 w-4 text-secondary transition-transform duration-200 ${
-                      showPastCourses ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                {showPastCourses && (
-                  <div className="p-6 pt-2 border-t border-border/20 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in duration-200">
-                    {inactiveCourses.map((course, idx) => (
-                      <CourseCard
-                        key={course.id}
-                        course={course}
-                        index={idx}
-                        isPast
-                        events={events}
-                        assignments={allAssignments}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
           </section>
         </div>
       )}
